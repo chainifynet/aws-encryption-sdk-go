@@ -1,0 +1,58 @@
+name: Dependabot
+on:
+  pull_request:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  dependabot-auto-merge:
+    name: Auto Merge
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1.6.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Add tag for patch updates
+        if: ${{steps.metadata.outputs.update-type == 'version-update:semver-patch'}}
+        uses: andymckay/labeler@1.0.4
+        with:
+          add-labels: "semver:patch"
+      - name: Add tag for minor updates
+        if: ${{steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
+        uses: andymckay/labeler@1.0.4
+        with:
+          add-labels: "semver:minor"
+      - name: Add tag for major updates
+        if: ${{steps.metadata.outputs.update-type == 'version-update:semver-major'}}
+        uses: andymckay/labeler@1.0.4
+        with:
+          add-labels: "semver:major"
+      - name: Auto-merge for Dependabot minor and patch updates
+        if: >-
+          (contains(steps.metadata.outputs.dependency-names, 'aws-sdk-go-v2') && steps.metadata.outputs.update-type == 'version-update:semver-minor') ||
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch')
+        run: |
+          gh pr review --approve "$PR_URL"
+          sleep 3
+          gh pr merge --auto --merge --subject "Merge pull request #$PR_NUMBER from $PR_HEAD_REF [skip ci]" "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add auto-merge tag
+        if: >-
+          (contains(steps.metadata.outputs.dependency-names, 'aws-sdk-go-v2') && steps.metadata.outputs.update-type == 'version-update:semver-minor') ||
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch')
+        uses: andymckay/labeler@1.0.4
+        with:
+          add-labels: "auto-merge"
