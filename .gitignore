@@ -17,6 +17,8 @@
 go.work
 
 # MacOS
+tmp/
+tmp2/
 .DS_Store
 .AppleDouble
 .LSOverride
