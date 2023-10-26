@@ -34,6 +34,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
+          cache: false
           go-version: ${{ matrix.go }}
 
       - name: Load cached dependencies
@@ -42,9 +43,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-${{ matrix.go }}-
 
       - name: Install dependencies
         run: make deps
