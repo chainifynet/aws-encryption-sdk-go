@@ -28,13 +28,13 @@ jobs:
             latest: true
     name: Unit Tests ${{ matrix.go }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Load cached dependencies
         uses: actions/cache@v3
