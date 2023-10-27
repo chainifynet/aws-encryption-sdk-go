@@ -91,27 +91,30 @@ func (as *AlgorithmSuite) GoString() string {
 	return fmt.Sprintf("%#v", *as)
 }
 
-func (as *AlgorithmSuite) String() string {
+func (as *AlgorithmSuite) Name() string {
 	if as.IsSigning() {
 		// AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384
-		return fmt.Sprintf("AlgID %#v: %v_%d_%v_HKDF_SHA%d_COMMIT_KEY_ECDSA_%v",
-			as.AlgorithmID,
+		return fmt.Sprintf("%v_%d_%v_HKDF_SHA%d_COMMIT_KEY_ECDSA_P%d",
 			as.EncryptionSuite.Algorithm,
 			as.EncryptionSuite.DataKeyLen*8,
 			as.EncryptionSuite.Mode,
 			as.KDFSuite.HashFunc().Size()*8,
-			as.Authentication.Algorithm.Params().Name,
+			as.Authentication.Algorithm.Params().BitSize,
 		)
 	} else {
 		// AES_256_GCM_HKDF_SHA512_COMMIT_KEY
-		return fmt.Sprintf("AlgID %#v: %v_%d_%v_HKDF_SHA%d_COMMIT_KEY",
-			as.AlgorithmID,
+		return fmt.Sprintf("%v_%d_%v_HKDF_SHA%d_COMMIT_KEY",
 			as.EncryptionSuite.Algorithm,
 			as.EncryptionSuite.DataKeyLen*8,
 			as.EncryptionSuite.Mode,
 			as.KDFSuite.HashFunc().Size()*8,
 		)
 	}
+}
+
+func (as *AlgorithmSuite) String() string {
+	// format: AlgID 0x0578: AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384
+	return fmt.Sprintf("AlgID 0x%04X: %s", as.AlgorithmID, as.Name())
 }
 
 func (as *AlgorithmSuite) IDBytes() []byte {

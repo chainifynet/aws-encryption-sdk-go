@@ -6,6 +6,8 @@ package suite
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_algorithm_ByID(t *testing.T) {
@@ -200,6 +202,38 @@ func TestAlgorithmSuite_IDBytes(t *testing.T) {
 			if got := tt.alg.IDBytes(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("IDBytes() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestAlgorithmSuite_Name(t *testing.T) {
+	tests := []struct {
+		name string
+		alg  *AlgorithmSuite
+		want string
+	}{
+		{"AES_256_GCM_HKDF_SHA512_COMMIT_KEY", AES_256_GCM_HKDF_SHA512_COMMIT_KEY, "AES_256_GCM_HKDF_SHA512_COMMIT_KEY"},
+		{"AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384", AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, "AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, tt.alg.Name(), "Name()")
+		})
+	}
+}
+
+func TestAlgorithmSuite_String(t *testing.T) {
+	tests := []struct {
+		name string
+		alg  *AlgorithmSuite
+		want string
+	}{
+		{"COMMIT_KEY", AES_256_GCM_HKDF_SHA512_COMMIT_KEY, "AlgID 0x0478: AES_256_GCM_HKDF_SHA512_COMMIT_KEY"},
+		{"COMMIT_KEY_ECDSA_P384", AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, "AlgID 0x0578: AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, tt.alg.String(), "String()")
 		})
 	}
 }
