@@ -84,7 +84,7 @@ func init() {
 
 	//loggerInstance = log.Logger
 
-	log.Info().
+	log.Trace().
 		Str("logLevel", log.GetLevel().String()).
 		Str("logWriter", string(LogOutput)).
 		Msg("Setup Global Logger")
