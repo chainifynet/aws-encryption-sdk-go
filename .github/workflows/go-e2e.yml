@@ -57,3 +57,7 @@ jobs:
 
       - name: E2E tests
         run: make e2e-test
+        env:
+          KEY_1_ARN: ${{ secrets.KEY_1_ARN }}
+          KEY_2_ARN: ${{ secrets.KEY_2_ARN }}
+          KEY_3_ARN: ${{ secrets.KEY_3_ARN }}
