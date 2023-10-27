@@ -52,6 +52,8 @@ e2e-test: e2e-test-cli e2e-test-short
 e2e-deps:
 	@echo "Installing e2e dependencies"
 	@pip install aws-encryption-sdk-cli
+	@aws-encryption-cli --version
+	@aws --version
 
 e2e-test-cli:
 	@echo "Running e2e CLI test"
