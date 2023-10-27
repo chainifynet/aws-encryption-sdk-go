@@ -35,7 +35,7 @@ func NewClientWithConfig(cfg *clientconfig.ClientConfig) *Client {
 
 type BaseClient interface {
 	clientConfig() clientconfig.ClientConfig
-	Decrypt(ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, []byte, error)
+	Decrypt(ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error)
 	Encrypt(source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error)
 	EncryptWithOpts(source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error)
 }
@@ -66,7 +66,7 @@ func (c *Client) Encrypt(source []byte, ec suite.EncryptionContext, materialsMan
 	return ciphertext, header, nil
 }
 
-func (c *Client) Decrypt(ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, []byte, error) {
+func (c *Client) Decrypt(ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
 	b, err := crypto.Decrypt(c.clientConfig(), ciphertext, materialsManager)
 	if err != nil {
 		return nil, nil, err
