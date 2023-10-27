@@ -51,6 +51,7 @@ func (cs *signer) sign() ([]byte, error) {
 		finalHash := cs.hasher.Sum([]byte(nil))
 		sign, err := ecdsa.SignASN1(rand.Reader, cs.key, finalHash)
 		if err != nil {
+			// TODO make error format consistent
 			return nil, fmt.Errorf("signASN1 %v, %w", err, signingErr)
 		}
 		if len(sign) == cs.signLen {

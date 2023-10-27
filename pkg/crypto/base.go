@@ -5,9 +5,9 @@ package crypto
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
@@ -67,7 +67,7 @@ func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.
 
 	b, err := dec.decrypt(ciphertext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("SDK error: %w", errors.Join(DecryptionErr, err))
 	}
 	// TODO andrew return header on decryption
 	//  https://github.com/aws/aws-encryption-sdk-python/blob/master/src/aws_encryption_sdk/__init__.py#L190
@@ -110,7 +110,7 @@ func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.E
 	ciphertext, header, err := enc.encrypt(source, ec)
 	if err != nil {
 		// TODO andrew clean up derived data key
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(EncryptionErr, err))
 	}
 	return ciphertext, header, nil
 }

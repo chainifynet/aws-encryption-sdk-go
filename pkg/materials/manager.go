@@ -49,6 +49,7 @@ func (defaultCMM *defaultCryptoMaterialsManager) generateSigningKeyUpdateEncrypt
 	}
 	private, err := ecdsa.GenerateKey(algorithm.Authentication.Algorithm, rand.Reader)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 	pubCompressed := elliptic.MarshalCompressed(algorithm.Authentication.Algorithm, private.PublicKey.X, private.PublicKey.Y)
@@ -73,6 +74,7 @@ func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq E
 	// it only adds signing key to encryption context if signing algo
 	signingKey, err := defaultCMM.generateSigningKeyUpdateEncryptionContext(encReq.Algorithm, encryptionContext)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 
@@ -80,10 +82,12 @@ func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq E
 
 	primaryMasterKey, masterKeys, err := defaultCMM.masterKeyProvider.MasterKeysForEncryption(encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 	dataEncryptionKey, encryptedDataKeys, err := prepareDataKeys(primaryMasterKey, masterKeys, encReq.Algorithm, encryptionContext)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 	return &EncryptionMaterials{
@@ -97,11 +101,13 @@ func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq E
 
 func (defaultCMM *defaultCryptoMaterialsManager) DecryptMaterials(decReq DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
 	if err := policy.Commitment.ValidatePolicyOnDecrypt(decReq.CommitmentPolicy, decReq.Algorithm); err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 
 	dataKey, err := defaultCMM.masterKeyProvider.DecryptDataKeyFromList(decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, err
 	}
 
@@ -115,11 +121,14 @@ func (defaultCMM *defaultCryptoMaterialsManager) DecryptMaterials(decReq Decrypt
 
 	// handle signing algo
 	if _, ok := decReq.EncryptionContext[encryptedContextAWSKey]; !ok {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
 		return nil, fmt.Errorf("missing %s in encryption context", encryptedContextAWSKey)
 	}
 	pubKeyStr := decReq.EncryptionContext[encryptedContextAWSKey]
 	verificationKey, err := b64.StdEncoding.DecodeString(pubKeyStr)
 	if err != nil {
+		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
+		// TODO deprecate pkg/errors
 		return nil, errors.Wrap(err, "ECDSA key error")
 	}
 

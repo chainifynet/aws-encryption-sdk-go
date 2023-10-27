@@ -32,17 +32,20 @@ func newVerifier(algorithm *suite.AlgorithmSuite) *verifier {
 
 func (cv *verifier) loadECCVerificationKey(verificationKey []byte) error {
 	if cv.key != nil {
+		// TODO deprecate pkg/errors, wrap consistent format
 		return errors.Wrap(VerificationErr, "key already exists")
 	}
 
 	x, y := elliptic.UnmarshalCompressed(cv.curve, verificationKey)
 	if x == nil {
+		// TODO deprecate pkg/errors, wrap consistent format
 		return errors.Wrap(VerificationErr, "X or Y is nil")
 	}
 
 	// We are using only P384 curve in suite.AlgorithmSuite
 	//goland:noinspection GoDeprecation
 	if ok := cv.curve.IsOnCurve(x, y); !ok {
+		// TODO deprecate pkg/errors, wrap consistent format
 		return errors.Wrap(VerificationErr, "X or Y not on Curve")
 	}
 	cv.key = &ecdsa.PublicKey{
@@ -65,6 +68,7 @@ func (cv *verifier) verify(signature []byte) error {
 	finalHash := cv.hasher.Sum([]byte(nil))
 	if ok := ecdsa.VerifyASN1(cv.key, finalHash, signature); !ok {
 		log.Error().Err(errors.Wrap(VerificationErr, "signature not valid")).Msg("verifier")
+		// TODO deprecate pkg/errors, wrap consistent format
 		return errors.Wrap(VerificationErr, "signature not valid")
 	}
 	return nil

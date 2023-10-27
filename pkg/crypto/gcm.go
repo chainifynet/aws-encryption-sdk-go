@@ -133,9 +133,11 @@ func (ge gcmEncryptor) encrypt(key, iv, plaintext, aadData []byte) ([]byte, []by
 func (gd gcmDecrypter) validateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error {
 	out, err := gd.decrypt(derivedDataKey, constructIV(0), []byte(nil), headerAuthTag, headerBytes)
 	if err != nil {
+		// TODO deprecate pkg/errors, introduce GCM errors
 		return errors.Wrap(DecryptionErr, "header authorization failed")
 	}
 	if len(out) != 0 {
+		// TODO deprecate pkg/errors, introduce GCM errors
 		return errors.Wrap(DecryptionErr, "header authorization output validation failed")
 	}
 	return nil
@@ -144,6 +146,7 @@ func (gd gcmDecrypter) validateHeaderAuth(derivedDataKey, headerAuthTag, headerB
 func (ge gcmEncryptor) generateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, error) {
 	_, headerAuth, err := ge.encrypt(derivedDataKey, constructIV(0), []byte(nil), headerBytes)
 	if err != nil {
+		// TODO deprecate pkg/errors, introduce GCM errors
 		return nil, fmt.Errorf("%w: header auth error", err)
 	}
 

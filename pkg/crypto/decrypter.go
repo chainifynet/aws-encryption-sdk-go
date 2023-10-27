@@ -17,6 +17,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+// TODO andrew errors refactor
+
 // Decrypt ciphertext decryption
 func (d *decrypter) decrypt(ciphertext []byte) ([]byte, error) {
 	var b []byte

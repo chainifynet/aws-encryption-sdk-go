@@ -27,6 +27,7 @@ func deriveDataEncryptionKey(dk keys.DataKeyI, alg *suite.AlgorithmSuite, messag
 
 	derivedKey := make([]byte, alg.EncryptionSuite.DataKeyLen)
 	if _, err := io.ReadFull(kdf, derivedKey); err != nil {
+		// TODO introduce key derivation errors
 		return nil, err
 	}
 	return derivedKey, nil
@@ -41,6 +42,7 @@ func calculateCommitmentKey(dk keys.DataKeyI, alg *suite.AlgorithmSuite, message
 
 	commitmentKey := make([]byte, lengthCommit)
 	if _, err := io.ReadFull(kdf, commitmentKey); err != nil {
+		// TODO introduce key derivation errors
 		return nil, err
 	}
 	return commitmentKey, nil

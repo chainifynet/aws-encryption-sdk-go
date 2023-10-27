@@ -17,6 +17,7 @@ func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.Mast
 
 	dataEncryptionKey, err := primaryMasterKey.GenerateDataKey(algorithm, ec)
 	if err != nil {
+		// TODO just wrap err
 		return nil, nil, err
 	}
 
@@ -28,6 +29,7 @@ func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.Mast
 		}
 		encryptedKey, err := masterKey.EncryptDataKey(dataEncryptionKey, algorithm, ec)
 		if err != nil {
+			// TODO just wrap err
 			return nil, nil, err
 		}
 		encryptedDataKeys = append(encryptedDataKeys, encryptedKey)

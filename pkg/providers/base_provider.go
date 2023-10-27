@@ -8,6 +8,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
+
 type ProviderBase interface {
 	ProviderID() string
 	ValidateProviderID(otherID string) error

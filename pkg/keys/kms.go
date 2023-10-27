@@ -83,7 +83,7 @@ func (kmsMK *KmsMasterKey) GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.E
 			Err(err).
 			Stringer("MasterKey", kmsMK.metadata).
 			Msg("MasterKey: GenerateDataKey")
-		return nil, GenerateDataKeyError
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(GenerateDataKeyError, err))
 	}
 	// TODO perform validation on suite.AlgorithmSuite length and generated data key length
 	log.Trace().
@@ -123,7 +123,7 @@ func (kmsMK *KmsMasterKey) EncryptDataKey(dataKey DataKeyI, alg *suite.Algorithm
 			Stringer("MK", kmsMK.metadata).
 			Stringer("DK", dataKey.KeyProvider()).
 			Msg("MasterKey: EncryptDataKey")
-		return nil, fmt.Errorf("KMS error: %v, KmsMasterKey: %w", err, EncryptKeyError)
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(EncryptKeyError, err))
 	}
 	log.Trace().
 		Stringer("MK", kmsMK.metadata).
@@ -170,9 +170,9 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, al
 			// TODO might handle more exceptions for edge-cases
 			//  ref github.com/aws/aws-sdk-go-v2/service/kms@v1.18.5/types/errors.go
 			if kmsErr := errors.Unwrap(smhErr.Unwrap()).(*types.IncorrectKeyException); kmsErr != nil {
-				// that is normal behaviour
+				// that is normal behaviour, we'll try to decrypt with other MasterKey in MasterKeyProvider
 				log.Trace().Caller().AnErr("kmsErr", kmsErr).Msg("KMS expected error")
-				return nil, fmt.Errorf("KMS expected error: %v, Error: %w", kmsErr, DecryptKeyError)
+				return nil, fmt.Errorf("KMSMasterKey expected error: %w", errors.Join(DecryptKeyError, kmsErr))
 			}
 		}
 
@@ -181,7 +181,7 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, al
 			Stringer("MK", kmsMK.metadata).
 			Stringer("EDK", encryptedDataKey.KeyProvider()).
 			Msg("MasterKey: DecryptDataKey")
-		return nil, fmt.Errorf("KMS error: %v, Error: %w", err, DecryptKeyError)
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(DecryptKeyError, err))
 	}
 
 	log.Trace().

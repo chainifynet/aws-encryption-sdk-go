@@ -72,9 +72,11 @@ func NewKmsKeyProviderWithOpts(keyIDs []string, optFns ...func(options *KmsProvi
 	if keyIDs != nil && len(keyIDs) > 0 {
 		for _, keyID := range keyIDs {
 			if err := validateKeyArn(keyID); err != nil {
+				// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 				return nil, fmt.Errorf("invalid keyID %s, %w", keyID, err)
 			}
 			if _, err := p.addMasterKey(keyID); err != nil {
+				// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 				return nil, err
 			}
 		}
@@ -124,6 +126,7 @@ func (kmsKP *KmsKeyProvider[KT]) ProviderID() string {
 
 func (kmsKP *KmsKeyProvider[KT]) ValidateProviderID(otherID string) error {
 	if kmsKP.providerID != otherID {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return fmt.Errorf("provided base MasterKey providerID %s doesnt match to with KeyProvider ID %s", otherID, kmsKP.providerID)
 	}
 	return nil
@@ -131,6 +134,7 @@ func (kmsKP *KmsKeyProvider[KT]) ValidateProviderID(otherID string) error {
 
 func (kmsKP *KmsKeyProvider[KT]) validateMasterKey(keyID string) error {
 	if _, exists := kmsKP.keyEntriesForEncrypt[keyID]; !exists {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return fmt.Errorf("key %v doesnt exists", keyID)
 	}
 	return nil
@@ -142,6 +146,7 @@ func (kmsKP *KmsKeyProvider[KT]) addMasterKey(keyID string) (keys.MasterKeyBase,
 		//return nil, fmt.Errorf("key %v already exists", keyID)
 		key, err := kmsKP.newMasterKey(keyID)
 		if err != nil {
+			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 			return nil, err
 		}
 
@@ -182,6 +187,7 @@ func (kmsKP *KmsKeyProvider[KT]) getClient(keyID string) (*kms.Client, error) {
 	// TODO add configurable default region
 	regionName, err := regionForKeyID(keyID, "")
 	if err != nil {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return nil, err
 	}
 	kmsKP.addRegionalClient(regionName)
@@ -210,6 +216,7 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 	for _, opt := range opts {
 		if err := opt(cfgOpts); err != nil {
 			log.Error().Err(err).Msg("unable to load Custom SDK config")
+			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 			// TODO andrew refactor return error
 		}
 	}
@@ -221,6 +228,7 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), opts...)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to load Custom SDK config")
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		// TODO andrew refactor return error
 	}
 	log.Trace().
@@ -235,6 +243,7 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(ec suite.EncryptionCont
 	//  andrew: cover with tests and we'll see
 
 	if kmsKP.primaryMasterKey == nil {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return nil, nil, fmt.Errorf("no primary key")
 	}
 	var members []keys.MasterKeyBase
@@ -351,6 +360,7 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedD
 	// If this point is reached without having the data key decrypted
 	//	then the data key has not been decrypted
 	if dataKey == nil {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return nil, keys.DecryptKeyError
 	}
 
@@ -378,6 +388,7 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKeyFromList(encryptedDataKeys []keys
 	}
 
 	if dataKey == nil {
+		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return nil, keys.DecryptKeyError
 	}
 

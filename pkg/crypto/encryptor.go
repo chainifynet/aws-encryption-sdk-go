@@ -21,18 +21,21 @@ func (e *encryptor) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 	b = make([]byte, len(source))
 	copy(b, source)
 	if len(source) <= 0 || len(b) <= 0 {
-		return nil, nil, fmt.Errorf("empty source, %w", EncryptionErr)
+		return nil, nil, fmt.Errorf("empty source")
 	}
 	buf := bytes.NewBuffer(b)
 	if err := e.prepareMessage(buf, ec); err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("prepare message error: %w", err)
+		//return nil, nil, err
 	}
 
 	if err := e.generateHeaderAuth(); err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return nil, nil, err
 	}
 
 	if err := e.encryptBody(buf); err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return nil, nil, err
 	}
 
@@ -41,14 +44,16 @@ func (e *encryptor) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 	if e.signer != nil {
 		signature, err := e.signer.sign()
 		if err != nil {
+			// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 			return nil, nil, err
 		}
 		footer, err := serialization.MessageFooter.NewFooter(e.algorithm, signature)
 		if err != nil {
+			// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 			return nil, nil, err
 		}
 		if err = e.updateCiphertextBuf(footer.Bytes()); err != nil {
-			return nil, nil, err
+			return nil, nil, err // already wrapped in updateCiphertextBuf
 		}
 	}
 
@@ -68,7 +73,7 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 	// check why we need ValidatePolicyOnEncrypt
 	// here and: encryptionsdk/materials/manager.go:47
 	if err := policy.Commitment.ValidatePolicyOnEncrypt(e.config.CommitmentPolicy(), e.algorithm); err != nil {
-		return err
+		return err // just return err
 	}
 
 	emr := materials.EncryptionMaterialsRequest{
@@ -82,10 +87,10 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 
 	encMaterials, err := e.cmm.GetEncryptionMaterials(emr)
 	if err != nil {
-		return fmt.Errorf("%w: failed cmm.GetEncryptionMaterials", EncryptionErr)
+		return fmt.Errorf("CMM error: %w", err)
 	}
 	if len(encMaterials.EncryptedDataKeys()) > e.config.MaxEncryptedDataKeys() {
-		return fmt.Errorf("%w: max encrypted data keys exceeded", EncryptionErr)
+		return fmt.Errorf("materials: max encrypted data keys exceeded")
 	}
 
 	if e.algorithm.IsSigning() {
@@ -96,11 +101,13 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 
 	messageID, err := rand.CryptoRandomBytes(e.algorithm.MessageIDLen())
 	if err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return fmt.Errorf("%w: messageID error", EncryptionErr)
 	}
 
 	derivedDataKey, err := deriveDataEncryptionKey(encMaterials.DataEncryptionKey(), e.algorithm, messageID)
 	if err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return fmt.Errorf("%w: key derivation failed", EncryptionErr)
 	}
 
@@ -108,6 +115,7 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 	e._derivedDataKey = derivedDataKey
 
 	if err = e.generateHeader(messageID, encMaterials); err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return err
 	}
 
@@ -119,11 +127,13 @@ func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.Enc
 
 	edks, err := serialization.EDK.FromEDKs(encMaterials.EncryptedDataKeys())
 	if err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return err
 	}
 
 	commitmentKey, err := calculateCommitmentKey(encMaterials.DataEncryptionKey(), e.algorithm, messageID)
 	if err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return err
 	}
 
@@ -139,12 +149,13 @@ func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.Enc
 
 	header, err := serialization.EncryptedMessageHeader.New(params)
 	if err != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return err
 	}
 	e.header = header
 
 	if err = e.updateBuffers(e.header.Bytes()); err != nil {
-		return err
+		return err // already wrapped in updateCiphertextBuf
 	}
 
 	return nil
@@ -153,14 +164,16 @@ func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.Enc
 func (e *encryptor) generateHeaderAuth() error {
 	headerAuthTag, err := e.aeadEncryptor.generateHeaderAuth(e._derivedDataKey, e.header.Bytes())
 	if err != nil {
+		// TODO make error format consistent
 		return fmt.Errorf("%w: header auth error", err)
 	}
 	headerAuthData, err := serialization.MessageHeaderAuth.New(headerAuthTag)
 	if err != nil {
+		// TODO make error format consistent
 		return fmt.Errorf("%w: header auth serialize error", err)
 	}
 	if err = e.updateBuffers(headerAuthData.Serialize()); err != nil {
-		return err
+		return err // wrapped already in updateCiphertextBuf
 	}
 	return nil
 }
@@ -168,6 +181,7 @@ func (e *encryptor) generateHeaderAuth() error {
 func (e *encryptor) encryptBody(plaintextBuffer *bytes.Buffer) error {
 	body, errBody := serialization.MessageBody.NewBody(e.header.AlgorithmSuite, e.frameLength)
 	if errBody != nil {
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return errBody
 	}
 
@@ -194,14 +208,17 @@ func (e *encryptor) encryptBody(plaintextBuffer *bytes.Buffer) error {
 		plaintext := plaintextBuffer.Next(bytesToRead)
 		ciphertext, authTag, err := e.encryptFrame(seqNum, isFinal, plaintext)
 		if err != nil {
+			// already wrapped in encryptFrame
 			return err
 		}
 		if errFrame := body.AddFrame(isFinal, seqNum, constructIV(seqNum), len(plaintext), ciphertext, authTag); errFrame != nil {
+			// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 			return errFrame
 		}
 	}
 
 	if err := e.updateBuffers(body.Bytes()); err != nil {
+		// wrapped already in updateCiphertextBuf
 		return err
 	}
 	return nil
@@ -229,6 +246,7 @@ func (e *encryptor) encryptFrame(seqNum int, isFinal bool, plaintext []byte) ([]
 func (e *encryptor) updateCiphertextBuf(b []byte) error {
 	if n, err := e.ciphertextBuf.Write(b); err != nil {
 		log.Error().Err(err).Msg("CiphertextBuf update error")
+		// TODO return fmt.Errorf wrapping err, EncryptionErr will be wrapped in caller
 		return err
 	} else {
 		log.Trace().Int("written", n).Msg("CiphertextBuf update")
@@ -239,6 +257,7 @@ func (e *encryptor) updateCiphertextBuf(b []byte) error {
 
 func (e *encryptor) updateBuffers(b []byte) error {
 	if err := e.updateCiphertextBuf(b); err != nil {
+		// wrapped already in updateCiphertextBuf
 		return err
 	}
 	if e.signer != nil {
