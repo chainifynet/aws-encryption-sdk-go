@@ -18,7 +18,7 @@ all: unit
 
 deps:
 	@echo "Installing dependencies"
-	@go mod download all -x
+	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
 
 # add golangci-lint later
