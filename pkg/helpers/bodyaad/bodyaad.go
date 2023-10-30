@@ -28,9 +28,6 @@ func (bodyAAD) ContentString(contentType suite.ContentType, finalFrame bool) []b
 	if finalFrame {
 		return []byte(suite.ContentAADFinalFrame)
 	}
-	//} else {
-	//	return []byte(suite.ContentAADFrame)
-	//}
 	return []byte(suite.ContentAADFrame)
 }
 
