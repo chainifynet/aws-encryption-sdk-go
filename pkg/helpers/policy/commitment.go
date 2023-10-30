@@ -9,7 +9,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
-var Commitment commitmentValidator
+var Commitment commitmentValidator //nolint:gochecknoglobals
 
 type commitmentValidator struct{}
 

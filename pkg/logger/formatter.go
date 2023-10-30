@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+//nolint:unused
 //goland:noinspection GoUnusedConst
 const (
 	colorBlack = iota + 30
@@ -136,6 +137,6 @@ func FmtHexColor(msg string, b []byte) func() string {
 }
 
 //goland:noinspection GoUnusedExportedFunction
-func FmtBytesF(b []byte) (key string, val string) {
+func FmtBytesF(b []byte) (key, val string) {
 	return "bytes", FmtBytes(b)
 }

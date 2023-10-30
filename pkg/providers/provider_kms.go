@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"github.com/rs/zerolog"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
@@ -20,8 +21,8 @@ import (
 )
 
 var (
-	log             = logger.L().Level(zerolog.DebugLevel)
-	malformedArnErr = errors.New("malformed Key ARN")
+	log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
+
 )
 
 const (
@@ -69,9 +70,9 @@ func NewKmsKeyProviderWithOpts(keyIDs []string, optFns ...func(options *KmsProvi
 	}
 
 	p := newKmsKeyProvider(&options)
-	if keyIDs != nil && len(keyIDs) > 0 {
+	if len(keyIDs) > 0 {
 		for _, keyID := range keyIDs {
-			if err := validateKeyArn(keyID); err != nil {
+			if err := arn.ValidateKeyArn(keyID); err != nil {
 				// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 				return nil, fmt.Errorf("invalid keyID %s, %w", keyID, err)
 			}
@@ -204,10 +205,10 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 		return
 	}
 
-	opts := append(kmsKP.options.AwsLoadOptions, config.WithRegion(region))
+	opts := append(kmsKP.options.AwsLoadOptions, config.WithRegion(region)) //nolint:gocritic
 
 	// TODO andrew remove since we can use WithSharedConfigProfile when configuring KmsKeyProvider
-	if len(kmsKP.options.Profile) != 0 {
+	if kmsKP.options.Profile != "" {
 		opts = append(opts, config.WithSharedConfigProfile(kmsKP.options.Profile))
 	}
 
@@ -220,7 +221,7 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 			// TODO andrew refactor return error
 		}
 	}
-	if len(cfgOpts.SharedConfigProfile) != 0 {
+	if cfgOpts.SharedConfigProfile != "" {
 		kmsKP.options.Profile = cfgOpts.SharedConfigProfile
 	}
 
@@ -238,7 +239,7 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 	kmsKP.regionalClients[region] = kmsClient
 }
 
-func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(ec suite.EncryptionContext, plaintextRoStream []byte, plaintextLength int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
+func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(_ suite.EncryptionContext, _ []byte, _ int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
 	// TODO probably we need to AddMasterKey for each of keyEntriesForEncrypt that eventually adds primaryMasterKey
 	//  andrew: cover with tests and we'll see
 
@@ -246,7 +247,7 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(ec suite.EncryptionCont
 		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 		return nil, nil, fmt.Errorf("no primary key")
 	}
-	var members []keys.MasterKeyBase
+	members := make([]keys.MasterKeyBase, 0, len(kmsKP.keyEntriesForEncrypt))
 	for _, k := range kmsKP.keyEntriesForEncrypt {
 		memberMasterKey := k.GetEntry()
 		members = append(members, memberMasterKey)
@@ -317,14 +318,14 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedD
 	}
 
 	for keyID, entry := range kmsKP.keyEntriesForDecrypt {
-		if structs.Contains(allMemberKeys, keyID) == false {
+		if !structs.Contains(allMemberKeys, keyID) {
 			allMembers = append(allMembers, entry.GetEntry())
 			allMemberKeys = append(allMemberKeys, keyID)
 		}
 	}
 
 	for keyID, entry := range kmsKP.keyEntriesForEncrypt {
-		if structs.Contains(allMemberKeys, keyID) == false {
+		if !structs.Contains(allMemberKeys, keyID) {
 			allMembers = append(allMembers, entry.GetEntry())
 			allMemberKeys = append(allMemberKeys, keyID)
 		}
@@ -347,11 +348,11 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedD
 			//	and this function MUST return
 			//	and not attempt to decrypt anymore encrypted data keys.
 			break
-		} else {
-			// if MasterKey returns keys.DecryptKeyError, try to decrypt next provider member key
-			if errors.Is(errDecrypt, keys.DecryptKeyError) {
+		} else { //nolint:revive
+			// if MasterKey returns keys.ErrDecryptKey, try to decrypt next provider member key
+			if errors.Is(errDecrypt, keys.ErrDecryptKey) {
 				continue
-			} else {
+			} else { //nolint:revive
 				break
 			}
 		}
@@ -361,7 +362,7 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedD
 	//	then the data key has not been decrypted
 	if dataKey == nil {
 		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, keys.DecryptKeyError
+		return nil, keys.ErrDecryptKey
 	}
 
 	return dataKey, nil
@@ -378,10 +379,10 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKeyFromList(encryptedDataKeys []keys
 		if errDecrypt == nil {
 			dataKey = decryptedDataKey
 			break
-		} else {
-			if errors.Is(errDecrypt, keys.DecryptKeyError) {
+		} else { //nolint:revive
+			if errors.Is(errDecrypt, keys.ErrDecryptKey) {
 				continue
-			} else {
+			} else { //nolint:revive
 				break
 			}
 		}
@@ -389,7 +390,7 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKeyFromList(encryptedDataKeys []keys
 
 	if dataKey == nil {
 		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, keys.DecryptKeyError
+		return nil, keys.ErrDecryptKey
 	}
 
 	return dataKey, nil
@@ -425,9 +426,9 @@ var _ KmsKeyProviderI = (*KmsKeyProvider[keys.KmsMasterKeyI])(nil)
 
 const _regionMinLength = 9
 
-func regionForKeyID(keyID string, defaultRegion string) (string, error) {
+func regionForKeyID(keyID, defaultRegion string) (string, error) {
 	parts := strings.Split(keyID, ":")
-	if len(parts) < 3 {
+	if len(parts) < 3 { //nolint:gomnd
 		// minimum chars in AWS region, i.e. sa-east-1
 		if len(defaultRegion) >= _regionMinLength {
 			return defaultRegion, nil
@@ -440,68 +441,4 @@ func regionForKeyID(keyID string, defaultRegion string) (string, error) {
 	}
 
 	return "", fmt.Errorf("UnknownRegionError, KeyID %v", keyID)
-}
-
-func validateKeyArn(keyID string) error {
-	elements := strings.SplitN(keyID, ":", 6)
-
-	if len(elements) < 6 {
-		return fmt.Errorf("keyID is missing required ARN components, %w", malformedArnErr)
-	}
-
-	if elements[0] != "arn" {
-		return fmt.Errorf("keyID is missing 'arn' string, %w", malformedArnErr)
-	}
-
-	partition := elements[1]
-	service := elements[2]
-	region := elements[3]
-	account := elements[4]
-
-	if partition == "" {
-		return fmt.Errorf("keyID is missing partition, %w", malformedArnErr)
-	}
-
-	if account == "" {
-		return fmt.Errorf("keyID is missing account, %w", malformedArnErr)
-	}
-
-	if region == "" {
-		return fmt.Errorf("keyID is missing region, %w", malformedArnErr)
-	}
-
-	if service != "kms" {
-		return fmt.Errorf("keyID has unknown service, %w", malformedArnErr)
-	}
-
-	resource := elements[5]
-	if resource == "" {
-		return fmt.Errorf("keyID is missing resource, %w", malformedArnErr)
-	}
-
-	resourceElements := strings.SplitN(resource, "/", 2)
-	if len(resourceElements) != 2 {
-		return fmt.Errorf("keyID resource section is malformed, %w", malformedArnErr)
-	}
-
-	resourceType := resourceElements[0]
-	resourceID := resourceElements[1]
-
-	if resourceType == "alias" {
-		return fmt.Errorf("alias keyID is not supported yet, %w", malformedArnErr)
-	}
-
-	if resourceType != "key" {
-		return fmt.Errorf("keyID has unknown resource type, %w", malformedArnErr)
-	}
-
-	if resourceID == "" {
-		return fmt.Errorf("keyID is missing resource id, %w", malformedArnErr)
-	}
-
-	if resourceType == "key" && strings.HasPrefix(resourceID, "mrk-") {
-		return fmt.Errorf("KMS MRK not supported yet, %w", malformedArnErr)
-	}
-
-	return nil
 }

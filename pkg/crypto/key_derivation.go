@@ -4,6 +4,8 @@
 package crypto
 
 import (
+	"errors"
+	"fmt"
 	"io"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
@@ -11,15 +13,19 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
+var errKeyDerivation = errors.New("key derivation error")
+
 const (
-	deriveKeyLabel = "DERIVEKEY"
-	commitLabel    = "COMMITKEY"
-	lengthCommit   = 32
+	deriveKeyLabel       = "DERIVEKEY"
+	commitLabel          = "COMMITKEY"
+	deriveKeyKdfInfoSize = 11 // 2 bytes AlgorithmID + 9 bytes label
+	commitKdfInfoSize    = 9  // 9 bytes commitLabel
+	lengthCommit         = 32
 )
 
 func deriveDataEncryptionKey(dk keys.DataKeyI, alg *suite.AlgorithmSuite, messageID []byte) ([]byte, error) {
 	var buf []byte
-	buf = make([]byte, 0, 11) // 2 bytes AlgorithmID + 9 bytes label
+	buf = make([]byte, 0, deriveKeyKdfInfoSize) // 2 bytes AlgorithmID + 9 bytes label
 	buf = append(buf, conv.FromInt.UUint16BigEndian(alg.AlgorithmID)...)
 	buf = append(buf, []byte(deriveKeyLabel)...)
 
@@ -27,23 +33,21 @@ func deriveDataEncryptionKey(dk keys.DataKeyI, alg *suite.AlgorithmSuite, messag
 
 	derivedKey := make([]byte, alg.EncryptionSuite.DataKeyLen)
 	if _, err := io.ReadFull(kdf, derivedKey); err != nil {
-		// TODO introduce key derivation errors
-		return nil, err
+		return nil, fmt.Errorf("derive data encryption key: %v: %w", err.Error(), errKeyDerivation)
 	}
 	return derivedKey, nil
 }
 
 func calculateCommitmentKey(dk keys.DataKeyI, alg *suite.AlgorithmSuite, messageID []byte) ([]byte, error) {
 	var buf []byte
-	buf = make([]byte, 0, 9) // 9 bytes commitLabel
+	buf = make([]byte, 0, commitKdfInfoSize) // 9 bytes commitLabel
 	buf = append(buf, []byte(commitLabel)...)
 
 	kdf := alg.KDFSuite.KDFFunc(alg.KDFSuite.HashFunc, dk.DataKey(), messageID, buf)
 
 	commitmentKey := make([]byte, lengthCommit)
 	if _, err := io.ReadFull(kdf, commitmentKey); err != nil {
-		// TODO introduce key derivation errors
-		return nil, err
+		return nil, fmt.Errorf("calculate commitment key: %v: %w", err.Error(), errKeyDerivation)
 	}
 	return commitmentKey, nil
 }

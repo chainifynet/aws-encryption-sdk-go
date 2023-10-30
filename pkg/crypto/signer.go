@@ -6,10 +6,9 @@ package crypto
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"errors"
 	"fmt"
 	"hash"
-
-	"github.com/pkg/errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	signingErr = errors.New("sign error")
+	errSigning = errors.New("sign error")
 )
 
 type signer struct {
@@ -51,18 +50,16 @@ func (cs *signer) sign() ([]byte, error) {
 		finalHash := cs.hasher.Sum([]byte(nil))
 		sign, err := ecdsa.SignASN1(rand.Reader, cs.key, finalHash)
 		if err != nil {
-			// TODO make error format consistent
-			return nil, fmt.Errorf("signASN1 %v, %w", err, signingErr)
+			return nil, fmt.Errorf("signASN1: %w", errors.Join(errSigning, err))
 		}
 		if len(sign) == cs.signLen {
 			signature = sign
 			break
-		} else {
-			log.Debug().Int("expectedLen", cs.signLen).
-				Int("actualLen", len(sign)).
-				Msg("sign is not desired length. recalculating")
-			continue
 		}
+		log.Debug().Int("expectedLen", cs.signLen).
+			Int("actualLen", len(sign)).
+			Msg("sign is not desired length. recalculating")
+		continue
 	}
 
 	log.Trace().

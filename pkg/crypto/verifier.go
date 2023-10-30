@@ -6,15 +6,15 @@ package crypto
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"errors"
+	"fmt"
 	"hash"
-
-	"github.com/pkg/errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
 var (
-	VerificationErr = errors.New("verification error")
+	ErrSignVerification = errors.New("verification error")
 )
 
 type verifier struct {
@@ -32,21 +32,18 @@ func newVerifier(algorithm *suite.AlgorithmSuite) *verifier {
 
 func (cv *verifier) loadECCVerificationKey(verificationKey []byte) error {
 	if cv.key != nil {
-		// TODO deprecate pkg/errors, wrap consistent format
-		return errors.Wrap(VerificationErr, "key already exists")
+		return fmt.Errorf("key already exists: %w", ErrSignVerification)
 	}
 
 	x, y := elliptic.UnmarshalCompressed(cv.curve, verificationKey)
 	if x == nil {
-		// TODO deprecate pkg/errors, wrap consistent format
-		return errors.Wrap(VerificationErr, "X or Y is nil")
+		return fmt.Errorf("X or Y is nil: %w", ErrSignVerification)
 	}
 
 	// We are using only P384 curve in suite.AlgorithmSuite
 	//goland:noinspection GoDeprecation
 	if ok := cv.curve.IsOnCurve(x, y); !ok {
-		// TODO deprecate pkg/errors, wrap consistent format
-		return errors.Wrap(VerificationErr, "X or Y not on Curve")
+		return fmt.Errorf("X or Y not on Curve: %w", ErrSignVerification)
 	}
 	cv.key = &ecdsa.PublicKey{
 		Curve: cv.curve,
@@ -67,9 +64,8 @@ func (cv *verifier) update(b []byte) {
 func (cv *verifier) verify(signature []byte) error {
 	finalHash := cv.hasher.Sum([]byte(nil))
 	if ok := ecdsa.VerifyASN1(cv.key, finalHash, signature); !ok {
-		log.Error().Err(errors.Wrap(VerificationErr, "signature not valid")).Msg("verifier")
-		// TODO deprecate pkg/errors, wrap consistent format
-		return errors.Wrap(VerificationErr, "signature not valid")
+		log.Error().Err(fmt.Errorf("signature not valid: %w", ErrSignVerification)).Msg("verifier")
+		return fmt.Errorf("signature not valid: %w", ErrSignVerification)
 	}
 	return nil
 }

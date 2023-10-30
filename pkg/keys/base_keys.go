@@ -9,12 +9,18 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+var (
+	ErrDecryptKey      = errors.New("unable to decrypt data key")
+	ErrGenerateDataKey = errors.New("unable to generate data key")
+	ErrEncryptKey      = errors.New("unable to encrypt data key")
+)
+
 type KeyMeta struct {
 	ProviderID string
 	KeyID      string
 }
 
-func WithKeyMeta(providerID string, keyID string) KeyMeta {
+func WithKeyMeta(providerID, keyID string) KeyMeta {
 	return KeyMeta{
 		ProviderID: providerID,
 		KeyID:      keyID,
@@ -31,12 +37,6 @@ func (km KeyMeta) Equal(other KeyMeta) bool {
 func (km KeyMeta) String() string {
 	return km.ProviderID + "__" + km.KeyID
 }
-
-var (
-	DecryptKeyError      = errors.New("unable to decrypt data key")
-	GenerateDataKeyError = errors.New("unable to generate data key")
-	EncryptKeyError      = errors.New("unable to encrypt data key")
-)
 
 type MasterKeyBase interface {
 	KeyID() string

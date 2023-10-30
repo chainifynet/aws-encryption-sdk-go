@@ -8,6 +8,7 @@ import (
 	"crypto/elliptic"
 	"crypto/sha256"
 	"crypto/sha512"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -17,10 +18,18 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
+var ErrAlgorithmSuite = errors.New("algorithm suite error")
+
 type encAlgorithm string
 type cipherMode string
 
 const (
+	messageIDLen          = int(32)
+	algorithmSuiteDataLen = int(32)
+
+	bitSize        = int(8) // 1 byte = 8 bits
+	algorithmIDLen = int(2) // algorithmID size must be 2 bytes (16-bit unsigned integer)
+
 	aesAlg encAlgorithm = "AES"
 
 	gcmMode cipherMode = "GCM"
@@ -41,7 +50,7 @@ var (
 	aes_256_GCM_IV12_TAG16 = newEncryptionSuite(aesAlg, gcmMode, 32, 12, 16)
 )
 
-func newEncryptionSuite(algorithm encAlgorithm, mode cipherMode, dataKeyLen int, ivLen int, authLen int) encryptionSuite {
+func newEncryptionSuite(algorithm encAlgorithm, mode cipherMode, dataKeyLen, ivLen, authLen int) encryptionSuite {
 	return encryptionSuite{Algorithm: algorithm, Mode: mode, DataKeyLen: dataKeyLen, IVLen: ivLen, AuthLen: authLen}
 }
 
@@ -52,8 +61,8 @@ type kdfSuite struct {
 
 //goland:noinspection GoSnakeCaseUsage,GoUnusedGlobalVariable
 var (
-	hkdf_SHA256 = newKdfSuite(hkdf.New, sha256.New)
-	hkdf_SHA384 = newKdfSuite(hkdf.New, sha512.New384)
+	hkdf_SHA256 = newKdfSuite(hkdf.New, sha256.New)    //nolint:unused
+	hkdf_SHA384 = newKdfSuite(hkdf.New, sha512.New384) //nolint:unused
 	hkdf_SHA512 = newKdfSuite(hkdf.New, sha512.New)
 )
 
@@ -96,20 +105,19 @@ func (as *AlgorithmSuite) Name() string {
 		// AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384
 		return fmt.Sprintf("%v_%d_%v_HKDF_SHA%d_COMMIT_KEY_ECDSA_P%d",
 			as.EncryptionSuite.Algorithm,
-			as.EncryptionSuite.DataKeyLen*8,
+			as.EncryptionSuite.DataKeyLen*bitSize,
 			as.EncryptionSuite.Mode,
-			as.KDFSuite.HashFunc().Size()*8,
+			as.KDFSuite.HashFunc().Size()*bitSize,
 			as.Authentication.Algorithm.Params().BitSize,
 		)
-	} else {
-		// AES_256_GCM_HKDF_SHA512_COMMIT_KEY
-		return fmt.Sprintf("%v_%d_%v_HKDF_SHA%d_COMMIT_KEY",
-			as.EncryptionSuite.Algorithm,
-			as.EncryptionSuite.DataKeyLen*8,
-			as.EncryptionSuite.Mode,
-			as.KDFSuite.HashFunc().Size()*8,
-		)
 	}
+	// AES_256_GCM_HKDF_SHA512_COMMIT_KEY
+	return fmt.Sprintf("%v_%d_%v_HKDF_SHA%d_COMMIT_KEY",
+		as.EncryptionSuite.Algorithm,
+		as.EncryptionSuite.DataKeyLen*bitSize,
+		as.EncryptionSuite.Mode,
+		as.KDFSuite.HashFunc().Size()*bitSize,
+	)
 }
 
 func (as *AlgorithmSuite) String() string {
@@ -122,10 +130,7 @@ func (as *AlgorithmSuite) IDBytes() []byte {
 }
 
 func (as *AlgorithmSuite) IsSigning() bool {
-	if as.Authentication.Algorithm != nil {
-		return true
-	}
-	return false
+	return as.Authentication.Algorithm != nil
 }
 
 func (as *AlgorithmSuite) IsCommitting() bool {
@@ -137,12 +142,12 @@ func (as *AlgorithmSuite) IsCommitting() bool {
 
 func (as *AlgorithmSuite) MessageIDLen() int {
 	// all supported algorithmSuite version 2 has 32 bytes MessageID length
-	return 32
+	return messageIDLen
 }
 
 func (as *AlgorithmSuite) AlgorithmSuiteDataLen() int {
 	// all supported algorithmSuite version 2 has 32 bytes Algorithm Suite Data field length
-	return 32
+	return algorithmSuiteDataLen
 }
 
 //goland:noinspection GoSnakeCaseUsage,GoUnusedGlobalVariable
@@ -151,8 +156,8 @@ var (
 	AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384 = newAlgorithmSuite(0x0578, aes_256_GCM_IV12_TAG16, 2, hkdf_SHA512, authSuite_SHA256_ECDSA_P384)
 )
 
-// Note: we are not accessing this map concurrently on write, so no need to use sync.Map
-var algorithmLookup = map[uint16]*AlgorithmSuite{}
+// Note: we are not accessing this map concurrently on write, so no need to use sync.Map.
+var algorithmLookup = map[uint16]*AlgorithmSuite{} //nolint:gochecknoglobals
 
 func newAlgorithmSuite(algorithmID uint16, encryptionSuite encryptionSuite, messageFormatVersion int, kdfSuite kdfSuite, authentication authenticationSuite) *AlgorithmSuite {
 	alg := &AlgorithmSuite{AlgorithmID: algorithmID, EncryptionSuite: encryptionSuite, MessageFormatVersion: messageFormatVersion, KDFSuite: kdfSuite, Authentication: authentication}
@@ -164,19 +169,19 @@ var Algorithm algorithm
 
 type algorithm struct{}
 
-// ByID returns proper AlgorithmSuite by its algorithmID 16-bit unsigned integer or panics if algorithm not supported
+// ByID returns proper AlgorithmSuite by its algorithmID 16-bit unsigned integer or panics if algorithm not supported.
 func (algorithm) ByID(algorithmID uint16) (*AlgorithmSuite, error) {
 	val, ok := algorithmLookup[algorithmID]
 	if !ok {
-		return nil, fmt.Errorf("%#v algorithm not supported", algorithmID)
+		return nil, fmt.Errorf("%#v algorithm not supported: %w", algorithmID, ErrAlgorithmSuite)
 	}
 	return val, nil
 }
 
-// FromBytes returns proper AlgorithmSuite from slice of bytes, slice must have a length of 2 bytes. panic if slice length is not 2
+// FromBytes returns proper AlgorithmSuite from slice of bytes, slice must have a length of 2 bytes. panic if slice length is not 2.
 func (alg algorithm) FromBytes(b []byte) (*AlgorithmSuite, error) {
-	if len(b) != 2 {
-		return nil, fmt.Errorf("%#v - algorithm size must be 2 bytes", b)
+	if len(b) != algorithmIDLen {
+		return nil, fmt.Errorf("%#v algorithm size must be 2 bytes: %w", b, ErrAlgorithmSuite)
 	}
 	return alg.ByID(conv.FromBytes.UUint16BigEndian(b))
 }

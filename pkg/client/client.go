@@ -12,7 +12,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
-var MaterialsManager materialsManager
+var MaterialsManager materialsManager //nolint:gochecknoglobals
 
 type materialsManager struct{}
 
@@ -67,10 +67,9 @@ func (c *Client) Encrypt(source []byte, ec suite.EncryptionContext, materialsMan
 }
 
 func (c *Client) Decrypt(ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
-	b, err := crypto.Decrypt(c.clientConfig(), ciphertext, materialsManager)
+	b, header, err := crypto.Decrypt(c.clientConfig(), ciphertext, materialsManager)
 	if err != nil {
 		return nil, nil, err
 	}
-	// TODO andrew return header as well
-	return b, nil, nil
+	return b, header, nil
 }

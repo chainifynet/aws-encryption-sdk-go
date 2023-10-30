@@ -18,13 +18,18 @@ import (
 )
 
 var (
-	log = logger.L().Level(zerolog.DebugLevel)
+	log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 )
 
 var (
-	InvalidMessage = errors.New("invalid message format")
-	DecryptionErr  = errors.New("decryption error")
-	EncryptionErr  = errors.New("encryption error")
+	ErrInvalidMessage = errors.New("invalid message format")
+	ErrDecryption     = errors.New("decryption error")
+	ErrEncryption     = errors.New("encryption error")
+)
+
+const (
+	firstByteEncryptedMessage = byte(0x02)
+	defaultClientEncryptFrame = int(1024)
 )
 
 // SdkDecrypter will take
@@ -41,7 +46,7 @@ var (
 //	error nil or specific error think about error handling, not just return fmt errorf...
 //	TODO might be try to provide client config here
 type SdkDecrypter interface {
-	decrypt(ciphertext []byte) ([]byte, error)
+	decrypt(ciphertext []byte) ([]byte, *serialization.MessageHeader, error)
 }
 
 type decrypter struct {
@@ -53,7 +58,7 @@ type decrypter struct {
 	_derivedDataKey []byte
 }
 
-func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.CryptoMaterialsManager) ([]byte, error) {
+func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
 	log.Trace().
 		Str("config", fmt.Sprintf("%+v", config)).
 		Msg("Decrypt")
@@ -65,14 +70,11 @@ func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.
 		aeadDecrypter: gcmDecrypter{},
 	}
 
-	b, err := dec.decrypt(ciphertext)
+	b, header, err := dec.decrypt(ciphertext)
 	if err != nil {
-		return nil, fmt.Errorf("SDK error: %w", errors.Join(DecryptionErr, err))
+		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(ErrDecryption, err))
 	}
-	// TODO andrew return header on decryption
-	//  https://github.com/aws/aws-encryption-sdk-python/blob/master/src/aws_encryption_sdk/__init__.py#L190
-	//  :returns: Tuple containing the decrypted plaintext and the message header object
-	return b, nil
+	return b, header, nil
 }
 
 var _ SdkDecrypter = (*decrypter)(nil)
@@ -95,7 +97,7 @@ type encryptor struct {
 }
 
 func Encrypt(config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
-	return EncryptWithOpts(config, source, ec, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, 1024)
+	return EncryptWithOpts(config, source, ec, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, defaultClientEncryptFrame)
 }
 
 func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
@@ -110,7 +112,7 @@ func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.E
 	ciphertext, header, err := enc.encrypt(source, ec)
 	if err != nil {
 		// TODO andrew clean up derived data key
-		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(EncryptionErr, err))
+		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(ErrEncryption, err))
 	}
 	return ciphertext, header, nil
 }

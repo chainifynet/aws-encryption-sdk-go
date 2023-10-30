@@ -10,8 +10,7 @@ import (
 
 // TODO andrew refactor, for sure it needs to be moved under keys package
 func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.MasterKeyBase, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, []keys.EncryptedDataKeyI, error) {
-	var encryptedDataKeys []keys.EncryptedDataKeyI
-	encryptedDataKeys = make([]keys.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
+	encryptedDataKeys := make([]keys.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
 
 	var encryptedDataEncryptionKey keys.EncryptedDataKeyI
 

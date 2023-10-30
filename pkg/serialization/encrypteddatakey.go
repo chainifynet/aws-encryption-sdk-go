@@ -5,10 +5,10 @@ package serialization
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
@@ -17,8 +17,10 @@ import (
 )
 
 var (
-	log = logger.L().With().Logger().Level(zerolog.DebugLevel)
+	log = logger.L().With().Logger().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 )
+
+const edkLenFields = int(3)
 
 type providerIdentity string
 
@@ -26,9 +28,9 @@ const (
 	awsKmsProviderID providerIdentity = "aws-kms"
 )
 
-var EDK = edk{
+var EDK = edk{ //nolint:gochecknoglobals
 	ProviderID: awsKmsProviderID,
-	LenFields:  3,
+	LenFields:  edkLenFields,
 }
 
 type edk struct {
@@ -37,9 +39,9 @@ type edk struct {
 }
 
 var (
-	MaxEncryptedDataKeysError = errors.New("maximum number of encrypted data keys")      // TODO andrew change to unexported
-	MinEncryptedDataKeysError = errors.New("minimum number of encrypted data keys is 1") // TODO andrew change to unexported
-	IncompleteBufferErr       = errors.New("incomplete buffer")                          // TODO andrew change to unexported
+	ErrMaxEncryptedDataKeys = errors.New("maximum number of encrypted data keys")
+	ErrMinEncryptedDataKeys = errors.New("minimum number of encrypted data keys is 1")
+	errEDK                  = errors.New("EDK error")
 )
 
 type encryptedDataKey struct {
@@ -54,11 +56,11 @@ type encryptedDataKey struct {
 func (e edk) new(providerID providerIdentity, providerInfo string, encryptedDataKeyData []byte) (*encryptedDataKey, error) {
 
 	if providerID != EDK.ProviderID {
-		return nil, fmt.Errorf("providerIdentity is not supported. Use providerIdentity.awsKmsProviderID")
+		return nil, fmt.Errorf("providerIdentity is not supported. Use providerIdentity.awsKmsProviderID: %w", errEDK)
 	}
 
 	if len(providerInfo) > math.MaxUint32 {
-		return nil, fmt.Errorf("ProviderInfo is too large, out of range MaxUint32")
+		return nil, fmt.Errorf("ProviderInfo is too large, out of range MaxUint32: %w", errEDK)
 	}
 
 	return &encryptedDataKey{
@@ -102,39 +104,38 @@ func (edk encryptedDataKey) bytes() []byte {
 }
 
 func (e edk) AsKeys(msgEDKs []encryptedDataKey) []keys.EncryptedDataKeyI {
-	var edks []keys.EncryptedDataKeyI
-	edks = make([]keys.EncryptedDataKeyI, 0, len(msgEDKs))
+	edks := make([]keys.EncryptedDataKeyI, 0, len(msgEDKs))
 	for _, k := range msgEDKs {
 		edks = append(edks, k.asKey())
 	}
 	return edks
 }
 
-func (e edk) validateMinMaxEDKs(keys int, max int) error {
-	if keys <= 0 {
-		return errors.Wrap(MinEncryptedDataKeysError, "reached limit")
+func (e edk) validateMinMaxEDKs(k, max int) error {
+	if k <= 0 {
+		return fmt.Errorf("reached limit: %w", ErrMinEncryptedDataKeys)
 	}
-	if keys > max {
-		return errors.Wrap(MaxEncryptedDataKeysError, "reached max limit")
+	if k > max {
+		return fmt.Errorf("reached max limit: %w", ErrMaxEncryptedDataKeys)
 	}
 	return nil
 }
 
 func (e edk) fromBufferWithCount(buf *bytes.Buffer) (int, []encryptedDataKey, error) {
 	if buf.Len() < countFieldBytes {
-		return 0, nil, errors.Wrap(IncompleteBufferErr, "deserialize encrypted data keys count")
+		return 0, nil, fmt.Errorf("deserialize encrypted data keys count: %w", errEDK)
 	}
 
 	encryptedDataKeyCount := fieldReader.ReadCountField(buf)
 	if encryptedDataKeyCount <= 0 {
-		return 0, nil, fmt.Errorf("encrypted data keys not found in message header")
+		return 0, nil, fmt.Errorf("encrypted data keys not found in message header: %w", errEDK)
 	}
 
 	var edks []encryptedDataKey
 	for i := 0; i < encryptedDataKeyCount; i++ {
 		encDataKey, err := e.fromBuffer(buf)
 		if err != nil {
-			return 0, nil, errors.Wrap(err, "cant deserialize expected encrypted data key")
+			return 0, nil, fmt.Errorf("cant deserialize expected encrypted data key: %w", errors.Join(errEDK, err))
 		}
 		edks = append(edks, *encDataKey)
 	}
@@ -143,7 +144,7 @@ func (e edk) fromBufferWithCount(buf *bytes.Buffer) (int, []encryptedDataKey, er
 }
 
 func (e edk) FromEDKs(list []keys.EncryptedDataKeyI) ([]encryptedDataKey, error) {
-	var edks []encryptedDataKey
+	edks := make([]encryptedDataKey, 0, len(list))
 	for _, keyI := range list {
 		encDataKey, err := e.new(providerIdentity(keyI.KeyProvider().ProviderID), keyI.KeyProvider().KeyID, keyI.EncryptedDataKey())
 		if err != nil {
@@ -156,7 +157,7 @@ func (e edk) FromEDKs(list []keys.EncryptedDataKeyI) ([]encryptedDataKey, error)
 
 func (e edk) fromBuffer(buf *bytes.Buffer) (*encryptedDataKey, error) {
 	if buf.Len() < (lenFieldBytes * e.LenFields) {
-		return nil, errors.Wrap(IncompleteBufferErr, "deserialize encrypted data key")
+		return nil, fmt.Errorf("deserialize encrypted data key")
 	}
 	providerIDLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {

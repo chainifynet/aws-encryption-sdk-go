@@ -6,9 +6,8 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
@@ -20,7 +19,15 @@ import (
 // 64 bits: 0 (reserved for future use)
 // 32 bits: Frame sequence number. For the header authentication tag, this value is all zeroes.
 
-const aesGCMTagSize = 16
+const (
+	aesGCMTagSize = 16
+	IVLen         = 12
+)
+
+var (
+	errGcmDecrypt = errors.New("gcm decrypt error")
+	errGcmEncrypt = errors.New("gcm encrypt error")
+)
 
 type gcmDecrypter struct{}
 
@@ -41,11 +48,11 @@ type gcmEncryptor struct{}
 //
 //	[]byte: []byte(nil)
 //	error: not nil
-func (gd gcmDecrypter) decrypt(key []byte, iv []byte, ciphertext []byte, tag []byte, aadData []byte) ([]byte, error) {
+func (gd gcmDecrypter) decrypt(key, iv, ciphertext, tag, aadData []byte) ([]byte, error) {
 	// TODO validations
 
 	// concat raw_ciphertext + auth_tag
-	ciphertextWithTag := append(ciphertext, tag...)
+	ciphertextWithTag := append(ciphertext, tag...) //nolint:gocritic
 
 	log.Trace().
 		Str("key", logger.FmtBytes(key)).
@@ -64,18 +71,18 @@ func (gd gcmDecrypter) decrypt(key []byte, iv []byte, ciphertext []byte, tag []b
 
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cipher error: %v: %w", err.Error(), errGcmDecrypt)
 	}
 
 	aesGCM, err := cipher.NewGCMWithNonceSize(c, len(iv))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AEAD error: %v: %w", err.Error(), errGcmDecrypt)
 	}
 
 	// nil, IV/nonce, (raw_ciphertext + auth_tag), aadData
 	plaintext, err := aesGCM.Open(nil, iv, ciphertextWithTag, aadData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("AES error: %v: %w", err.Error(), errGcmDecrypt)
 	}
 	return plaintext, nil
 }
@@ -91,12 +98,12 @@ func (ge gcmEncryptor) encrypt(key, iv, plaintext, aadData []byte) ([]byte, []by
 
 	c, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cipher error: %v: %w", err.Error(), errGcmEncrypt)
 	}
 
 	aesGCM, err := cipher.NewGCMWithTagSize(c, aesGCMTagSize)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("AEAD error: %v: %w", err.Error(), errGcmEncrypt)
 	}
 
 	// ciphertext[:ciphertext len - tagSize], tag[:ciphertext len - tagSize]
@@ -133,12 +140,10 @@ func (ge gcmEncryptor) encrypt(key, iv, plaintext, aadData []byte) ([]byte, []by
 func (gd gcmDecrypter) validateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error {
 	out, err := gd.decrypt(derivedDataKey, constructIV(0), []byte(nil), headerAuthTag, headerBytes)
 	if err != nil {
-		// TODO deprecate pkg/errors, introduce GCM errors
-		return errors.Wrap(DecryptionErr, "header authorization failed")
+		return fmt.Errorf("invalid header auth: %w", err)
 	}
 	if len(out) != 0 {
-		// TODO deprecate pkg/errors, introduce GCM errors
-		return errors.Wrap(DecryptionErr, "header authorization output validation failed")
+		return fmt.Errorf("invalid header auth length: %d", len(out))
 	}
 	return nil
 }
@@ -146,8 +151,7 @@ func (gd gcmDecrypter) validateHeaderAuth(derivedDataKey, headerAuthTag, headerB
 func (ge gcmEncryptor) generateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, error) {
 	_, headerAuth, err := ge.encrypt(derivedDataKey, constructIV(0), []byte(nil), headerBytes)
 	if err != nil {
-		// TODO deprecate pkg/errors, introduce GCM errors
-		return nil, fmt.Errorf("%w: header auth error", err)
+		return nil, fmt.Errorf("invalid header auth: %w", err)
 	}
 
 	return headerAuth, nil
@@ -162,7 +166,7 @@ func (ge gcmEncryptor) generateHeaderAuth(derivedDataKey, headerBytes []byte) ([
 // For the header authentication tag, this value is all zeroes. seqNum will be 0
 func constructIV(seqNum int) []byte {
 	var bs []byte
-	bs = make([]byte, 0, 12)                                                    // IV is 12 bytes
+	bs = make([]byte, 0, IVLen)                                                 // IV is 12 bytes
 	bs = append(bs, []uint8{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}...) // 64 bits or 8 bytes: 0 (reserved for future use)
 	bs = append(bs, conv.FromInt.Uint32BigEndian(seqNum)...)                    // 32 bits or 4 bytes: Frame sequence number.
 	return bs

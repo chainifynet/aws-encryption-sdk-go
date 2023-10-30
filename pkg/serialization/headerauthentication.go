@@ -12,7 +12,7 @@ const (
 	headerAuthDataLen = int(16) // TODO suite.AlgorithmSuite.EncryptionSuite.AuthLen
 )
 
-var MessageHeaderAuth mha
+var MessageHeaderAuth mha //nolint:gochecknoglobals
 
 type mha struct{}
 

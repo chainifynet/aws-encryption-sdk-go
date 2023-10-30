@@ -53,6 +53,14 @@ var testEncryptDecryptTableShort = []tableTestCase{
 			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
+	{
+		"Keys1_F4096_Edk1", false, testFilesShort,
+		algNoSig,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 4096, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+		}, nil,
+	},
 }
 
 var testEncryptDecryptTable = []tableTestCase{
@@ -321,7 +329,7 @@ var testEncryptDecryptTable = []tableTestCase{
 	},
 }
 
-func getTestTable(t *testing.T) []tableTestCase {
+func getTestTable(_ *testing.T) []tableTestCase {
 	if testing.Short() {
 		return testEncryptDecryptTableShort
 	}
@@ -462,7 +470,7 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 	}
 }
 
-func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) {
+func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) { //nolint:gocognit
 	setupGroupTest(t)
 	tests := getTestTable(t)
 
@@ -490,8 +498,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				assert.NotNil(t, cmm)
 				ciphertextSdk1, header1, err := c.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.EncryptionErr)
-					assert.NotErrorIs(t, err, crypto.DecryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrEncryption)
+					assert.NotErrorIs(t, err, crypto.ErrDecryption)
 					require.Error(t, err)
 					return
 				}
@@ -555,8 +563,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// TODO assert header when implemented
 				plaintextSdk2, _, err := c.Decrypt(ciphertextCli2, cmm)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.DecryptionErr)
-					assert.NotErrorIs(t, err, crypto.EncryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrDecryption)
+					assert.NotErrorIs(t, err, crypto.ErrEncryption)
 					require.Error(t, err)
 					return
 				}
@@ -592,8 +600,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// TODO assert header when implemented
 				plaintextSdk3, _, err := c2.Decrypt(ciphertextCli2, cmm2)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.DecryptionErr)
-					assert.NotErrorIs(t, err, crypto.EncryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrDecryption)
+					assert.NotErrorIs(t, err, crypto.ErrEncryption)
 					require.Error(t, err)
 					return
 				}
@@ -610,8 +618,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 
 				ciphertextSdk2, header2, err := c2.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm2, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.EncryptionErr)
-					assert.NotErrorIs(t, err, crypto.DecryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrEncryption)
+					assert.NotErrorIs(t, err, crypto.ErrDecryption)
 					require.Error(t, err)
 					return
 				}
@@ -629,8 +637,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 
 				ciphertextSdk3, header3, err := c.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.EncryptionErr)
-					assert.NotErrorIs(t, err, crypto.DecryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrEncryption)
+					assert.NotErrorIs(t, err, crypto.ErrDecryption)
 					require.Error(t, err)
 					return
 				}
@@ -648,8 +656,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// TODO assert header when implemented
 				plaintextSdk4, _, err := c.Decrypt(ciphertextSdk2, cmm)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.DecryptionErr)
-					assert.NotErrorIs(t, err, crypto.EncryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrDecryption)
+					assert.NotErrorIs(t, err, crypto.ErrEncryption)
 					require.Error(t, err)
 					return
 				}
@@ -668,8 +676,8 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// TODO assert header when implemented
 				plaintextSdk5, _, err := c2.Decrypt(ciphertextSdk3, cmm2)
 				if err != nil && tc.tWantErr {
-					assert.ErrorIs(t, err, crypto.DecryptionErr)
-					assert.NotErrorIs(t, err, crypto.EncryptionErr)
+					assert.ErrorIs(t, err, crypto.ErrDecryption)
+					assert.NotErrorIs(t, err, crypto.ErrEncryption)
 					require.Error(t, err)
 					return
 				}

@@ -5,19 +5,18 @@ package serialization
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 var (
-	footerErr = errors.New("message footer error")
+	errFooter = errors.New("message footer error")
 )
 
-var MessageFooter = messageFooter{
+var MessageFooter = messageFooter{ //nolint:gochecknoglobals
 	lenFields: 1,
 }
 
@@ -33,7 +32,7 @@ type footer struct {
 
 func (mf messageFooter) NewFooter(alg *suite.AlgorithmSuite, signature []byte) (*footer, error) {
 	if alg.Authentication.SignatureLen != len(signature) {
-		return nil, fmt.Errorf("invalid signature length, %w", footerErr)
+		return nil, fmt.Errorf("invalid signature length, %w", errFooter)
 	}
 	return &footer{
 		algorithmSuite: alg,
@@ -45,13 +44,13 @@ func (mf messageFooter) NewFooter(alg *suite.AlgorithmSuite, signature []byte) (
 func (mf messageFooter) FromBuffer(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (*footer, error) {
 	signLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
-		return nil, fmt.Errorf("cant read signLen, %v, %w", err, footerErr)
+		return nil, fmt.Errorf("cant read signLen: %w", errors.Join(errFooter, err))
 	}
 	if signLen != alg.Authentication.SignatureLen {
-		return nil, fmt.Errorf("invalid signature length, %w", footerErr)
+		return nil, fmt.Errorf("invalid signature length: %w", errFooter)
 	}
 	if buf.Len() < signLen {
-		return nil, fmt.Errorf("malformed footer, %w", footerErr)
+		return nil, fmt.Errorf("malformed footer: %w", errFooter)
 	}
 	signature := buf.Next(signLen)
 	return &footer{

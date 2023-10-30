@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	log zerolog.Logger
+	log zerolog.Logger //nolint:gochecknoglobals
 )
 
 func SetupGlobalLogger(level zerolog.Level, outputFormat OutputFormat) {
@@ -24,13 +24,10 @@ func SetupGlobalLogger(level zerolog.Level, outputFormat OutputFormat) {
 	switch outputFormat {
 	case ConsoleOutput:
 		logWriter = setupConsoleLogger()
-		break
 	case Default:
 		logWriter = os.Stderr
-		break
 	default:
 		logWriter = os.Stderr
-		break
 	}
 
 	zlog.Logger = zlog.Output(logWriter).With().
@@ -56,7 +53,7 @@ func setupConsoleLogger() io.Writer {
 	}
 }
 
-func init() {
+func init() { //nolint:gochecknoinits
 	SetupGlobalLogger(LogLevel, LogOutput)
 	//loggerInstance = zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
