@@ -15,10 +15,12 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
-var aadLenErr = errors.New("key or value length is out of range")
+const aadLenFields = int(2)
 
-var AAD = aad{
-	lenFields: 2,
+var errAadLen = errors.New("key or value length is out of range")
+
+var AAD = aad{ //nolint:gochecknoglobals
+	lenFields: aadLenFields,
 }
 
 type aad struct {
@@ -50,7 +52,7 @@ func (s aad) NewAAD() *aadData {
 // TODO andrew refactor to return (nil, error)
 func (s aad) NewAADWithEncryptionContext(ec map[string]string) *aadData {
 	// just return new AAD if empty map provided
-	if len(ec) <= 0 {
+	if len(ec) == 0 {
 		return AAD.NewAAD()
 	}
 	// it is extra important to keep an order of encryption context
@@ -73,9 +75,9 @@ func (s aad) NewAADWithEncryptionContext(ec map[string]string) *aadData {
 	return data
 }
 
-func (d *aadData) addKeyValue(key string, value string) error {
+func (d *aadData) addKeyValue(key, value string) error {
 	if len(key) > math.MaxUint16 || len(value) > math.MaxUint32 {
-		return aadLenErr
+		return errAadLen
 	}
 	d.kv = append(d.kv, keyValuePair{
 		keyLen:   len(key),
@@ -91,7 +93,7 @@ func (d *aadData) addKeyValue(key string, value string) error {
 // When there is no encryption context or the encryption context is empty, this field is not present in the AAD structure.
 // TODO andrew change to unexported
 func (d *aadData) Len() int {
-	if len(d.kv) <= 0 {
+	if len(d.kv) == 0 {
 		return 0
 	}
 	return countFieldBytes + d.kvLen()
@@ -111,7 +113,7 @@ func (d *aadData) kvLen() int {
 
 // Bytes TODO andrew change to unexported
 func (d *aadData) Bytes() []byte {
-	if len(d.kv) <= 0 {
+	if len(d.kv) == 0 {
 		return nil
 	}
 	var buf []byte
@@ -183,17 +185,17 @@ func (kv keyValuePair) Bytes() []byte {
 func (d *aadData) keyValueFromBuffer(buf *bytes.Buffer) error {
 	keyLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
-		return aadLenErr
+		return fmt.Errorf("cant read keyLen: %w", errors.Join(errAadLen, err))
 	}
 	key := buf.Next(keyLen)
 	valueLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
-		return aadLenErr
+		return fmt.Errorf("cant read valueLen: %w", errors.Join(errAadLen, err))
 	}
 	value := buf.Next(valueLen)
 
-	if len(string(key)) > math.MaxUint16 || len(string(value)) > math.MaxUint32 {
-		return aadLenErr
+	if len(key) > math.MaxUint16 || len(value) > math.MaxUint32 {
+		return fmt.Errorf("out of range: %w", errAadLen)
 	}
 	d.kv = append(d.kv, keyValuePair{
 		keyLen:   keyLen,

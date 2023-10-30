@@ -19,20 +19,19 @@ func AlgSuffix(as *suite.AlgorithmSuite) string {
 	}
 	if as.IsSigning() {
 		return "SIGN"
-	} else {
-		return "NONE"
 	}
+	return "NONE"
 }
 
-var SetupEncryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd {
+var SetupEncryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd { //nolint:gochecknoglobals,gocritic
 	return NewEncryptCmd(keyIDs, ec, frame, edk, alg)
 }
 
-var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd {
+var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd { //nolint:gochecknoglobals
 	return NewDecryptCmd(keyIDs, ec, frame, edk)
 }
 
-var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) error) materials.CryptoMaterialsManager {
+var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) error) materials.CryptoMaterialsManager { //nolint:gochecknoglobals
 	keyProvider, err := providers.NewKmsKeyProviderWithOpts(
 		keyIDs,
 		providers.WithAwsLoadOptions(opts...),
@@ -48,7 +47,7 @@ var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) e
 	return cmm
 }
 
-var SetupClient = func(maxEdk int) *client.Client {
+var SetupClient = func(maxEdk int) *client.Client { //nolint:gochecknoglobals
 	cfg, err := clientconfig.NewConfigWithOpts(
 		clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyRequireEncryptRequireDecrypt),
 		clientconfig.WithMaxEncryptedDataKeys(maxEdk),

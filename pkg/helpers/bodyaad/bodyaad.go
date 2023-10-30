@@ -10,7 +10,12 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
-var BodyAAD bodyAAD
+const (
+	seqNumLen = int(4) // seqNum as big-endian 32-bit unsigned integer
+	lengthLen = int(8) // length as big-endian 64-bit unsigned integer
+)
+
+var BodyAAD bodyAAD //nolint:gochecknoglobals
 
 type bodyAAD struct{}
 
@@ -22,16 +27,18 @@ func (bodyAAD) ContentString(contentType suite.ContentType, finalFrame bool) []b
 	}
 	if finalFrame {
 		return []byte(suite.ContentAADFinalFrame)
-	} else {
-		return []byte(suite.ContentAADFrame)
 	}
+	//} else {
+	//	return []byte(suite.ContentAADFrame)
+	//}
+	return []byte(suite.ContentAADFrame)
 }
 
-func (bodyAAD) ContentAADBytes(messageID []byte, contentString []byte, seqNum int, length int) []byte {
+func (bodyAAD) ContentAADBytes(messageID, contentString []byte, seqNum, length int) []byte {
 	bufLen := len(messageID) +
 		len(contentString) +
-		4 + // seqNum as big-endian 32-bit unsigned integer
-		8 // length as big-endian 64-bit unsigned integer
+		seqNumLen + // 4, seqNum as big-endian 32-bit unsigned integer
+		lengthLen // 8, length as big-endian 64-bit unsigned integer
 
 	var buf []byte
 	buf = make([]byte, 0, bufLen)

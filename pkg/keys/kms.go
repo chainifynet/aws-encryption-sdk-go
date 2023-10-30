@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/aws/smithy-go"
+	"github.com/aws/smithy-go/transport/http"
 	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
@@ -23,7 +24,7 @@ const (
 )
 
 var (
-	log = logger.L().Level(zerolog.DebugLevel)
+	log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 )
 
 type KmsMasterKeyI interface {
@@ -48,7 +49,7 @@ func NewKmsMasterKey(client *kms.Client, keyID string) *KmsMasterKey {
 	}
 }
 
-// checking that KmsMasterKey implements both MasterKeyBase and KmsMasterKeyI interfaces
+// checking that KmsMasterKey implements both MasterKeyBase and KmsMasterKeyI interfaces.
 var _ MasterKeyBase = (*KmsMasterKey)(nil)
 var _ KmsMasterKeyI = (*KmsMasterKey)(nil)
 
@@ -61,11 +62,7 @@ func (kmsMK *KmsMasterKey) Metadata() KeyMeta {
 }
 
 func (kmsMK *KmsMasterKey) OwnsDataKey(key Key) bool {
-	if kmsMK.metadata.KeyID == key.KeyID() {
-		return true
-	} else {
-		return false
-	}
+	return kmsMK.metadata.KeyID == key.KeyID()
 }
 
 // GenerateDataKey returns DataKey is generated from primaryMasterKey in MasterKeyProvider
@@ -83,7 +80,7 @@ func (kmsMK *KmsMasterKey) GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.E
 			Err(err).
 			Stringer("MasterKey", kmsMK.metadata).
 			Msg("MasterKey: GenerateDataKey")
-		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(GenerateDataKeyError, err))
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(ErrGenerateDataKey, err))
 	}
 	// TODO perform validation on suite.AlgorithmSuite length and generated data key length
 	log.Trace().
@@ -112,7 +109,7 @@ func (kmsMK *KmsMasterKey) buildGenerateDataKeyRequest(alg *suite.AlgorithmSuite
 //
 //	i.e. GenerateDataKey (encryption material generator), once per primaryMasterKey ->
 //	-> for each MasterKey (KmsMasterKey) registered in providers.MasterKeyProvider do EncryptDataKey
-func (kmsMK *KmsMasterKey) EncryptDataKey(dataKey DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
+func (kmsMK *KmsMasterKey) EncryptDataKey(dataKey DataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
 	// TODO add validations against suite.AlgorithmSuite
 	encryptDataKeyRequest := kmsMK.buildEncryptRequest(dataKey, ec)
 	// TODO do something with Context
@@ -123,7 +120,7 @@ func (kmsMK *KmsMasterKey) EncryptDataKey(dataKey DataKeyI, alg *suite.Algorithm
 			Stringer("MK", kmsMK.metadata).
 			Stringer("DK", dataKey.KeyProvider()).
 			Msg("MasterKey: EncryptDataKey")
-		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(EncryptKeyError, err))
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(ErrEncryptKey, err))
 	}
 	log.Trace().
 		Stringer("MK", kmsMK.metadata).
@@ -151,10 +148,10 @@ func (kmsMK *KmsMasterKey) buildEncryptRequest(dataKey DataKeyI, ec suite.Encryp
 //	dataKey				Plaintext is decrypted content of EncryptedDataKey encryptedDataKey
 //	encryptedDataKey	encrypted content of (this) EncryptedDataKey
 //
-// Decrypted dataKey (plaintext) MUST match DataKey (plaintext) that was originally generated at GenerateDataKey
-func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
+// Decrypted dataKey (plaintext) MUST match DataKey (plaintext) that was originally generated at GenerateDataKey.
+func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
 	// TODO add validations against suite.AlgorithmSuite
-	if kmsMK.OwnsDataKey(encryptedDataKey) == false {
+	if !kmsMK.OwnsDataKey(encryptedDataKey) {
 		// that is expected, just log
 		log.Trace().Caller().
 			AnErr("kmsmk_err", fmt.Errorf("KMSMasterKey doesnt not own EncryptedDataKey, expected behaviour")).
@@ -166,13 +163,23 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, al
 	// TODO do something with Context
 	decryptOutput, err := kmsMK.kmsClient.Decrypt(context.TODO(), decryptRequest)
 	if err != nil {
-		if smhErr := err.(*smithy.OperationError); smhErr != nil {
-			// TODO might handle more exceptions for edge-cases
-			//  ref github.com/aws/aws-sdk-go-v2/service/kms@v1.18.5/types/errors.go
-			if kmsErr := errors.Unwrap(smhErr.Unwrap()).(*types.IncorrectKeyException); kmsErr != nil {
-				// that is normal behaviour, we'll try to decrypt with other MasterKey in MasterKeyProvider
-				log.Trace().Caller().AnErr("kmsErr", kmsErr).Msg("KMS expected error")
-				return nil, fmt.Errorf("KMSMasterKey expected error: %w", errors.Join(DecryptKeyError, kmsErr))
+		var smhErr1 *smithy.OperationError
+		if errors.As(err, &smhErr1) {
+			// smhErr is *smithy.OperationError here
+			// smhErr.Unwrap() is *http.ResponseError - gets Err property which is ResponseError
+			// calling responseError.Unwrap() - gets Err property which is *types.IncorrectKeyException
+			var responseError *http.ResponseError
+			if errors.As(smhErr1.Unwrap(), &responseError) {
+				var kmsErr *types.IncorrectKeyException
+				if errors.As(responseError.Unwrap(), &kmsErr) {
+					// kmsErr is *types.IncorrectKeyException here
+					// TODO might handle more exceptions for edge-cases
+					// ref github.com/aws/aws-sdk-go-v2/service/kms@v1.18.5/types/errors.go
+					// ref2 https://github.com/aws/aws-sdk-go-v2/issues/1110
+					// that is normal behaviour, we'll try to decrypt with other MasterKey in MasterKeyProvider
+					log.Trace().Caller().AnErr("kmsErr", kmsErr).Msg("KMS expected error")
+					return nil, fmt.Errorf("KMSMasterKey expected error: %w", errors.Join(ErrDecryptKey, kmsErr))
+				}
 			}
 		}
 
@@ -181,7 +188,7 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, al
 			Stringer("MK", kmsMK.metadata).
 			Stringer("EDK", encryptedDataKey.KeyProvider()).
 			Msg("MasterKey: DecryptDataKey")
-		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(DecryptKeyError, err))
+		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(ErrDecryptKey, err))
 	}
 
 	log.Trace().

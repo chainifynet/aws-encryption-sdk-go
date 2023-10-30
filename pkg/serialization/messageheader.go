@@ -5,9 +5,8 @@ package serialization
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -15,8 +14,8 @@ import (
 )
 
 var (
-	headerInvalidVersionErr = errors.New("invalid version, expected format version 2")
-	headerDeserializeErr    = errors.New("header deserialization error")
+	errHeaderInvalidVersion = errors.New("invalid version, expected format version 2")
+	errHeaderDeserialize    = errors.New("header deserialization error")
 )
 
 const (
@@ -26,7 +25,7 @@ const (
 // All AES-GCM algorithm suites have a 12-byte initialization vector and a 16-byte AES-GCM authentication tag.
 // reference https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/IV-reference.html
 
-var EncryptedMessageHeader emh
+var EncryptedMessageHeader emh //nolint:gochecknoglobals
 
 type emh struct{}
 
@@ -64,7 +63,7 @@ func (mh emh) New(p MessageHeaderParams) (*MessageHeader, error) {
 	if len(p.MessageID) != p.AlgorithmSuite.MessageIDLen() {
 		return nil, fmt.Errorf("invalid MessageID length")
 	}
-	if len(p.EncryptedDataKeys) <= 0 {
+	if len(p.EncryptedDataKeys) == 0 {
 		return nil, fmt.Errorf("no dataKeys for messageHeader")
 	}
 	if len(p.AlgorithmSuiteData) != p.AlgorithmSuite.AlgorithmSuiteDataLen() {
@@ -103,7 +102,7 @@ func (mh MessageHeader) String() string {
 func (mh MessageHeader) Len() int {
 	edkLen := 0
 	for _, key := range mh.EncryptedDataKeys {
-		edkLen = edkLen + key.len()
+		edkLen += key.len()
 	}
 
 	// 1 + 32 + 2 + 2 + 101 + 2 + 272 + 1 + 4 + 32
@@ -141,10 +140,10 @@ func (mh MessageHeader) Bytes() []byte {
 
 func (mh emh) fromBuffer(buf *bytes.Buffer) (*MessageHeader, error) {
 	if buf == nil {
-		return nil, fmt.Errorf("empty buffer, %w", headerDeserializeErr)
+		return nil, fmt.Errorf("empty buffer: %w", errHeaderDeserialize)
 	}
 	if buf.Len() < minimumHeaderBufferLen {
-		return nil, fmt.Errorf("buffer too small, %w", headerDeserializeErr)
+		return nil, fmt.Errorf("buffer too small: %w", errHeaderDeserialize)
 	}
 
 	version := fieldReader.ReadSingleField(buf)
@@ -159,7 +158,7 @@ func (mh emh) fromBuffer(buf *bytes.Buffer) (*MessageHeader, error) {
 
 	// validate message version is the same as AlgorithmSuite MessageFormatVersion
 	if int(version) != algorithmSuite.MessageFormatVersion {
-		return nil, fmt.Errorf("%v message version not equal to Algorithm defined, %w", version, headerInvalidVersionErr)
+		return nil, fmt.Errorf("%v message version not equal to Algorithm defined: %w", version, errHeaderInvalidVersion)
 	}
 
 	messageID := buf.Next(algorithmSuite.MessageIDLen())
@@ -177,28 +176,28 @@ func (mh emh) fromBuffer(buf *bytes.Buffer) (*MessageHeader, error) {
 	//encryptedDataKeyCount, encryptedDataKeys, err := EDK.fromBufferWithCount(buf)
 	_, encryptedDataKeys, err := EDK.fromBufferWithCount(buf)
 	if err != nil {
-		return nil, errors.Wrap(err, "message header error")
+		return nil, fmt.Errorf("header EDK: %w", err)
 	}
 
 	if buf.Len() < singleFieldBytes {
-		return nil, fmt.Errorf("empty buffer, cant read contentType, %w", headerDeserializeErr)
+		return nil, fmt.Errorf("empty buffer, cant read contentType: %w", errHeaderDeserialize)
 	}
 	contentType := fieldReader.ReadSingleField(buf)
 	if suite.ContentType(contentType) != suite.FramedContent {
-		return nil, fmt.Errorf("ContentType %v not supported", contentType)
+		return nil, fmt.Errorf("ContentType %v not supported: %w", contentType, errHeaderDeserialize)
 	}
 
 	frameLength, err := fieldReader.ReadFrameField(buf)
 	if err != nil {
-		return nil, fmt.Errorf("cant read frameLength, %w", headerDeserializeErr)
+		return nil, fmt.Errorf("cant read frameLength, %w", errHeaderDeserialize)
 	}
 	// validate min(128) and max(maxUint32) frame len
 	if frameLength < suite.MinFrameSize || frameLength > suite.MaxFrameSize {
-		return nil, fmt.Errorf("%v frame length out of range", frameLength)
+		return nil, fmt.Errorf("%v frame length out of range: %w", frameLength, errHeaderDeserialize)
 	}
 
 	if buf.Len() < algorithmSuite.AlgorithmSuiteDataLen() {
-		return nil, fmt.Errorf("empty buffer, cant read algorithmSuiteData, %w", headerDeserializeErr)
+		return nil, fmt.Errorf("empty buffer, cant read algorithmSuiteData, %w", errHeaderDeserialize)
 	}
 	// should be 32
 	algorithmSuiteData := buf.Next(algorithmSuite.AlgorithmSuiteDataLen())

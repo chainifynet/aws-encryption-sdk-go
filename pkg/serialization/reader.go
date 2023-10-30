@@ -10,7 +10,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
-var fieldReader bufReader
+var fieldReader bufReader //nolint:gochecknoglobals
 
 type bufReader struct{}
 

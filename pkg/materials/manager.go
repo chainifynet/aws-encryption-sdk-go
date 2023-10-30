@@ -7,11 +7,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	b64 "encoding/base64"
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
-
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -22,7 +20,7 @@ const (
 	encryptedContextAWSKey = "aws-crypto-public-key"
 )
 
-var CMM cmm
+var CMM cmm //nolint:gochecknoglobals
 
 type cmm struct{}
 
@@ -49,8 +47,7 @@ func (defaultCMM *defaultCryptoMaterialsManager) generateSigningKeyUpdateEncrypt
 	}
 	private, err := ecdsa.GenerateKey(algorithm.Authentication.Algorithm, rand.Reader)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
+		return nil, fmt.Errorf("ECDSA key error: %w", err)
 	}
 	pubCompressed := elliptic.MarshalCompressed(algorithm.Authentication.Algorithm, private.PublicKey.X, private.PublicKey.Y)
 
@@ -59,7 +56,7 @@ func (defaultCMM *defaultCryptoMaterialsManager) generateSigningKeyUpdateEncrypt
 }
 
 func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
-	// it is already done in: pkg/crypto/encryptor.go:69
+	// it is already done in: pkg/crypto/encryptor.go:75
 	//if err := policy.Commitment.ValidatePolicyOnEncrypt(encReq.CommitmentPolicy, encReq.Algorithm); err != nil {
 	//	return nil, err
 	//}
@@ -74,21 +71,18 @@ func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq E
 	// it only adds signing key to encryption context if signing algo
 	signingKey, err := defaultCMM.generateSigningKeyUpdateEncryptionContext(encReq.Algorithm, encryptionContext)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
+		return nil, fmt.Errorf("signing key update: %w", errors.Join(ErrCMM, err))
 	}
 
 	encryptionContext = structs.MapSort(encryptionContext)
 
 	primaryMasterKey, masterKeys, err := defaultCMM.masterKeyProvider.MasterKeysForEncryption(encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
+		return nil, fmt.Errorf("KeyProvider error: %w", errors.Join(ErrCMM, err))
 	}
 	dataEncryptionKey, encryptedDataKeys, err := prepareDataKeys(primaryMasterKey, masterKeys, encReq.Algorithm, encryptionContext)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
+		return nil, fmt.Errorf("key error: %w", errors.Join(ErrCMM, err))
 	}
 	return &EncryptionMaterials{
 		algorithm:         encReq.Algorithm,
@@ -100,15 +94,14 @@ func (defaultCMM *defaultCryptoMaterialsManager) GetEncryptionMaterials(encReq E
 }
 
 func (defaultCMM *defaultCryptoMaterialsManager) DecryptMaterials(decReq DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
-	if err := policy.Commitment.ValidatePolicyOnDecrypt(decReq.CommitmentPolicy, decReq.Algorithm); err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
-	}
+	// done in: pkg/crypto/decrypter.go:67
+	//if err := policy.Commitment.ValidatePolicyOnDecrypt(decReq.CommitmentPolicy, decReq.Algorithm); err != nil {
+	//	return nil, err
+	//}
 
 	dataKey, err := defaultCMM.masterKeyProvider.DecryptDataKeyFromList(decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, err
+		return nil, fmt.Errorf("KeyProvider error: %w", errors.Join(ErrCMM, err))
 	}
 
 	// if not signing algo, return decryption materials without verification key
@@ -121,15 +114,12 @@ func (defaultCMM *defaultCryptoMaterialsManager) DecryptMaterials(decReq Decrypt
 
 	// handle signing algo
 	if _, ok := decReq.EncryptionContext[encryptedContextAWSKey]; !ok {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		return nil, fmt.Errorf("missing %s in encryption context", encryptedContextAWSKey)
+		return nil, fmt.Errorf("missing %s in encryption context: %w", encryptedContextAWSKey, errors.Join(ErrCMM, err))
 	}
 	pubKeyStr := decReq.EncryptionContext[encryptedContextAWSKey]
 	verificationKey, err := b64.StdEncoding.DecodeString(pubKeyStr)
 	if err != nil {
-		// TODO introduce CMM errors, wrap err with fmt.Errorf wrapping inner err
-		// TODO deprecate pkg/errors
-		return nil, errors.Wrap(err, "ECDSA key error")
+		return nil, fmt.Errorf("ECDSA key error: %w", errors.Join(ErrCMM, err))
 	}
 
 	return &DecryptionMaterials{

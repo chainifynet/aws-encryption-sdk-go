@@ -6,8 +6,7 @@ package crypto
 import (
 	"bytes"
 	"crypto/hmac"
-
-	"github.com/pkg/errors"
+	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
@@ -17,46 +16,43 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
-// TODO andrew errors refactor
-
 // Decrypt ciphertext decryption
-func (d *decrypter) decrypt(ciphertext []byte) ([]byte, error) {
+func (d *decrypter) decrypt(ciphertext []byte) ([]byte, *serialization.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(ciphertext))
 	copy(b, ciphertext)
-	if len(ciphertext) <= 0 || len(b) <= 0 {
-		return nil, errors.Wrap(InvalidMessage, "empty ciphertext")
+	if len(ciphertext) == 0 || len(b) == 0 {
+		return nil, nil, fmt.Errorf("empty ciphertext")
 	}
 
 	// early stage check if cipher text contains needed first byte of message version
 	// by doing this we avoid mistakes with base64 byte sequence
-	if ciphertext[0] != byte(0x02) {
-		return nil, errors.Wrap(InvalidMessage, "first byte does not contain message version")
+	if ciphertext[0] != firstByteEncryptedMessage {
+		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", ErrInvalidMessage)
 	}
 	buf := bytes.NewBuffer(b)
 
 	if err := d.decryptHeader(buf); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	body, err := d.decryptBody(buf)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if d.verifier != nil {
 		footer, errFooter := serialization.MessageFooter.FromBuffer(d.header.AlgorithmSuite, buf)
 		if errFooter != nil {
-			return nil, errFooter
+			return nil, nil, errFooter
 		}
 
 		if errSig := d.verifier.verify(footer.Signature); errSig != nil {
-			return nil, errSig
+			return nil, nil, errSig
 		}
 	}
 
-	// TODO andrew return header on decryption
-	return body, nil
+	return body, d.header, nil
 }
 
 func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
@@ -65,8 +61,8 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 		return err
 	}
 
-	if err = policy.Commitment.ValidatePolicyOnDecrypt(d.config.CommitmentPolicy(), header.AlgorithmSuite); err != nil {
-		return err
+	if errPolicy := policy.Commitment.ValidatePolicyOnDecrypt(d.config.CommitmentPolicy(), header.AlgorithmSuite); errPolicy != nil {
+		return errPolicy
 	}
 
 	if header.AlgorithmSuite.IsSigning() {
@@ -91,42 +87,42 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 
 	decMaterials, err := d.cmm.DecryptMaterials(dmr)
 	if err != nil {
-		return errors.Wrap(err, "failed cmm.DecryptMaterials")
+		return fmt.Errorf("decrypt materials: %w", err)
 	}
 
 	if d.verifier != nil {
 		if errLK := d.verifier.loadECCVerificationKey(decMaterials.VerificationKey()); errLK != nil {
-			return errLK
+			return fmt.Errorf("decrypt verifier error: %w", errLK)
 		}
 	}
 
 	derivedDataKey, err := deriveDataEncryptionKey(decMaterials.DataKey(), header.AlgorithmSuite, header.MessageID)
 	if err != nil {
-		return errors.Wrapf(DecryptionErr, "key derivation failed: %v", err)
+		return fmt.Errorf("decrypt key derivation error: %w", err)
 	}
 
 	if header.AlgorithmSuite.IsCommitting() {
 		expectedCommitmentKey, err := calculateCommitmentKey(decMaterials.DataKey(), header.AlgorithmSuite, header.MessageID)
 		if err != nil {
-			return errors.Wrapf(DecryptionErr, "failed to calculate commitment key: %v", err)
+			return fmt.Errorf("decrypt calculate commitment key error: %w", err)
 		}
 
 		if ok := hmac.Equal(expectedCommitmentKey, header.AlgorithmSuiteData); !ok {
-			return errors.Wrap(DecryptionErr, "Key commitment validation failed. Key identity does not match the identity asserted in the message")
+			return fmt.Errorf("key commitment validation failed: key identity does not match the identity asserted in the message")
 		}
 	}
 
-	if err = d.aeadDecrypter.validateHeaderAuth(derivedDataKey, headerAuth.AuthData(), header.Bytes()); err != nil {
-		return err
+	if errHeaderAuth := d.aeadDecrypter.validateHeaderAuth(derivedDataKey, headerAuth.AuthData(), header.Bytes()); errHeaderAuth != nil {
+		return fmt.Errorf("decrypt header auth error: %w", errHeaderAuth)
 	}
 
 	if d._derivedDataKey != nil {
-		return errors.New("derived data key already exists")
+		return fmt.Errorf("decrypt derived data key already exists")
 	}
 	d._derivedDataKey = derivedDataKey
 
 	if d.header != nil {
-		return errors.New("header already exists")
+		return fmt.Errorf("decrypt header already exists")
 	}
 	d.header = header
 
@@ -136,7 +132,7 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 	body, err := serialization.DeserializeBody(buf, d.header.AlgorithmSuite, d.header.FrameLength)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("body error: %w", err)
 	}
 
 	plaintext := new(bytes.Buffer)
@@ -149,15 +145,15 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 			frame.SequenceNumber(),
 			len(frame.EncryptedContent()),
 		)
-		b, err := d.aeadDecrypter.decrypt(
+		b, errAead := d.aeadDecrypter.decrypt(
 			d._derivedDataKey,
 			frame.IV(),
 			frame.EncryptedContent(),
 			frame.AuthenticationTag(),
 			associatedData,
 		)
-		if err != nil {
-			return nil, err
+		if errAead != nil {
+			return nil, fmt.Errorf("decrypt frame error: %w", errAead)
 		}
 		readBytes += len(b)
 		plaintext.Write(b)
@@ -168,7 +164,7 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 	}
 
 	if plaintext.Len() != readBytes {
-		return nil, errors.New("malformed message body size")
+		return nil, fmt.Errorf("malformed body message size")
 	}
 
 	var plaintextData []byte
@@ -176,10 +172,10 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 
 	wb, err := plaintext.Read(plaintextData)
 	if err != nil {
-		return nil, errors.Wrapf(err, "malformed body message size")
+		return nil, fmt.Errorf("malformed body message size: %w", err)
 	}
 	if wb != readBytes {
-		return nil, errors.Wrapf(err, "malformed body message size")
+		return nil, fmt.Errorf("malformed body message size")
 	}
 	plaintext.Reset()
 

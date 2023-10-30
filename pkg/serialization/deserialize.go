@@ -5,21 +5,20 @@ package serialization
 
 import (
 	"bytes"
-
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
 //goland:noinspection GoExportedFuncWithUnexportedType
-func DeserializeHeader(buf *bytes.Buffer, maxEncryptedDataKeys int) (*MessageHeader, *headerAuth, error) {
+func DeserializeHeader(buf *bytes.Buffer, maxEncryptedDataKeys int) (*MessageHeader, *headerAuth, error) { //nolint:revive
 	header, err := EncryptedMessageHeader.fromBuffer(buf)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if err = EDK.validateMinMaxEDKs(header.EncryptedDataKeyCount, maxEncryptedDataKeys); err != nil {
-		return nil, nil, err
+	if errEdk := EDK.validateMinMaxEDKs(header.EncryptedDataKeyCount, maxEncryptedDataKeys); errEdk != nil {
+		return nil, nil, errEdk
 	}
 
 	authData, err := MessageHeaderAuth.Deserialize(buf)
@@ -31,7 +30,7 @@ func DeserializeHeader(buf *bytes.Buffer, maxEncryptedDataKeys int) (*MessageHea
 }
 
 //goland:noinspection GoExportedFuncWithUnexportedType
-func DeserializeBody(buf *bytes.Buffer, algorithm *suite.AlgorithmSuite, frameLen int) (*body, error) {
+func DeserializeBody(buf *bytes.Buffer, algorithm *suite.AlgorithmSuite, frameLen int) (*body, error) { //nolint:revive
 	if buf.Len() < frameFieldBytes {
 		return nil, errors.New("malformed message")
 	}

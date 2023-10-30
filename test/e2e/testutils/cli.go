@@ -15,7 +15,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 )
 
-var log = logger.L().Level(zerolog.DebugLevel)
+var log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 
 const (
 	cliCmd = "aws-encryption-cli"
@@ -30,7 +30,7 @@ type CliCmd struct {
 	args    []string
 }
 
-func NewEncryptCmd(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd {
+func NewEncryptCmd(keyIDs []string, ec map[string]string, frame, edk int, alg string) *CliCmd {
 	command, args := encryptCmdArgs(keyIDs, ec, frame, edk, alg)
 	//log.Trace().Str("command", command).Strs("args", args).Msg("new EncryptCmd")
 	return &CliCmd{
@@ -42,7 +42,7 @@ func NewEncryptCmd(keyIDs []string, ec map[string]string, frame int, edk int, al
 	}
 }
 
-func NewDecryptCmd(keyIDs []string, ec map[string]string, frame int, edk int) *CliCmd {
+func NewDecryptCmd(keyIDs []string, ec map[string]string, frame, edk int) *CliCmd {
 	command, args := decryptCmdArgs(keyIDs, ec, frame, edk)
 	//log.Trace().Str("command", command).Strs("args", args).Msg("new DecryptCmd")
 	return &CliCmd{
@@ -81,7 +81,7 @@ func (c *CliCmd) Run(input []byte, wantErr bool) (output []byte, err error) {
 
 	c.stdin = bytes.NewBuffer(inputCpy)
 
-	cmd := exec.Command(c.command, c.args...)
+	cmd := exec.Command(c.command, c.args...) //#nosec:G204
 	// see https://github.com/aws/aws-encryption-sdk-python/blob/master/src/aws_encryption_sdk/key_providers/kms.py#L963-L965
 	// = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.6
 	// # If an AWS SDK Default Region can not be obtained
@@ -127,7 +127,7 @@ func (c *CliCmd) Run(input []byte, wantErr bool) (output []byte, err error) {
 }
 
 //goland:noinspection GoUnusedParameter
-func decryptCmdArgs(keyIDs []string, ec map[string]string, frame int, edk int) (command string, args []string) {
+func decryptCmdArgs(keyIDs []string, ec map[string]string, _, edk int) (command string, args []string) {
 	wrappedKeys := wrappingKeysArg(keyIDs)
 	ecArgs := encryptionContextArg(ec)
 	cmdArgs := []string{
@@ -154,7 +154,7 @@ func decryptCmdArgs(keyIDs []string, ec map[string]string, frame int, edk int) (
 	return cliCmd, cmdArgs
 }
 
-func encryptCmdArgs(keyIDs []string, ec map[string]string, frame int, edk int, algorithm string) (command string, args []string) {
+func encryptCmdArgs(keyIDs []string, ec map[string]string, frame, edk int, algorithm string) (command string, args []string) {
 	wrappedKeys := encryptWrappingKeysArg(keyIDs)
 	ecArgs := encryptionContextArg(ec)
 	cmdArgs := []string{
@@ -181,7 +181,7 @@ func encryptCmdArgs(keyIDs []string, ec map[string]string, frame int, edk int, a
 }
 
 func encryptionContextArg(ec map[string]string) []string {
-	var values []string
+	values := make([]string, 0, len(ec))
 	for k, v := range ec {
 		values = append(values, fmt.Sprintf("%s=%s", k, v))
 	}
@@ -196,11 +196,11 @@ func encryptionContextArg(ec map[string]string) []string {
 }
 
 func wrappingKeysArg(keyIDs []string) []string {
-	var wrapKeys []string
+	wrapKeys := make([]string, 0, len(keyIDs))
 	//wrapKeys = append(wrapKeys, "--wrapping-keys")
 	for _, keyID := range keyIDs {
-		wrapKeys = append(wrapKeys, "--wrapping-keys")
-		wrapKeys = append(wrapKeys, fmt.Sprintf("key=%s", keyID))
+		//wrapKeys = append(wrapKeys, "--wrapping-keys")
+		wrapKeys = append(wrapKeys, "--wrapping-keys", fmt.Sprintf("key=%s", keyID))
 	}
 	if len(wrapKeys) == 0 {
 		return nil
@@ -209,11 +209,11 @@ func wrappingKeysArg(keyIDs []string) []string {
 }
 
 func encryptWrappingKeysArg(keyIDs []string) []string {
-	var wrapKeys []string
+	wrapKeys := make([]string, 0, len(keyIDs))
 	//wrapKeys = append(wrapKeys, "--wrapping-keys")
 	for _, keyID := range keyIDs {
-		wrapKeys = append(wrapKeys, "--wrapping-keys") // default
-		wrapKeys = append(wrapKeys, fmt.Sprintf("key=%s", keyID))
+		//wrapKeys = append(wrapKeys, "--wrapping-keys") // default
+		wrapKeys = append(wrapKeys, "--wrapping-keys", fmt.Sprintf("key=%s", keyID))
 	}
 	if len(wrapKeys) == 0 {
 		return nil

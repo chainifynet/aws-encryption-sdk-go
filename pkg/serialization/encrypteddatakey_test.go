@@ -34,11 +34,11 @@ func Test_edk_validateMinMaxEDKs(t *testing.T) {
 		{"valid", edkMock, args{1, 1}, assert.NoError, nil},
 		{"valid", edkMock, args{1, 2}, assert.NoError, nil},
 		{"valid", edkMock, args{2, 2}, assert.NoError, nil},
-		{"invalid", edkMock, args{3, 2}, assert.Error, MaxEncryptedDataKeysError},
-		{"invalid", edkMock, args{10, 5}, assert.Error, MaxEncryptedDataKeysError},
-		{"invalid", edkMock, args{1, 0}, assert.Error, MaxEncryptedDataKeysError},
-		{"invalid", edkMock, args{0, 1}, assert.Error, MinEncryptedDataKeysError},
-		{"invalid", edkMock, args{0, 0}, assert.Error, MinEncryptedDataKeysError},
+		{"invalid", edkMock, args{3, 2}, assert.Error, ErrMaxEncryptedDataKeys},
+		{"invalid", edkMock, args{10, 5}, assert.Error, ErrMaxEncryptedDataKeys},
+		{"invalid", edkMock, args{1, 0}, assert.Error, ErrMaxEncryptedDataKeys},
+		{"invalid", edkMock, args{0, 1}, assert.Error, ErrMinEncryptedDataKeys},
+		{"invalid", edkMock, args{0, 0}, assert.Error, ErrMinEncryptedDataKeys},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

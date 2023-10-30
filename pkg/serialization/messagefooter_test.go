@@ -172,6 +172,7 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := MessageFooter.FromBuffer(tt.args.alg, tt.args.buf)
 			if err != nil && tt.wantErr {
+				require.ErrorIs(t, err, errFooter)
 				require.Errorf(t, err, "FromBuffer() error = %v, wantErr %v", err, tt.wantErr)
 				require.ErrorContainsf(t, err, tt.errString, "FromBuffer() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -266,7 +267,7 @@ func TestNewFooter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := MessageFooter.NewFooter(tt.algorithmSuite, tt.signature)
 			if err != nil && tt.wantErr {
-				require.ErrorIs(t, err, footerErr)
+				require.ErrorIs(t, err, errFooter)
 				require.Errorf(t, err, "NewFooter() error = %v, wantErr %v", err, tt.wantErr)
 				require.ErrorContainsf(t, err, tt.errString, "NewFooter() error = %v, wantErr %v", err, tt.wantErr)
 				return
