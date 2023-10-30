@@ -1,9 +1,9 @@
 name: Go E2E
 
 on:
-  pull_request:
+  push:
     branches:
-      - 'feature/*'
+      - 'main'
   workflow_dispatch:
 
 jobs:
