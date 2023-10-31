@@ -28,7 +28,7 @@ const (
 	algorithmSuiteDataLen = int(32)
 
 	bitSize        = int(8) // 1 byte = 8 bits
-	algorithmIDLen = int(2) // algorithmID size must be 2 bytes (16-bit unsigned integer)
+	algorithmIDLen = int(2) // Algorithm ID size must be 2 bytes (16-bit unsigned integer)
 
 	aesAlg encAlgorithm = "AES"
 
@@ -169,7 +169,7 @@ var Algorithm algorithm
 
 type algorithm struct{}
 
-// ByID returns proper AlgorithmSuite by its algorithmID 16-bit unsigned integer or panics if algorithm not supported.
+// ByID returns proper AlgorithmSuite by its algorithmID 16-bit unsigned integer
 func (algorithm) ByID(algorithmID uint16) (*AlgorithmSuite, error) {
 	val, ok := algorithmLookup[algorithmID]
 	if !ok {
@@ -178,7 +178,7 @@ func (algorithm) ByID(algorithmID uint16) (*AlgorithmSuite, error) {
 	return val, nil
 }
 
-// FromBytes returns proper AlgorithmSuite from slice of bytes, slice must have a length of 2 bytes. panic if slice length is not 2.
+// FromBytes returns proper AlgorithmSuite from slice of bytes, slice must have a length of 2 bytes
 func (alg algorithm) FromBytes(b []byte) (*AlgorithmSuite, error) {
 	if len(b) != algorithmIDLen {
 		return nil, fmt.Errorf("%#v algorithm size must be 2 bytes: %w", b, ErrAlgorithmSuite)
