@@ -13,6 +13,7 @@ updates:
         patterns:
           - "github.com/aws/aws-sdk-go-v2"
           - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
         update-types:
           - "patch"
           - "minor"
