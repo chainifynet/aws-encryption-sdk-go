@@ -15,6 +15,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 )
 
 var (
@@ -32,19 +33,6 @@ const (
 	defaultClientEncryptFrame = int(1024)
 )
 
-// SdkDecrypter will take
-//
-//	ciphertext - copy to buffer
-//	cmm - is a pointer
-//	source len ?
-//	commitment_policy
-//
-// must return:
-//
-//	plaintext []byte
-//	header as object
-//	error nil or specific error think about error handling, not just return fmt errorf...
-//	TODO might be try to provide client config here
 type SdkDecrypter interface {
 	decrypt(ciphertext []byte) ([]byte, *serialization.MessageHeader, error)
 }
@@ -52,7 +40,7 @@ type SdkDecrypter interface {
 type decrypter struct {
 	cmm             materials.CryptoMaterialsManager
 	config          clientconfig.ClientConfig
-	aeadDecrypter   gcmDecrypter
+	aeadDecrypter   encryption.AEADDecrypter
 	header          *serialization.MessageHeader
 	verifier        *verifier
 	_derivedDataKey []byte
@@ -67,7 +55,7 @@ func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.
 	dec := decrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
-		aeadDecrypter: gcmDecrypter{},
+		aeadDecrypter: encryption.Gcm{},
 	}
 
 	b, header, err := dec.decrypt(ciphertext)
@@ -79,17 +67,16 @@ func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.
 
 var _ SdkDecrypter = (*decrypter)(nil)
 
-// SdkEncryptor will take a lot more, later
-type SdkEncryptor interface {
+type SdkEncrypter interface {
 	encrypt(source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error)
 }
 
-type encryptor struct {
+type encrypter struct {
 	cmm             materials.CryptoMaterialsManager
 	config          clientconfig.ClientConfig
 	algorithm       *suite.AlgorithmSuite
 	frameLength     int
-	aeadEncryptor   gcmEncryptor
+	aeadEncrypter   encryption.AEADEncrypter
 	header          *serialization.MessageHeader
 	_derivedDataKey []byte
 	signer          *signer
@@ -101,12 +88,12 @@ func Encrypt(config clientconfig.ClientConfig, source []byte, ec suite.Encryptio
 }
 
 func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
-	enc := encryptor{
+	enc := encrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
 		algorithm:     algorithm,
 		frameLength:   frameLength,
-		aeadEncryptor: gcmEncryptor{},
+		aeadEncrypter: encryption.Gcm{},
 		ciphertextBuf: new(bytes.Buffer),
 	}
 	ciphertext, header, err := enc.encrypt(source, ec)
@@ -117,4 +104,4 @@ func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.E
 	return ciphertext, header, nil
 }
 
-var _ SdkEncryptor = (*encryptor)(nil)
+var _ SdkEncrypter = (*encrypter)(nil)

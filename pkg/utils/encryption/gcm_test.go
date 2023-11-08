@@ -1,7 +1,7 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package crypto
+package encryption
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ var (
 	aadData   = []byte("someAadData")
 )
 
-func Test_gcmEncryptor_encrypt(t *testing.T) {
+func Test_Gcm_Encrypt(t *testing.T) {
 	type args struct {
 		key       []byte
 		iv        []byte
@@ -37,8 +37,8 @@ func Test_gcmEncryptor_encrypt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ge := gcmEncryptor{}
-			ciphertext, tag, err := ge.encrypt(tt.args.key, tt.args.iv, tt.args.plaintext, tt.args.aadData)
+			ge := Gcm{}
+			ciphertext, tag, err := ge.Encrypt(tt.args.key, tt.args.iv, tt.args.plaintext, tt.args.aadData)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("encrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -53,7 +53,7 @@ func Test_gcmEncryptor_encrypt(t *testing.T) {
 	}
 }
 
-func Test_gcmEncryptor_generateHeaderAuth(t *testing.T) {
+func Test_Gcm_GenerateHeaderAuth(t *testing.T) {
 	type args struct {
 		derivedDataKey []byte
 		headerBytes    []byte
@@ -70,20 +70,20 @@ func Test_gcmEncryptor_generateHeaderAuth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ge := gcmEncryptor{}
-			got, err := ge.generateHeaderAuth(tt.args.derivedDataKey, tt.args.headerBytes)
+			ge := Gcm{}
+			got, err := ge.GenerateHeaderAuth(tt.args.derivedDataKey, tt.args.headerBytes)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("generateHeaderAuth() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GenerateHeaderAuth() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("generateHeaderAuth() got = %#v, want %#v", got, tt.want)
+				t.Errorf("GenerateHeaderAuth() got = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_gcmDecrypter_validateHeaderAuth(t *testing.T) {
+func Test_Gcm_ValidateHeaderAuth(t *testing.T) {
 	type args struct {
 		derivedDataKey []byte
 		headerAuthTag  []byte
@@ -103,15 +103,15 @@ func Test_gcmDecrypter_validateHeaderAuth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gd := gcmDecrypter{}
-			if err := gd.validateHeaderAuth(tt.args.derivedDataKey, tt.args.headerAuthTag, tt.args.headerBytes); (err != nil) != tt.wantErr {
-				t.Errorf("validateHeaderAuth() error = %v, wantErr %v", err, tt.wantErr)
+			ge := Gcm{}
+			if err := ge.ValidateHeaderAuth(tt.args.derivedDataKey, tt.args.headerAuthTag, tt.args.headerBytes); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateHeaderAuth() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func Test_gcmDecrypter_decrypt(t *testing.T) {
+func Test_Gcm_Decrypt(t *testing.T) {
 	type args struct {
 		key        []byte
 		iv         []byte
@@ -138,8 +138,8 @@ func Test_gcmDecrypter_decrypt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gd := gcmDecrypter{}
-			got, err := gd.decrypt(tt.args.key, tt.args.iv, tt.args.ciphertext, tt.args.tag, tt.args.aadData)
+			ge := Gcm{}
+			got, err := ge.Decrypt(tt.args.key, tt.args.iv, tt.args.ciphertext, tt.args.tag, tt.args.aadData)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("decrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -151,7 +151,7 @@ func Test_gcmDecrypter_decrypt(t *testing.T) {
 	}
 }
 
-func Test_constructIV(t *testing.T) {
+func Test_Gcm_ConstructIV(t *testing.T) {
 	tests := []struct {
 		name   string
 		seqNum int
@@ -163,8 +163,9 @@ func Test_constructIV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := constructIV(tt.seqNum); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("constructIV() = %#v, want %#v", got, tt.want)
+			ge := Gcm{}
+			if got := ge.ConstructIV(tt.seqNum); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ConstructIV() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

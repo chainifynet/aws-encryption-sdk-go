@@ -10,10 +10,10 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
 // Decrypt ciphertext decryption
@@ -71,13 +71,6 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 		d.verifier.update(headerAuth.Serialize())
 	}
 
-	log.Trace().
-		Int("len", header.Len()).
-		Str("bytes", logger.FmtBytes(header.Bytes())).
-		Int("headerAuthLen", headerAuth.Len()).
-		Str("headerAuthB", logger.FmtBytes(headerAuth.AuthData())).
-		Msg("headers")
-
 	dmr := materials.DecryptionMaterialsRequest{
 		Algorithm:         header.AlgorithmSuite,
 		EncryptedDataKeys: serialization.EDK.AsKeys(header.EncryptedDataKeys),
@@ -96,13 +89,13 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 		}
 	}
 
-	derivedDataKey, err := deriveDataEncryptionKey(decMaterials.DataKey(), header.AlgorithmSuite, header.MessageID)
+	derivedDataKey, err := keyderivation.DeriveDataEncryptionKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite, header.MessageID)
 	if err != nil {
 		return fmt.Errorf("decrypt key derivation error: %w", err)
 	}
 
 	if header.AlgorithmSuite.IsCommitting() {
-		expectedCommitmentKey, err := calculateCommitmentKey(decMaterials.DataKey(), header.AlgorithmSuite, header.MessageID)
+		expectedCommitmentKey, err := keyderivation.CalculateCommitmentKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite, header.MessageID)
 		if err != nil {
 			return fmt.Errorf("decrypt calculate commitment key error: %w", err)
 		}
@@ -112,7 +105,7 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 		}
 	}
 
-	if errHeaderAuth := d.aeadDecrypter.validateHeaderAuth(derivedDataKey, headerAuth.AuthData(), header.Bytes()); errHeaderAuth != nil {
+	if errHeaderAuth := d.aeadDecrypter.ValidateHeaderAuth(derivedDataKey, headerAuth.AuthData(), header.Bytes()); errHeaderAuth != nil {
 		return fmt.Errorf("decrypt header auth error: %w", errHeaderAuth)
 	}
 
@@ -145,7 +138,7 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 			frame.SequenceNumber(),
 			len(frame.EncryptedContent()),
 		)
-		b, errAead := d.aeadDecrypter.decrypt(
+		b, errAead := d.aeadDecrypter.Decrypt(
 			d._derivedDataKey,
 			frame.IV(),
 			frame.EncryptedContent(),

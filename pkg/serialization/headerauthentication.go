@@ -50,6 +50,7 @@ func (h mha) Deserialize(buf *bytes.Buffer) (*headerAuth, error) {
 	}
 
 	authData := buf.Next(headerAuthDataLen)
+	// TODO copy authData into new slice, otherwise authData capacity is equal to buf capacity
 
 	return h.New(authData)
 }

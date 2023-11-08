@@ -30,6 +30,14 @@ var (
 	usersJson []byte
 	//go:embed testdata/users_pretty.json
 	usersJsonPretty []byte
+
+	//go:embed testdata/static_1.key
+	staticKey1 []byte
+	//go:embed testdata/static_2.key
+	staticKey2 []byte
+
+	//go:embed testdata/encrypted_static.enc
+	random32kbEncryptedStatic []byte
 )
 
 var testFilesAll = []testFile{

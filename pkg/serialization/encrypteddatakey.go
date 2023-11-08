@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/rs/zerolog"
 
@@ -29,12 +30,12 @@ const (
 )
 
 var EDK = edk{ //nolint:gochecknoglobals
-	ProviderID: awsKmsProviderID,
+	ProviderID: awsKmsProviderID, // TODO deprecate this field
 	LenFields:  edkLenFields,
 }
 
 type edk struct {
-	ProviderID providerIdentity
+	ProviderID providerIdentity // TODO deprecate this field
 	LenFields  int
 }
 
@@ -54,9 +55,12 @@ type encryptedDataKey struct {
 }
 
 func (e edk) new(providerID providerIdentity, providerInfo string, encryptedDataKeyData []byte) (*encryptedDataKey, error) {
+	if strings.HasPrefix(string(providerID), "aws") && providerID != awsKmsProviderID {
+		return nil, fmt.Errorf("ProviderID %s is not supported: %w", providerID, errEDK)
+	}
 
-	if providerID != EDK.ProviderID {
-		return nil, fmt.Errorf("providerIdentity is not supported. Use providerIdentity.awsKmsProviderID: %w", errEDK)
+	if strings.HasPrefix(providerInfo, "aws:") && providerID != awsKmsProviderID {
+		return nil, fmt.Errorf("ProviderInfo %s is not supported: %w", providerInfo, errEDK)
 	}
 
 	if len(providerInfo) > math.MaxUint32 {

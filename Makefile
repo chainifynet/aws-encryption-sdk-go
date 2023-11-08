@@ -14,7 +14,7 @@ SDK_PKGS=./pkg/...
 RUN_NONE=-run NOTHING
 RUN_INTEG=-run '^Test_Integration_'
 
-.PHONY: all deps vet lint lint-ci unit
+.PHONY: all deps mocks vet lint lint-ci unit
 all: unit
 
 deps:
@@ -22,13 +22,19 @@ deps:
 	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.1
+	@#go get github.com/stretchr/testify/mock@v1.8.4
+	@#go install github.com/vektra/mockery/v2@v2.36.1
 
-# add golangci-lint later
+mocks:
+	@echo "Generating mocks"
+	@#mockery --all --keeptree --case=underscore --output=./test/mocks
+
 lint: vet lint-ci
 
 lint-ci:
 	@echo "Running golangci-lint"
 	@golangci-lint run --build-tags=${CI_TAGS} --out-format=github-actions ./...
+	@#golangci-lint run --build-tags=${CI_TAGS} ./...
 
 vet:
 	@go vet ${BUILD_TAGS} --all ${SDK_PKGS}

@@ -29,9 +29,9 @@ var (
 
 type KmsMasterKeyI interface {
 	MasterKeyBase
-	GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
-	EncryptDataKey(dataKey DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error)
-	DecryptDataKey(encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
+	buildGenerateDataKeyRequest(alg *suite.AlgorithmSuite, ec suite.EncryptionContext) *kms.GenerateDataKeyInput
+	buildEncryptRequest(dataKey DataKeyI, ec suite.EncryptionContext) *kms.EncryptInput
+	buildDecryptRequest(encryptedDataKey EncryptedDataKeyI, ec suite.EncryptionContext) *kms.DecryptInput
 }
 
 type KmsMasterKey struct {

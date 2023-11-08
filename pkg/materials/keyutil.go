@@ -8,7 +8,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
-// TODO andrew refactor, for sure it needs to be moved under keys package
+// TODO andrew refactor, for sure it needs to be moved under keys or providers likely package
 func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.MasterKeyBase, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, []keys.EncryptedDataKeyI, error) {
 	encryptedDataKeys := make([]keys.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
 

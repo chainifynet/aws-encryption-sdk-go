@@ -7,18 +7,9 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
-
-var MaterialsManager materialsManager //nolint:gochecknoglobals
-
-type materialsManager struct{}
-
-func (materialsManager) NewCMM(keyProvider providers.MasterKeyProvider) materials.CryptoMaterialsManager {
-	return materials.CMM.NewDefault(keyProvider)
-}
 
 // NewClient returns a new client with default clientconfig.ClientConfig config
 func NewClient() *Client {

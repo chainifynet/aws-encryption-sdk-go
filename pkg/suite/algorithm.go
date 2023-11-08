@@ -45,12 +45,13 @@ type encryptionSuite struct {
 
 //goland:noinspection GoSnakeCaseUsage,GoUnusedGlobalVariable
 var (
-	aes_128_GCM_IV12_TAG16 = newEncryptionSuite(aesAlg, gcmMode, 16, 12, 16)
-	aes_192_GCM_IV12_TAG16 = newEncryptionSuite(aesAlg, gcmMode, 24, 12, 16)
-	aes_256_GCM_IV12_TAG16 = newEncryptionSuite(aesAlg, gcmMode, 32, 12, 16)
+	aes_128_GCM_IV12_TAG16 = NewEncryptionSuite(aesAlg, gcmMode, 16, 12, 16)
+	aes_192_GCM_IV12_TAG16 = NewEncryptionSuite(aesAlg, gcmMode, 24, 12, 16)
+	aes_256_GCM_IV12_TAG16 = NewEncryptionSuite(aesAlg, gcmMode, 32, 12, 16)
 )
 
-func newEncryptionSuite(algorithm encAlgorithm, mode cipherMode, dataKeyLen, ivLen, authLen int) encryptionSuite {
+//goland:noinspection GoExportedFuncWithUnexportedType
+func NewEncryptionSuite(algorithm encAlgorithm, mode cipherMode, dataKeyLen, ivLen, authLen int) encryptionSuite { //nolint:revive
 	return encryptionSuite{Algorithm: algorithm, Mode: mode, DataKeyLen: dataKeyLen, IVLen: ivLen, AuthLen: authLen}
 }
 
@@ -61,12 +62,13 @@ type kdfSuite struct {
 
 //goland:noinspection GoSnakeCaseUsage,GoUnusedGlobalVariable
 var (
-	hkdf_SHA256 = newKdfSuite(hkdf.New, sha256.New)    //nolint:unused
-	hkdf_SHA384 = newKdfSuite(hkdf.New, sha512.New384) //nolint:unused
-	hkdf_SHA512 = newKdfSuite(hkdf.New, sha512.New)
+	hkdf_SHA256 = NewKdfSuite(hkdf.New, sha256.New)    //nolint:unused
+	hkdf_SHA384 = NewKdfSuite(hkdf.New, sha512.New384) //nolint:unused
+	hkdf_SHA512 = NewKdfSuite(hkdf.New, sha512.New)
 )
 
-func newKdfSuite(KDFFunc func(hash func() hash.Hash, secret, salt, info []byte) io.Reader, hashFunc func() hash.Hash) kdfSuite {
+//goland:noinspection GoExportedFuncWithUnexportedType
+func NewKdfSuite(KDFFunc func(hash func() hash.Hash, secret, salt, info []byte) io.Reader, hashFunc func() hash.Hash) kdfSuite { //nolint:revive
 	return kdfSuite{KDFFunc: KDFFunc, HashFunc: hashFunc}
 }
 
@@ -154,12 +156,14 @@ func (as *AlgorithmSuite) AlgorithmSuiteDataLen() int {
 var (
 	AES_256_GCM_HKDF_SHA512_COMMIT_KEY            = newAlgorithmSuite(0x0478, aes_256_GCM_IV12_TAG16, 2, hkdf_SHA512, authSuite_NONE)
 	AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384 = newAlgorithmSuite(0x0578, aes_256_GCM_IV12_TAG16, 2, hkdf_SHA512, authSuite_SHA256_ECDSA_P384)
+	//AES_256_GCM_HKDF_SHA512_COMMIT_KEY_WRAPPING            = newAlgorithmSuite(0x0470, aes_256_GCM_IV12_TAG16, 2, hkdf_SHA512, authSuite_NONE)
+	//AES_256_GCM_HKDF_SHA512_COMMIT_KEY_WRAPPING_ECDSA_P384 = newAlgorithmSuite(0x0570, aes_256_GCM_IV12_TAG16, 2, hkdf_SHA512, authSuite_SHA256_ECDSA_P384)
 )
 
 // Note: we are not accessing this map concurrently on write, so no need to use sync.Map.
 var algorithmLookup = map[uint16]*AlgorithmSuite{} //nolint:gochecknoglobals
 
-func newAlgorithmSuite(algorithmID uint16, encryptionSuite encryptionSuite, messageFormatVersion int, kdfSuite kdfSuite, authentication authenticationSuite) *AlgorithmSuite {
+func newAlgorithmSuite(algorithmID uint16, encryptionSuite encryptionSuite, messageFormatVersion int, kdfSuite kdfSuite, authentication authenticationSuite) *AlgorithmSuite { //nolint:unparam
 	alg := &AlgorithmSuite{AlgorithmID: algorithmID, EncryptionSuite: encryptionSuite, MessageFormatVersion: messageFormatVersion, KDFSuite: kdfSuite, Authentication: authentication}
 	algorithmLookup[algorithmID] = alg
 	return alg
