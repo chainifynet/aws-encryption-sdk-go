@@ -22,76 +22,30 @@ import (
 
 var (
 	log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
-
 )
-
-const (
-	_kmsProviderID = "aws-kms"
-)
-
-type KmsProviderOptions struct {
-	Profile        string
-	AwsLoadOptions []func(options *config.LoadOptions) error
-}
-
-type OptionFunc func(options *KmsProviderOptions) error
-
-func WithProfile(p string) OptionFunc {
-	return func(o *KmsProviderOptions) error {
-		o.Profile = p
-		return nil
-	}
-}
-
-func WithAwsLoadOptions(opts ...func(options *config.LoadOptions) error) OptionFunc {
-	return func(o *KmsProviderOptions) error {
-		o.AwsLoadOptions = opts
-		return nil
-	}
-}
 
 type KmsKeyProviderI interface {
 	MasterKeyProvider
-	KmsKeyForEncrypt(base keys.MasterKeyBase) (keys.KmsMasterKeyI, error)
-	KmsKeyForDecrypt(base keys.MasterKeyBase) (keys.KmsMasterKeyI, error)
-	// TODO might be in setup method for KMS??
-	//  or might move AddMasterKey, MasterKeysForEncryption... methods here
-	//  to achieve constrains specifically on keys.KmsMasterKey regardless of interface keys.KmsMasterKeyI
+	getClient(keyID string) (*kms.Client, error)
 }
 
-// NewKmsKeyProviderWithOpts TODO add more options
-// make possible to initialise provider without keys and with keys list
 func NewKmsKeyProviderWithOpts(keyIDs []string, optFns ...func(options *KmsProviderOptions) error) (*KmsKeyProvider[keys.KmsMasterKeyI], error) {
 	var options KmsProviderOptions
 	for _, optFn := range optFns {
 		if err := optFn(&options); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("provider config error: %w", errors.Join(ErrMasterKeyProvider, err))
 		}
 	}
 
 	p := newKmsKeyProvider(&options)
 	if len(keyIDs) > 0 {
 		for _, keyID := range keyIDs {
-			if err := arn.ValidateKeyArn(keyID); err != nil {
-				// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-				return nil, fmt.Errorf("invalid keyID %s, %w", keyID, err)
-			}
 			if _, err := p.addMasterKey(keyID); err != nil {
-				// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-				return nil, err
+				return nil, fmt.Errorf("add MasterKey error: %w", errors.Join(ErrMasterKeyProvider, err))
 			}
 		}
 	}
 	return p, nil
-
-	//return &KmsKeyProvider[keys.KmsMasterKeyI]{
-	//	providerID:           _kmsProviderID,
-	//	options:              options,
-	//	regionalClients:      map[string]*kms.Client{},
-	//	keyEntriesForEncrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI]),
-	//	keyEntriesForDecrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI]),
-	//}, nil
-
 }
 
 func NewKmsKeyProvider(keyIDs ...string) (*KmsKeyProvider[keys.KmsMasterKeyI], error) {
@@ -100,16 +54,16 @@ func NewKmsKeyProvider(keyIDs ...string) (*KmsKeyProvider[keys.KmsMasterKeyI], e
 
 func newKmsKeyProvider(options *KmsProviderOptions) *KmsKeyProvider[keys.KmsMasterKeyI] {
 	return &KmsKeyProvider[keys.KmsMasterKeyI]{
-		providerID:           _kmsProviderID,
+		keyProvider:          newKeyProvider(_kmsProviderID, AwsKms),
 		options:              *options,
-		regionalClients:      map[string]*kms.Client{},
-		keyEntriesForEncrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI]),
-		keyEntriesForDecrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI]),
+		regionalClients:      make(map[string]*kms.Client, 5),                       // increase if needed
+		keyEntriesForEncrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI], 5), // increase if needed
+		keyEntriesForDecrypt: make(map[string]keys.KeyEntry[keys.KmsMasterKeyI], 5), // increase if needed
 	}
 }
 
 type KmsKeyProvider[KT keys.KmsMasterKeyI] struct {
-	providerID       string
+	keyProvider      *KeyProvider
 	primaryMasterKey *keys.KeyEntry[KT]
 
 	options KmsProviderOptions
@@ -121,30 +75,34 @@ type KmsKeyProvider[KT keys.KmsMasterKeyI] struct {
 	keyEntriesForDecrypt map[string]keys.KeyEntry[KT] // keyEntriesForDecrypt where keys.KeyEntry not a pointer
 }
 
-func (kmsKP *KmsKeyProvider[KT]) ProviderID() string {
-	return kmsKP.providerID
+func (kmsKP *KmsKeyProvider[KT]) Provider() *KeyProvider {
+	return kmsKP.keyProvider
 }
 
 func (kmsKP *KmsKeyProvider[KT]) ValidateProviderID(otherID string) error {
-	if kmsKP.providerID != otherID {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return fmt.Errorf("provided base MasterKey providerID %s doesnt match to with KeyProvider ID %s", otherID, kmsKP.providerID)
+	if kmsKP.keyProvider.providerID != otherID {
+		return fmt.Errorf("providerID %q doesnt match to with MasterKeyProvider ID %q", otherID, kmsKP.keyProvider.providerID)
 	}
 	return nil
 }
 
 func (kmsKP *KmsKeyProvider[KT]) validateMasterKey(keyID string) error {
-	if _, exists := kmsKP.keyEntriesForEncrypt[keyID]; !exists {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return fmt.Errorf("key %v doesnt exists", keyID)
+	if err := arn.ValidateKeyArn(keyID); err != nil {
+		return fmt.Errorf("invalid keyID %q: %w", keyID, err)
+	}
+	if kmsKP.options.discovery && kmsKP.options.discoveryFilter != nil {
+		if !kmsKP.options.discoveryFilter.IsAllowed(keyID) {
+			return fmt.Errorf("keyID %q is not allowed by discovery filter", keyID)
+		}
 	}
 	return nil
 }
 
 func (kmsKP *KmsKeyProvider[KT]) addMasterKey(keyID string) (keys.MasterKeyBase, error) {
-
-	if errKeyExists := kmsKP.validateMasterKey(keyID); errKeyExists != nil {
-		//return nil, fmt.Errorf("key %v already exists", keyID)
+	if err := kmsKP.validateMasterKey(keyID); err != nil {
+		return nil, err
+	}
+	if _, exists := kmsKP.keyEntriesForEncrypt[keyID]; !exists {
 		key, err := kmsKP.newMasterKey(keyID)
 		if err != nil {
 			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
@@ -188,8 +146,7 @@ func (kmsKP *KmsKeyProvider[KT]) getClient(keyID string) (*kms.Client, error) {
 	// TODO add configurable default region
 	regionName, err := regionForKeyID(keyID, "")
 	if err != nil {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, err
+		return nil, fmt.Errorf("KMS client error: %w", err)
 	}
 	kmsKP.addRegionalClient(regionName)
 	log.Trace().
@@ -205,25 +162,7 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 		return
 	}
 
-	opts := append(kmsKP.options.AwsLoadOptions, config.WithRegion(region)) //nolint:gocritic
-
-	// TODO andrew remove since we can use WithSharedConfigProfile when configuring KmsKeyProvider
-	if kmsKP.options.Profile != "" {
-		opts = append(opts, config.WithSharedConfigProfile(kmsKP.options.Profile))
-	}
-
-	// TODO andrew refactor this
-	cfgOpts := &config.LoadOptions{}
-	for _, opt := range opts {
-		if err := opt(cfgOpts); err != nil {
-			log.Error().Err(err).Msg("unable to load Custom SDK config")
-			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-			// TODO andrew refactor return error
-		}
-	}
-	if cfgOpts.SharedConfigProfile != "" {
-		kmsKP.options.Profile = cfgOpts.SharedConfigProfile
-	}
+	opts := append(kmsKP.options.awsLoadOptions, config.WithRegion(region)) //nolint:gocritic
 
 	// TODO pass Context
 	cfg, err := config.LoadDefaultConfig(context.TODO(), opts...)
@@ -240,12 +179,8 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(region string) {
 }
 
 func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(_ suite.EncryptionContext, _ []byte, _ int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
-	// TODO probably we need to AddMasterKey for each of keyEntriesForEncrypt that eventually adds primaryMasterKey
-	//  andrew: cover with tests and we'll see
-
 	if kmsKP.primaryMasterKey == nil {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, nil, fmt.Errorf("no primary key")
+		return nil, nil, fmt.Errorf("KmsKeyProvider no primary key: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderEncrypt, ErrMasterKeyProviderNoPrimaryKey))
 	}
 	members := make([]keys.MasterKeyBase, 0, len(kmsKP.keyEntriesForEncrypt))
 	for _, k := range kmsKP.keyEntriesForEncrypt {
@@ -260,42 +195,31 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeysForEncryption(_ suite.EncryptionConte
 	return kmsKP.primaryMasterKey.GetEntry(), nil, nil
 }
 
-// MasterKeyForEncrypt
-// Deprecated: TODO andrew remove unused
-func (kmsKP *KmsKeyProvider[KT]) MasterKeyForEncrypt(keyID string) (keys.MasterKeyBase, error) {
-	if err := kmsKP.validateMasterKey(keyID); err != nil {
-		//return nil, err
-		return kmsKP.addMasterKey(keyID)
-	}
-	return kmsKP.keyEntriesForEncrypt[keyID].GetEntry(), nil
-}
-
-// MasterKeyForEncryptByKeyMetadata
-// Deprecated: TODO andrew remove unused
-func (kmsKP *KmsKeyProvider[KT]) MasterKeyForEncryptByKeyMetadata(metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
+func (kmsKP *KmsKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
 	if err := kmsKP.ValidateProviderID(metadata.ProviderID); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, err))
 	}
 	if err := kmsKP.validateMasterKey(metadata.KeyID); err != nil {
-		return kmsKP.addMasterKey(metadata.KeyID)
-		//return nil, err
+		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, err))
 	}
-	return kmsKP.keyEntriesForEncrypt[metadata.KeyID].GetEntry(), nil
-}
 
-func (kmsKP *KmsKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
-	// TODO add validation
+	// first check available keys for Encrypt
 	if mkForEncrypt, ok := kmsKP.keyEntriesForEncrypt[metadata.KeyID]; ok {
 		return mkForEncrypt.GetEntry(), nil
 	}
 
+	if !kmsKP.options.discovery {
+		return nil, fmt.Errorf("MasterKeyForDecrypt: discovery not enabled: %w", ErrMasterKeyProvider)
+	}
+
+	// then check available keys for Decrypt
 	if mkForDecrypt, ok := kmsKP.keyEntriesForDecrypt[metadata.KeyID]; ok {
 		return mkForDecrypt.GetEntry(), nil
 	}
 
 	decryptMasterKey, err := kmsKP.newMasterKey(metadata.KeyID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("MasterKeyForDecrypt error: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderDecrypt, err))
 	}
 
 	kmsKP.keyEntriesForDecrypt[metadata.KeyID] = keys.NewKeyEntry(decryptMasterKey.(KT))
@@ -303,24 +227,17 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (key
 	return decryptMasterKey, nil
 }
 
-func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
-	var dataKey keys.DataKeyI
-
+func (kmsKP *KmsKeyProvider[KT]) masterKeysForDecryption() []keys.MasterKeyBase {
 	var allMembers []keys.MasterKeyBase
 	var allMemberKeys []string
-	// TODO check decrypt keys if they already there, skip below i.e. fast-path
-	decryptMasterKey, err := kmsKP.MasterKeyForDecrypt(encryptedDataKey.KeyProvider())
-	if err != nil {
-		log.Warn().Msgf("cant reach MasterKey by kmsKP.MasterKeyForDecrypt for encryptedDataKey, keyID: %v", encryptedDataKey.KeyID())
-	} else {
-		allMembers = append(allMembers, decryptMasterKey)
-		allMemberKeys = append(allMemberKeys, decryptMasterKey.KeyID())
-	}
 
-	for keyID, entry := range kmsKP.keyEntriesForDecrypt {
-		if !structs.Contains(allMemberKeys, keyID) {
-			allMembers = append(allMembers, entry.GetEntry())
-			allMemberKeys = append(allMemberKeys, keyID)
+	// only if discovery filter is set
+	if kmsKP.options.discovery && kmsKP.options.discoveryFilter != nil {
+		for keyID, entry := range kmsKP.keyEntriesForDecrypt {
+			if !structs.Contains(allMemberKeys, keyID) {
+				allMembers = append(allMembers, entry.GetEntry())
+				allMemberKeys = append(allMemberKeys, keyID)
+			}
 		}
 	}
 
@@ -331,91 +248,24 @@ func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedD
 		}
 	}
 
-	// ref https://github.com/awslabs/aws-encryption-sdk-specification/blob/master/framework/aws-kms/aws-kms-mrk-aware-master-key.md#decrypt-data-key
-	// For each encrypted data key in the filtered set, one at a time,
-	//	the master key MUST attempt to decrypt the data key.
-	for i, memberKey := range allMembers {
-		log.Trace().
-			Int("memberI", i).
-			Str("keyID", memberKey.KeyID()).
-			Str("method", "DecryptDataKey").
-			Msg("Provider: DecryptDataKey")
-		decryptedDataKey, errDecrypt := memberKey.DecryptDataKey(encryptedDataKey, alg, ec)
-		if errDecrypt == nil {
-			dataKey = decryptedDataKey
-			// https://github.com/awslabs/aws-encryption-sdk-specification/blob/master/framework/aws-kms/aws-kms-mrk-aware-master-key.md#decrypt-data-key
-			// If the AWS KMS response satisfies the requirements then it MUST be use
-			//	and this function MUST return
-			//	and not attempt to decrypt anymore encrypted data keys.
-			break
-		} else { //nolint:revive
-			// if MasterKey returns keys.ErrDecryptKey, try to decrypt next provider member key
-			if errors.Is(errDecrypt, keys.ErrDecryptKey) {
-				continue
-			} else { //nolint:revive
-				break
-			}
-		}
-	}
+	return allMembers
+}
 
-	// If this point is reached without having the data key decrypted
-	//	then the data key has not been decrypted
-	if dataKey == nil {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, keys.ErrDecryptKey
+func (kmsKP *KmsKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
+	dataKey, err := kmsKP.keyProvider.decryptDataKey(kmsKP, encryptedDataKey, alg, ec)
+	if err != nil {
+		return nil, err
 	}
-
 	return dataKey, nil
 }
 
 // DecryptDataKeyFromList iterates through EDK, calls DecryptDataKey
 func (kmsKP *KmsKeyProvider[KT]) DecryptDataKeyFromList(encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
-	var dataKey keys.DataKeyI
-
-	for i, edk := range encryptedDataKeys {
-		log.Trace().Int("edkI", i).Str("method", "DecryptDataKeyFromList").
-			Msg("DecryptDataKeyFromList")
-		decryptedDataKey, errDecrypt := kmsKP.DecryptDataKey(edk, alg, ec)
-		if errDecrypt == nil {
-			dataKey = decryptedDataKey
-			break
-		} else { //nolint:revive
-			if errors.Is(errDecrypt, keys.ErrDecryptKey) {
-				continue
-			} else { //nolint:revive
-				break
-			}
-		}
+	dataKey, err := kmsKP.keyProvider.decryptDataKeyFromList(kmsKP, encryptedDataKeys, alg, ec)
+	if err != nil {
+		return nil, err
 	}
-
-	if dataKey == nil {
-		// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
-		return nil, keys.ErrDecryptKey
-	}
-
 	return dataKey, nil
-}
-
-// KmsKeyForEncrypt TODO probably remove, it wont be used
-func (kmsKP *KmsKeyProvider[KT]) KmsKeyForEncrypt(base keys.MasterKeyBase) (keys.KmsMasterKeyI, error) {
-	if err := kmsKP.ValidateProviderID(base.Metadata().ProviderID); err != nil {
-		return nil, err
-	}
-	if err := kmsKP.validateMasterKey(base.KeyID()); err != nil {
-		return nil, err
-	}
-	return kmsKP.keyEntriesForEncrypt[base.KeyID()].GetEntry(), nil
-}
-
-// KmsKeyForDecrypt TODO probably remove, it wont be used
-func (kmsKP *KmsKeyProvider[KT]) KmsKeyForDecrypt(base keys.MasterKeyBase) (keys.KmsMasterKeyI, error) {
-	if err := kmsKP.ValidateProviderID(base.Metadata().ProviderID); err != nil {
-		return nil, err
-	}
-	if err := kmsKP.validateMasterKey(base.KeyID()); err != nil {
-		return nil, err
-	}
-	return kmsKP.keyEntriesForEncrypt[base.KeyID()].GetEntry(), nil
 }
 
 // var _ MasterKeyProvider = (*KmsKeyProvider[keys.MasterKeyBase])(nil)
@@ -424,21 +274,19 @@ var _ MasterKeyProvider = (*KmsKeyProvider[keys.KmsMasterKeyI])(nil)
 // var _ KmsKeyProviderI = (*KmsKeyProvider[keys.MasterKeyBase])(nil)
 var _ KmsKeyProviderI = (*KmsKeyProvider[keys.KmsMasterKeyI])(nil)
 
-const _regionMinLength = 9
-
 func regionForKeyID(keyID, defaultRegion string) (string, error) {
 	parts := strings.Split(keyID, ":")
 	if len(parts) < 3 { //nolint:gomnd
 		// minimum chars in AWS region, i.e. sa-east-1
-		if len(defaultRegion) >= _regionMinLength {
+		if len(defaultRegion) >= _awsRegionMinLength {
 			return defaultRegion, nil
 		}
-		return "", fmt.Errorf("InvalidRegionError, KeyID %v", keyID)
+		return "", fmt.Errorf("InvalidRegionError: KeyID %v", keyID)
 	}
 
-	if len(parts[3]) >= _regionMinLength {
+	if len(parts[3]) >= _awsRegionMinLength {
 		return parts[3], nil
 	}
 
-	return "", fmt.Errorf("UnknownRegionError, KeyID %v", keyID)
+	return "", fmt.Errorf("UnknownRegionError: KeyID %v", keyID)
 }

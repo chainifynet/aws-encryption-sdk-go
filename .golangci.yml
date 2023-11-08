@@ -119,6 +119,7 @@ linters-settings:
       - '^math\.'
       - '^http\.StatusText$'
       - '^strings\.SplitN$'
+      - 'make'
 
   gocritic:
     disabled-checks:
@@ -151,6 +152,7 @@ issues:
         - gocritic
         - revive
         - errorlint
+        - wrapcheck
         - maintidx
         - thelper
         - unused

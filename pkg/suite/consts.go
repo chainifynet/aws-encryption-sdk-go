@@ -24,8 +24,6 @@ const (
 	ContentAADFinalFrame ContentAADString = "AWSKMSEncryptionClient Final Frame"
 )
 
-type EncryptionContext map[string]string
-
 type CommitmentPolicy int8
 
 const (

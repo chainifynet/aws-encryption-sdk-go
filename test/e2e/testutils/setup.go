@@ -35,6 +35,7 @@ var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) e
 	keyProvider, err := providers.NewKmsKeyProviderWithOpts(
 		keyIDs,
 		providers.WithAwsLoadOptions(opts...),
+		providers.WithDiscovery(true),
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("setupCMM")
@@ -42,7 +43,7 @@ var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) e
 		//panic(err)
 	}
 
-	cmm := client.MaterialsManager.NewCMM(keyProvider)
+	cmm, _ := materials.NewDefault(keyProvider)
 
 	return cmm
 }

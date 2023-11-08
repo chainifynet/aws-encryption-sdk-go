@@ -13,10 +13,11 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
-func (e *encryptor) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error) {
+func (e *encrypter) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(source))
 	copy(b, source)
@@ -26,7 +27,6 @@ func (e *encryptor) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 	buf := bytes.NewBuffer(b)
 	if err := e.prepareMessage(buf, ec); err != nil {
 		return nil, nil, fmt.Errorf("prepare message error: %w", err)
-		//return nil, nil, err
 	}
 
 	if err := e.generateHeaderAuth(); err != nil {
@@ -65,9 +65,7 @@ func (e *encryptor) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 	return ciphertext, e.header, nil
 }
 
-func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.EncryptionContext) error {
-	// check why we need ValidatePolicyOnEncrypt
-	// here and: encryptionsdk/materials/manager.go:47
+func (e *encrypter) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.EncryptionContext) error {
 	if err := policy.Commitment.ValidatePolicyOnEncrypt(e.config.CommitmentPolicy(), e.algorithm); err != nil {
 		return err // just return err
 	}
@@ -100,7 +98,7 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 		return fmt.Errorf("messageID error: %w", err)
 	}
 
-	derivedDataKey, err := deriveDataEncryptionKey(encMaterials.DataEncryptionKey(), e.algorithm, messageID)
+	derivedDataKey, err := keyderivation.DeriveDataEncryptionKey(encMaterials.DataEncryptionKey().DataKey(), e.algorithm, messageID)
 	if err != nil {
 		return fmt.Errorf("key derivation failed: %w", err)
 	}
@@ -115,7 +113,7 @@ func (e *encryptor) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 	return nil
 }
 
-func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.EncryptionMaterials) error {
+func (e *encrypter) generateHeader(messageID []byte, encMaterials *materials.EncryptionMaterials) error {
 	aadData := serialization.AAD.NewAADWithEncryptionContext(encMaterials.EncryptionContext())
 
 	edks, err := serialization.EDK.FromEDKs(encMaterials.EncryptedDataKeys())
@@ -123,7 +121,7 @@ func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.Enc
 		return fmt.Errorf("EDK error: %w", err)
 	}
 
-	commitmentKey, err := calculateCommitmentKey(encMaterials.DataEncryptionKey(), e.algorithm, messageID)
+	commitmentKey, err := keyderivation.CalculateCommitmentKey(encMaterials.DataEncryptionKey().DataKey(), e.algorithm, messageID)
 	if err != nil {
 		return fmt.Errorf("calculate commitment key error: %w", err)
 	}
@@ -151,8 +149,8 @@ func (e *encryptor) generateHeader(messageID []byte, encMaterials *materials.Enc
 	return nil
 }
 
-func (e *encryptor) generateHeaderAuth() error {
-	headerAuthTag, err := e.aeadEncryptor.generateHeaderAuth(e._derivedDataKey, e.header.Bytes())
+func (e *encrypter) generateHeaderAuth() error {
+	headerAuthTag, err := e.aeadEncrypter.GenerateHeaderAuth(e._derivedDataKey, e.header.Bytes())
 	if err != nil {
 		return fmt.Errorf("header auth error: %w", err)
 	}
@@ -166,7 +164,7 @@ func (e *encryptor) generateHeaderAuth() error {
 	return nil
 }
 
-func (e *encryptor) encryptBody(plaintextBuffer *bytes.Buffer) error {
+func (e *encrypter) encryptBody(plaintextBuffer *bytes.Buffer) error {
 	body, errBody := serialization.MessageBody.NewBody(e.header.AlgorithmSuite, e.frameLength)
 	if errBody != nil {
 		return fmt.Errorf("body error: %w", errBody)
@@ -195,31 +193,26 @@ func (e *encryptor) encryptBody(plaintextBuffer *bytes.Buffer) error {
 		plaintext := plaintextBuffer.Next(bytesToRead)
 		ciphertext, authTag, err := e.encryptFrame(seqNum, isFinal, plaintext)
 		if err != nil {
-			// already wrapped in encryptFrame
 			return err
 		}
-		if errFrame := body.AddFrame(isFinal, seqNum, constructIV(seqNum), len(plaintext), ciphertext, authTag); errFrame != nil {
+		if errFrame := body.AddFrame(isFinal, seqNum, e.aeadEncrypter.ConstructIV(seqNum), len(plaintext), ciphertext, authTag); errFrame != nil {
 			return fmt.Errorf("body frame error: %w", errFrame)
 		}
 	}
 
-	if err := e.updateBuffers(body.Bytes()); err != nil {
-		// wrapped already in updateCiphertextBuf
-		return err
-	}
-	return nil
+	return e.updateBuffers(body.Bytes())
 }
 
-func (e *encryptor) encryptFrame(seqNum int, isFinal bool, plaintext []byte) ([]byte, []byte, error) {
+func (e *encrypter) encryptFrame(seqNum int, isFinal bool, plaintext []byte) ([]byte, []byte, error) {
 	associatedData := bodyaad.BodyAAD.ContentAADBytes(
 		e.header.MessageID,
 		bodyaad.BodyAAD.ContentString(suite.FramedContent, isFinal),
 		seqNum,
 		len(plaintext),
 	)
-	ciphertext, authTag, err := e.aeadEncryptor.encrypt(
+	ciphertext, authTag, err := e.aeadEncrypter.Encrypt(
 		e._derivedDataKey,
-		constructIV(seqNum),
+		e.aeadEncrypter.ConstructIV(seqNum),
 		plaintext,
 		associatedData,
 	)
@@ -229,18 +222,16 @@ func (e *encryptor) encryptFrame(seqNum int, isFinal bool, plaintext []byte) ([]
 	return ciphertext, authTag, nil
 }
 
-func (e *encryptor) updateCiphertextBuf(b []byte) error {
-	n, err := e.ciphertextBuf.Write(b)
+func (e *encrypter) updateCiphertextBuf(b []byte) error {
+	_, err := e.ciphertextBuf.Write(b)
 	if err != nil {
-		log.Error().Err(err).Msg("CiphertextBuf update error")
 		return fmt.Errorf("ciphertext buffer write error: %w", err)
 	}
-	log.Trace().Int("written", n).Msg("CiphertextBuf update")
 
 	return nil
 }
 
-func (e *encryptor) updateBuffers(b []byte) error {
+func (e *encrypter) updateBuffers(b []byte) error {
 	if err := e.updateCiphertextBuf(b); err != nil {
 		return err
 	}

@@ -14,22 +14,25 @@ import (
 // TODO might replace with interface to achieve compatibility in CryptoMaterialsManager interface
 type EncryptionMaterialsRequest struct {
 	EncryptionContext suite.EncryptionContext
-	FrameLength       int
-	PlaintextRoStream []byte // TODO andrew remove
+	FrameLength       int    // TODO andrew remove unused
+	PlaintextRoStream []byte // TODO andrew remove unused
 	Algorithm         *suite.AlgorithmSuite
 	PlaintextLength   int
-	CommitmentPolicy  suite.CommitmentPolicy
+	CommitmentPolicy  suite.CommitmentPolicy // TODO andrew remove unused
 }
 
 // EncryptionMaterials Encryption materials returned by CryptoMaterialsManager.GetEncryptionMaterials method
 type EncryptionMaterials struct {
-	algorithm         *suite.AlgorithmSuite
+	algorithm         *suite.AlgorithmSuite // TODO andrew remove unused
 	dataEncryptionKey keys.DataKeyI
 	encryptedDataKeys []keys.EncryptedDataKeyI
 	encryptionContext suite.EncryptionContext
 	signingKey        *ecdsa.PrivateKey
 }
 
+// Algorithm
+//
+// Deprecated: TODO andrew remove unused
 func (e EncryptionMaterials) Algorithm() *suite.AlgorithmSuite {
 	return e.algorithm
 }
@@ -55,7 +58,7 @@ type DecryptionMaterialsRequest struct {
 	Algorithm         *suite.AlgorithmSuite
 	EncryptedDataKeys []keys.EncryptedDataKeyI
 	EncryptionContext suite.EncryptionContext
-	CommitmentPolicy  suite.CommitmentPolicy
+	CommitmentPolicy  suite.CommitmentPolicy // TODO andrew remove unused
 }
 
 // DecryptionMaterials Decryption materials returned by CryptoMaterialsManager.DecryptMaterials method

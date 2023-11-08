@@ -70,7 +70,7 @@ func Test_algorithm_FromBytes(t *testing.T) {
 	}
 }
 
-func Test_newEncryptionSuite(t *testing.T) {
+func Test_NewEncryptionSuite(t *testing.T) {
 	type args struct {
 		algorithm  encAlgorithm
 		mode       cipherMode
@@ -89,8 +89,8 @@ func Test_newEncryptionSuite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newEncryptionSuite(tt.args.algorithm, tt.args.mode, tt.args.dataKeyLen, tt.args.ivLen, tt.args.authLen); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newEncryptionSuite() = %v, want %v", got, tt.want)
+			if got := NewEncryptionSuite(tt.args.algorithm, tt.args.mode, tt.args.dataKeyLen, tt.args.ivLen, tt.args.authLen); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewEncryptionSuite() = %v, want %v", got, tt.want)
 			}
 		})
 	}

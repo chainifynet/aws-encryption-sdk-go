@@ -14,7 +14,7 @@ func TestErrMalformedArn(t *testing.T) {
 	assert.ErrorContains(t, ErrMalformedArn, "malformed Key ARN")
 }
 
-func TestValidateKeyArn(t *testing.T) {
+func TestParseValidateKeyArn(t *testing.T) {
 	tests := []struct {
 		name      string
 		keyID     string
@@ -46,14 +46,21 @@ func TestValidateKeyArn(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateKeyArn(tt.keyID)
+			keyArn, err := ParseArn(tt.keyID)
+			errValidate := ValidateKeyArn(tt.keyID)
 			if tt.wantErr {
 				require.Error(t, err)
+				require.Error(t, errValidate)
 				require.ErrorIs(t, err, ErrMalformedArn)
+				require.ErrorIs(t, errValidate, ErrMalformedArn)
 				require.ErrorContains(t, err, tt.errString)
+				require.ErrorContains(t, errValidate, tt.errString)
+				require.Nil(t, keyArn)
 				return
 			}
 			require.NoError(t, err)
+			require.NoError(t, errValidate)
+			require.NotNil(t, keyArn)
 		})
 	}
 }
