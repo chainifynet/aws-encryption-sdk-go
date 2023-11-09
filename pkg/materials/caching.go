@@ -4,6 +4,7 @@
 package materials
 
 import (
+	"context"
 	"time"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
@@ -35,12 +36,12 @@ func NewCaching(cache BaseCache, _ providers.MasterKeyProvider, _ ...providers.M
 // compile checking that CachingCryptoMaterialsManager implements CryptoMaterialsManager interface
 var _ CryptoMaterialsManager = (*CachingCryptoMaterialsManager)(nil)
 
-func (c *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
+func (c *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ context.Context, _ EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
 	//TODO implement me
 	panic("not implemented yet")
 }
 
-func (c *CachingCryptoMaterialsManager) DecryptMaterials(_ DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
+func (c *CachingCryptoMaterialsManager) DecryptMaterials(_ context.Context, _ DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
 	//TODO implement me
 	panic("not implemented yet")
 }

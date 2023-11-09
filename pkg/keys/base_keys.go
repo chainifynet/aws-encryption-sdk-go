@@ -4,6 +4,7 @@
 package keys
 
 import (
+	"context"
 	"errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -42,9 +43,9 @@ type MasterKeyBase interface {
 	KeyID() string
 	Metadata() KeyMeta
 	OwnsDataKey(key Key) bool
-	GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
-	EncryptDataKey(dataKey DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error)
-	DecryptDataKey(encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
+	GenerateDataKey(ctx context.Context, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
+	EncryptDataKey(ctx context.Context, dataKey DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error)
+	DecryptDataKey(ctx context.Context, encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error)
 }
 
 type KeyEntry[V any] struct {

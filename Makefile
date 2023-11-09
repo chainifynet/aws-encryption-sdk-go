@@ -14,7 +14,7 @@ SDK_PKGS=./pkg/...
 RUN_NONE=-run NOTHING
 RUN_INTEG=-run '^Test_Integration_'
 
-.PHONY: all deps mocks vet lint lint-ci unit
+.PHONY: all deps mocks vet lint lint-ci lint-local unit
 all: unit
 
 deps:
@@ -34,7 +34,10 @@ lint: vet lint-ci
 lint-ci:
 	@echo "Running golangci-lint"
 	@golangci-lint run --build-tags=${CI_TAGS} --out-format=github-actions ./...
-	@#golangci-lint run --build-tags=${CI_TAGS} ./...
+
+lint-local:
+	@echo "Running golangci-lint locally"
+	@golangci-lint run --build-tags=${CI_TAGS} ./...
 
 vet:
 	@go vet ${BUILD_TAGS} --all ${SDK_PKGS}

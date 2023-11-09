@@ -6,6 +6,7 @@
 package main_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,8 @@ import (
 )
 
 func Test_Integration_StaticKeysEncrypt(t *testing.T) {
+	ctx := context.Background()
+
 	// setup client config
 	cfg, err := clientconfig.NewConfigWithOpts(
 		clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyRequireEncryptRequireDecrypt),
@@ -48,14 +51,14 @@ func Test_Integration_StaticKeysEncrypt(t *testing.T) {
 	log.Debug().Str("bytes", logger.FmtBytes(random32kb)).Msg("Input")
 
 	// encrypt data
-	ciphertext1, header1, err := c.EncryptWithOpts(random32kb, testEc, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, 4096)
+	ciphertext1, header1, err := c.EncryptWithOpts(ctx, random32kb, testEc, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, 4096)
 	require.NoError(t, err)
 	assert.NotNil(t, ciphertext1)
 	assert.NotNil(t, header1)
 	log.Debug().Str("bytes", logger.FmtBytes(ciphertext1)).Msg("ciphertext1")
 
 	// decrypt ciphertext
-	plaintext1, header1Dec, err := c.Decrypt(ciphertext1, cmm)
+	plaintext1, header1Dec, err := c.Decrypt(ctx, ciphertext1, cmm)
 	require.NoError(t, err)
 	assert.NotNil(t, plaintext1)
 	assert.NotNil(t, header1Dec)
@@ -64,6 +67,8 @@ func Test_Integration_StaticKeysEncrypt(t *testing.T) {
 }
 
 func Test_Integration_StaticKeysDecrypt(t *testing.T) {
+	ctx := context.Background()
+
 	// setup client config
 	cfg, err := clientconfig.NewConfigWithOpts(
 		clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyRequireEncryptRequireDecrypt),
@@ -104,14 +109,14 @@ func Test_Integration_StaticKeysDecrypt(t *testing.T) {
 	log.Debug().Str("bytes", logger.FmtBytes(random32kbEncryptedStatic)).Msg("Input")
 
 	// decrypt ciphertext using raw key provider 1 (only with static key 1)
-	plaintext1, header1Dec, err := c.Decrypt(random32kbEncryptedStatic, cmm1)
+	plaintext1, header1Dec, err := c.Decrypt(ctx, random32kbEncryptedStatic, cmm1)
 	require.NoError(t, err)
 	assert.NotNil(t, plaintext1)
 	assert.NotNil(t, header1Dec)
 	log.Debug().Str("bytes", logger.FmtBytes(plaintext1)).Msg("plaintext1")
 
 	// decrypt ciphertext using raw key provider 2 (only with static key 2)
-	plaintext2, header2Dec, err := c.Decrypt(random32kbEncryptedStatic, cmm2)
+	plaintext2, header2Dec, err := c.Decrypt(ctx, random32kbEncryptedStatic, cmm2)
 	require.NoError(t, err)
 	assert.NotNil(t, plaintext2)
 	assert.NotNil(t, header2Dec)
@@ -136,7 +141,7 @@ func Test_Integration_StaticKeysDecrypt(t *testing.T) {
 	assert.NotNil(t, cmm3)
 
 	// decrypt ciphertext using raw key provider 3
-	plaintext3, header3Dec, err := c.Decrypt(random32kbEncryptedStatic, cmm3)
+	plaintext3, header3Dec, err := c.Decrypt(ctx, random32kbEncryptedStatic, cmm3)
 	require.NoError(t, err)
 	assert.NotNil(t, plaintext3)
 	assert.NotNil(t, header3Dec)

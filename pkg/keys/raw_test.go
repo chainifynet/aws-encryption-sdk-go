@@ -4,6 +4,7 @@
 package keys
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -273,6 +274,8 @@ func TestRawMasterKey_GenerateDataKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
 			mockEncrypter := new(MockEncrypter)
 			mockRandomGenerator := new(MockRandomGenerator)
 			mockWrapper := new(MockWrapper)
@@ -297,7 +300,7 @@ func TestRawMasterKey_GenerateDataKey(t *testing.T) {
 				Encrypter:  mockEncrypter,
 				keyWrapper: mockWrapper,
 			}
-			got, err := rawMK.GenerateDataKey(tt.args.alg, tt.args.ec)
+			got, err := rawMK.GenerateDataKey(ctx, tt.args.alg, tt.args.ec)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, tt.wantErr)
@@ -374,6 +377,8 @@ func TestRawMasterKey_EncryptDataKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
 			mockEncrypter := new(MockEncrypter)
 			mockRandomGenerator := new(MockRandomGenerator)
 			mockWrapper := new(MockWrapper)
@@ -396,7 +401,7 @@ func TestRawMasterKey_EncryptDataKey(t *testing.T) {
 				Encrypter:  mockEncrypter,
 				keyWrapper: mockWrapper,
 			}
-			got, err := rawMK.EncryptDataKey(tt.args.dk, tt.args.alg, tt.args.ec)
+			got, err := rawMK.EncryptDataKey(ctx, tt.args.dk, tt.args.alg, tt.args.ec)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, tt.wantErr)
@@ -638,6 +643,8 @@ func TestRawMasterKey_DecryptDataKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
 			mockEncrypter := new(MockEncrypter)
 			mockRandomGenerator := new(MockRandomGenerator)
 			mockWrapper := new(MockWrapper)
@@ -664,7 +671,7 @@ func TestRawMasterKey_DecryptDataKey(t *testing.T) {
 				Encrypter:  mockEncrypter,
 				keyWrapper: mockWrapper,
 			}
-			got, err := rawMK.DecryptDataKey(tt.args.encryptedDataKey, tt.args.alg, tt.args.ec)
+			got, err := rawMK.DecryptDataKey(ctx, tt.args.encryptedDataKey, tt.args.alg, tt.args.ec)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, tt.wantErr)

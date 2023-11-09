@@ -5,6 +5,7 @@ package crypto
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
-func (e *encrypter) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error) {
+func (e *encrypter) encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(source))
 	copy(b, source)
@@ -25,7 +26,7 @@ func (e *encrypter) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 		return nil, nil, fmt.Errorf("empty source")
 	}
 	buf := bytes.NewBuffer(b)
-	if err := e.prepareMessage(buf, ec); err != nil {
+	if err := e.prepareMessage(ctx, buf, ec); err != nil {
 		return nil, nil, fmt.Errorf("prepare message error: %w", err)
 	}
 
@@ -65,7 +66,7 @@ func (e *encrypter) encrypt(source []byte, ec suite.EncryptionContext) ([]byte, 
 	return ciphertext, e.header, nil
 }
 
-func (e *encrypter) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.EncryptionContext) error {
+func (e *encrypter) prepareMessage(ctx context.Context, plaintextBuffer *bytes.Buffer, ec suite.EncryptionContext) error {
 	if err := policy.Commitment.ValidatePolicyOnEncrypt(e.config.CommitmentPolicy(), e.algorithm); err != nil {
 		return err // just return err
 	}
@@ -79,7 +80,7 @@ func (e *encrypter) prepareMessage(plaintextBuffer *bytes.Buffer, ec suite.Encry
 		CommitmentPolicy:  e.config.CommitmentPolicy(),
 	}
 
-	encMaterials, err := e.cmm.GetEncryptionMaterials(emr)
+	encMaterials, err := e.cmm.GetEncryptionMaterials(ctx, emr)
 	if err != nil {
 		return fmt.Errorf("encrypt materials: %w", err)
 	}

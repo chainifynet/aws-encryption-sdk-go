@@ -5,6 +5,7 @@ package crypto
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 
@@ -30,11 +31,10 @@ var (
 
 const (
 	firstByteEncryptedMessage = byte(0x02)
-	defaultClientEncryptFrame = int(1024)
 )
 
 type SdkDecrypter interface {
-	decrypt(ciphertext []byte) ([]byte, *serialization.MessageHeader, error)
+	decrypt(ctx context.Context, ciphertext []byte) ([]byte, *serialization.MessageHeader, error)
 }
 
 type decrypter struct {
@@ -46,19 +46,14 @@ type decrypter struct {
 	_derivedDataKey []byte
 }
 
-func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
-	log.Trace().
-		Str("config", fmt.Sprintf("%+v", config)).
-		Msg("Decrypt")
-	// TODO not sure needs to be tested properly
-
+func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext []byte, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
 	dec := decrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
 		aeadDecrypter: encryption.Gcm{},
 	}
 
-	b, header, err := dec.decrypt(ciphertext)
+	b, header, err := dec.decrypt(ctx, ciphertext)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(ErrDecryption, err))
 	}
@@ -68,7 +63,7 @@ func Decrypt(config clientconfig.ClientConfig, ciphertext []byte, cmm materials.
 var _ SdkDecrypter = (*decrypter)(nil)
 
 type SdkEncrypter interface {
-	encrypt(source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error)
+	encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error)
 }
 
 type encrypter struct {
@@ -83,11 +78,7 @@ type encrypter struct {
 	ciphertextBuf   *bytes.Buffer
 }
 
-func Encrypt(config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
-	return EncryptWithOpts(config, source, ec, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, defaultClientEncryptFrame)
-}
-
-func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
+func Encrypt(ctx context.Context, config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
 	enc := encrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
@@ -96,7 +87,7 @@ func EncryptWithOpts(config clientconfig.ClientConfig, source []byte, ec suite.E
 		aeadEncrypter: encryption.Gcm{},
 		ciphertextBuf: new(bytes.Buffer),
 	}
-	ciphertext, header, err := enc.encrypt(source, ec)
+	ciphertext, header, err := enc.encrypt(ctx, source, ec)
 	if err != nil {
 		// TODO andrew clean up derived data key
 		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(ErrEncryption, err))

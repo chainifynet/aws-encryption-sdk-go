@@ -5,6 +5,7 @@ package crypto
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"fmt"
 
@@ -16,8 +17,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
-// Decrypt ciphertext decryption
-func (d *decrypter) decrypt(ciphertext []byte) ([]byte, *serialization.MessageHeader, error) {
+// decrypt ciphertext decryption
+func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, *serialization.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(ciphertext))
 	copy(b, ciphertext)
@@ -32,7 +33,7 @@ func (d *decrypter) decrypt(ciphertext []byte) ([]byte, *serialization.MessageHe
 	}
 	buf := bytes.NewBuffer(b)
 
-	if err := d.decryptHeader(buf); err != nil {
+	if err := d.decryptHeader(ctx, buf); err != nil {
 		return nil, nil, err
 	}
 
@@ -55,7 +56,7 @@ func (d *decrypter) decrypt(ciphertext []byte) ([]byte, *serialization.MessageHe
 	return body, d.header, nil
 }
 
-func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
+func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error {
 	header, headerAuth, err := serialization.DeserializeHeader(buf, d.config.MaxEncryptedDataKeys())
 	if err != nil {
 		return err
@@ -78,7 +79,7 @@ func (d *decrypter) decryptHeader(buf *bytes.Buffer) error {
 		CommitmentPolicy:  d.config.CommitmentPolicy(),
 	}
 
-	decMaterials, err := d.cmm.DecryptMaterials(dmr)
+	decMaterials, err := d.cmm.DecryptMaterials(ctx, dmr)
 	if err != nil {
 		return fmt.Errorf("decrypt materials: %w", err)
 	}

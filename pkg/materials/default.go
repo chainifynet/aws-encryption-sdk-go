@@ -4,6 +4,7 @@
 package materials
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	b64 "encoding/base64"
@@ -45,7 +46,7 @@ func NewDefault(primary providers.MasterKeyProvider, extra ...providers.MasterKe
 	}, nil
 }
 
-func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(encReq EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
+func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx context.Context, encReq EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
 	// copy encryption context map
 	var encryptionContext suite.EncryptionContext
 	encryptionContext = make(suite.EncryptionContext)
@@ -62,7 +63,7 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(encReq En
 	encryptionContext = structs.MapSort(encryptionContext)
 
 	var masterKeys []keys.MasterKeyBase
-	primaryMasterKey, primaryMemberKeys, err := composite.primaryKeyProvider.MasterKeysForEncryption(encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
+	primaryMasterKey, primaryMemberKeys, err := composite.primaryKeyProvider.MasterKeysForEncryption(ctx, encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
 	if err != nil {
 		return nil, fmt.Errorf("primary KeyProvider error: %w", errors.Join(ErrCMM, err))
 	}
@@ -70,7 +71,7 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(encReq En
 	if len(composite.masterKeyProviders) > 0 {
 		for _, mkp := range composite.masterKeyProviders {
 			// here we dont really need primary master key, it is already in memberKeys
-			_, memberKeys, errMember := mkp.MasterKeysForEncryption(encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
+			_, memberKeys, errMember := mkp.MasterKeysForEncryption(ctx, encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
 			// here we can ignore providers.ErrMasterKeyProviderNoPrimaryKey
 			//  assuming that provider could have only member keys
 			if errMember != nil && !errors.Is(errMember, providers.ErrMasterKeyProviderNoPrimaryKey) {
@@ -82,7 +83,7 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(encReq En
 		}
 	}
 
-	dataEncryptionKey, encryptedDataKeys, err := prepareDataKeys(primaryMasterKey, masterKeys, encReq.Algorithm, encryptionContext)
+	dataEncryptionKey, encryptedDataKeys, err := prepareDataKeys(ctx, primaryMasterKey, masterKeys, encReq.Algorithm, encryptionContext)
 	if err != nil {
 		return nil, fmt.Errorf("key error: %w", errors.Join(ErrCMM, err))
 	}
@@ -96,10 +97,10 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(encReq En
 
 }
 
-func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(decReq DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
+func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, decReq DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
 	var dataKey keys.DataKeyI
 	var errDecryptDataKey error
-	dataKeyPrimary, err := composite.primaryKeyProvider.DecryptDataKeyFromList(decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
+	dataKeyPrimary, err := composite.primaryKeyProvider.DecryptDataKeyFromList(ctx, decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 	if err != nil {
 		if !errors.Is(err, providers.ErrMasterKeyProviderDecrypt) {
 			return nil, fmt.Errorf("primary KeyProvider error: %w", errors.Join(ErrCMM, err))
@@ -110,7 +111,7 @@ func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(decReq Decrypti
 		dataKey = dataKeyPrimary
 	} else if len(composite.masterKeyProviders) > 0 {
 		for _, mkp := range composite.masterKeyProviders {
-			dataKeyMember, errMember := mkp.DecryptDataKeyFromList(decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
+			dataKeyMember, errMember := mkp.DecryptDataKeyFromList(ctx, decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 			if errMember != nil {
 				if !errors.Is(errMember, providers.ErrMasterKeyProviderDecrypt) {
 					return nil, fmt.Errorf("member KeyProvider error: %w", errors.Join(ErrCMM, err))

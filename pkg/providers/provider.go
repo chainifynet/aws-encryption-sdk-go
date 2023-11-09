@@ -4,6 +4,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -15,8 +16,8 @@ import (
 type baseKeyProvider interface {
 	ID() string
 	Type() ProviderType
-	decryptDataKey(MKP MasterKeyProvider, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
-	decryptDataKeyFromList(MKP MasterKeyProvider, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
+	decryptDataKey(ctx context.Context, MKP MasterKeyProvider, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
+	decryptDataKeyFromList(ctx context.Context, MKP MasterKeyProvider, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
 }
 
 type KeyProvider struct {
@@ -47,7 +48,7 @@ func (kp *KeyProvider) GoString() string {
 	return kp.String()
 }
 
-func (kp *KeyProvider) decryptDataKey(MKP MasterKeyProvider, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
+func (kp *KeyProvider) decryptDataKey(ctx context.Context, MKP MasterKeyProvider, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
 	if err := MKP.ValidateProviderID(encryptedDataKey.KeyProvider().ProviderID); err != nil {
 		return nil, fmt.Errorf("DecryptDataKey validate expected error: %w", errors.Join(ErrMasterKeyProviderDecrypt, err))
 	}
@@ -61,7 +62,7 @@ func (kp *KeyProvider) decryptDataKey(MKP MasterKeyProvider, encryptedDataKey ke
 	var allMembers []keys.MasterKeyBase
 	var allMemberKeys []string
 
-	decryptMasterKey, err := MKP.MasterKeyForDecrypt(encryptedDataKey.KeyProvider())
+	decryptMasterKey, err := MKP.MasterKeyForDecrypt(ctx, encryptedDataKey.KeyProvider())
 	if err != nil {
 		log.Trace().
 			Stringer("EDK", encryptedDataKey.KeyProvider()).
@@ -96,7 +97,7 @@ func (kp *KeyProvider) decryptDataKey(MKP MasterKeyProvider, encryptedDataKey ke
 			Str("keyID", memberKey.KeyID()).
 			Str("method", "DecryptDataKey").
 			Msg("Provider: DecryptDataKey")
-		decryptedDataKey, errDecrypt := memberKey.DecryptDataKey(encryptedDataKey, alg, ec)
+		decryptedDataKey, errDecrypt := memberKey.DecryptDataKey(ctx, encryptedDataKey, alg, ec)
 		if errDecrypt == nil {
 			dataKey = decryptedDataKey
 			// https://github.com/awslabs/aws-encryption-sdk-specification/blob/master/framework/aws-kms/aws-kms-mrk-aware-master-key.md#decrypt-data-key
@@ -134,7 +135,7 @@ func (kp *KeyProvider) decryptDataKey(MKP MasterKeyProvider, encryptedDataKey ke
 	return dataKey, nil
 }
 
-func (kp *KeyProvider) decryptDataKeyFromList(MKP MasterKeyProvider, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
+func (kp *KeyProvider) decryptDataKeyFromList(ctx context.Context, MKP MasterKeyProvider, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
 	var dataKey keys.DataKeyI
 
 	var errDecryptDataKey error
@@ -155,7 +156,7 @@ func (kp *KeyProvider) decryptDataKeyFromList(MKP MasterKeyProvider, encryptedDa
 			errDecryptDataKey = fmt.Errorf("DecryptDataKeyFromList validate expected error: %w", errors.Join(ErrMasterKeyProviderDecrypt, err))
 			continue
 		}
-		decryptedDataKey, errDecrypt := MKP.DecryptDataKey(edk, alg, ec)
+		decryptedDataKey, errDecrypt := MKP.DecryptDataKey(ctx, edk, alg, ec)
 		if errDecrypt == nil {
 			dataKey = decryptedDataKey
 			break

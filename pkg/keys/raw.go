@@ -4,6 +4,7 @@
 package keys
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -68,7 +69,7 @@ func (rawMK *RawMasterKey) OwnsDataKey(key Key) bool {
 	return rawMK.metadata.KeyID == key.KeyID()
 }
 
-func (rawMK *RawMasterKey) GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
+func (rawMK *RawMasterKey) GenerateDataKey(_ context.Context, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
 	dataKey, _ := rand.CryptoRandomBytes(alg.EncryptionSuite.DataKeyLen)
 
 	encryptedDataKey, err := rawMK.encryptDataKey(dataKey, alg, ec)
@@ -101,7 +102,7 @@ func (rawMK *RawMasterKey) encryptDataKey(dataKey []byte, alg *suite.AlgorithmSu
 	return encryptedDataKey, nil
 }
 
-func (rawMK *RawMasterKey) EncryptDataKey(dk DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
+func (rawMK *RawMasterKey) EncryptDataKey(_ context.Context, dk DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
 	encryptedDataKey, err := rawMK.encryptDataKey(dk.DataKey(), alg, ec)
 	if err != nil {
 		return nil, fmt.Errorf("RawMasterKey error: %w", errors.Join(ErrEncryptKey, err))
@@ -113,7 +114,7 @@ func (rawMK *RawMasterKey) EncryptDataKey(dk DataKeyI, alg *suite.AlgorithmSuite
 	}, nil
 }
 
-func (rawMK *RawMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
+func (rawMK *RawMasterKey) DecryptDataKey(_ context.Context, encryptedDataKey EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
 	if encryptedDataKey == nil {
 		return nil, fmt.Errorf("RawMasterKey error: invalid encryptedDataKey: %w", ErrDecryptKey)
 	}
