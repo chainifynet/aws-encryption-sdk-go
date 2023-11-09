@@ -4,17 +4,19 @@
 package materials
 
 import (
+	"context"
+
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
 // TODO andrew refactor, for sure it needs to be moved under keys or providers likely package
-func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.MasterKeyBase, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, []keys.EncryptedDataKeyI, error) {
+func prepareDataKeys(ctx context.Context, primaryMasterKey keys.MasterKeyBase, masterKeys []keys.MasterKeyBase, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, []keys.EncryptedDataKeyI, error) {
 	encryptedDataKeys := make([]keys.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
 
 	var encryptedDataEncryptionKey keys.EncryptedDataKeyI
 
-	dataEncryptionKey, err := primaryMasterKey.GenerateDataKey(algorithm, ec)
+	dataEncryptionKey, err := primaryMasterKey.GenerateDataKey(ctx, algorithm, ec)
 	if err != nil {
 		// TODO just wrap err
 		return nil, nil, err
@@ -26,7 +28,7 @@ func prepareDataKeys(primaryMasterKey keys.MasterKeyBase, masterKeys []keys.Mast
 			encryptedDataKeys = append(encryptedDataKeys, encryptedDataEncryptionKey)
 			continue
 		}
-		encryptedKey, err := masterKey.EncryptDataKey(dataEncryptionKey, algorithm, ec)
+		encryptedKey, err := masterKey.EncryptDataKey(ctx, dataEncryptionKey, algorithm, ec)
 		if err != nil {
 			// TODO just wrap err
 			return nil, nil, err

@@ -4,6 +4,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -86,7 +87,7 @@ func (rawKP *RawKeyProvider[KT]) addMasterKey(keyID string) (keys.MasterKeyBase,
 		return nil, err
 	}
 	if _, exists := rawKP.keyEntriesForEncrypt[keyID]; !exists {
-		key, err := rawKP.newMasterKey(keyID)
+		key, err := rawKP.newMasterKey(context.Background(), keyID)
 		if err != nil {
 			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 			return nil, err
@@ -118,7 +119,7 @@ func (rawKP *RawKeyProvider[KT]) getStaticKey(keyID string) ([]byte, error) {
 	return rawKP.staticKeys[keyID], nil
 }
 
-func (rawKP *RawKeyProvider[KT]) newMasterKey(keyID string) (keys.MasterKeyBase, error) {
+func (rawKP *RawKeyProvider[KT]) newMasterKey(_ context.Context, keyID string) (keys.MasterKeyBase, error) {
 	staticKey, err := rawKP.getStaticKey(keyID)
 	if err != nil {
 		return nil, err
@@ -127,7 +128,7 @@ func (rawKP *RawKeyProvider[KT]) newMasterKey(keyID string) (keys.MasterKeyBase,
 	return key, nil
 }
 
-func (rawKP *RawKeyProvider[KT]) MasterKeysForEncryption(_ suite.EncryptionContext, _ []byte, _ int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
+func (rawKP *RawKeyProvider[KT]) MasterKeysForEncryption(_ context.Context, _ suite.EncryptionContext, _ []byte, _ int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
 	if rawKP.primaryMasterKey == nil {
 		return nil, nil, fmt.Errorf("RawKeyProvider no primary key: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderEncrypt))
 	}
@@ -144,7 +145,7 @@ func (rawKP *RawKeyProvider[KT]) MasterKeysForEncryption(_ suite.EncryptionConte
 	return rawKP.primaryMasterKey.GetEntry(), nil, nil
 }
 
-func (rawKP *RawKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
+func (rawKP *RawKeyProvider[KT]) MasterKeyForDecrypt(ctx context.Context, metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
 	if err := rawKP.validateMasterKey(metadata.KeyID); err != nil {
 		return nil, fmt.Errorf("MasterKeyForDecrypt error: %w", errors.Join(ErrMasterKeyProvider, err))
 	}
@@ -156,7 +157,7 @@ func (rawKP *RawKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (key
 		return mkForDecrypt.GetEntry(), nil
 	}
 
-	decryptMasterKey, err := rawKP.newMasterKey(metadata.KeyID)
+	decryptMasterKey, err := rawKP.newMasterKey(ctx, metadata.KeyID)
 	if err != nil {
 		return nil, fmt.Errorf("MasterKeyForDecrypt error: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderDecrypt, err))
 	}
@@ -166,16 +167,16 @@ func (rawKP *RawKeyProvider[KT]) MasterKeyForDecrypt(metadata keys.KeyMeta) (key
 	return decryptMasterKey, nil
 }
 
-func (rawKP *RawKeyProvider[KT]) DecryptDataKey(encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
-	dataKey, err := rawKP.keyProvider.decryptDataKey(rawKP, encryptedDataKey, alg, ec)
+func (rawKP *RawKeyProvider[KT]) DecryptDataKey(ctx context.Context, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
+	dataKey, err := rawKP.keyProvider.decryptDataKey(ctx, rawKP, encryptedDataKey, alg, ec)
 	if err != nil {
 		return nil, err
 	}
 	return dataKey, nil
 }
 
-func (rawKP *RawKeyProvider[KT]) DecryptDataKeyFromList(encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
-	dataKey, err := rawKP.keyProvider.decryptDataKeyFromList(rawKP, encryptedDataKeys, alg, ec)
+func (rawKP *RawKeyProvider[KT]) DecryptDataKeyFromList(ctx context.Context, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error) {
+	dataKey, err := rawKP.keyProvider.decryptDataKeyFromList(ctx, rawKP, encryptedDataKeys, alg, ec)
 	if err != nil {
 		return nil, err
 	}

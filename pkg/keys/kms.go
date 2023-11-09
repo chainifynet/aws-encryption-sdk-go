@@ -71,10 +71,10 @@ func (kmsMK *KmsMasterKey) OwnsDataKey(key Key) bool {
 //	provider			keyID of this (MasterKey) KmsMasterKey
 //	dataKey				Plaintext of this generated dataKey
 //	encryptedDataKey	CiphertextBlob of this generated dataKey
-func (kmsMK *KmsMasterKey) GenerateDataKey(alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
+func (kmsMK *KmsMasterKey) GenerateDataKey(ctx context.Context, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
 	dataKeyRequest := kmsMK.buildGenerateDataKeyRequest(alg, ec)
-	// TODO do something with Context
-	dataKeyOutput, err := kmsMK.kmsClient.GenerateDataKey(context.TODO(), dataKeyRequest)
+
+	dataKeyOutput, err := kmsMK.kmsClient.GenerateDataKey(ctx, dataKeyRequest)
 	if err != nil {
 		log.Error().Caller().
 			Err(err).
@@ -109,11 +109,11 @@ func (kmsMK *KmsMasterKey) buildGenerateDataKeyRequest(alg *suite.AlgorithmSuite
 //
 //	i.e. GenerateDataKey (encryption material generator), once per primaryMasterKey ->
 //	-> for each MasterKey (KmsMasterKey) registered in providers.MasterKeyProvider do EncryptDataKey
-func (kmsMK *KmsMasterKey) EncryptDataKey(dataKey DataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
+func (kmsMK *KmsMasterKey) EncryptDataKey(ctx context.Context, dataKey DataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (EncryptedDataKeyI, error) {
 	// TODO add validations against suite.AlgorithmSuite
 	encryptDataKeyRequest := kmsMK.buildEncryptRequest(dataKey, ec)
-	// TODO do something with Context
-	encryptOutput, err := kmsMK.kmsClient.Encrypt(context.TODO(), encryptDataKeyRequest)
+
+	encryptOutput, err := kmsMK.kmsClient.Encrypt(ctx, encryptDataKeyRequest)
 	if err != nil {
 		log.Error().Caller().
 			Err(err).
@@ -149,7 +149,7 @@ func (kmsMK *KmsMasterKey) buildEncryptRequest(dataKey DataKeyI, ec suite.Encryp
 //	encryptedDataKey	encrypted content of (this) EncryptedDataKey
 //
 // Decrypted dataKey (plaintext) MUST match DataKey (plaintext) that was originally generated at GenerateDataKey.
-func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
+func (kmsMK *KmsMasterKey) DecryptDataKey(ctx context.Context, encryptedDataKey EncryptedDataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (DataKeyI, error) {
 	// TODO add validations against suite.AlgorithmSuite
 	if !kmsMK.OwnsDataKey(encryptedDataKey) {
 		// that is expected, just log
@@ -160,8 +160,8 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(encryptedDataKey EncryptedDataKeyI, _ 
 			Msg("MasterKey: DecryptDataKey")
 	}
 	decryptRequest := kmsMK.buildDecryptRequest(encryptedDataKey, ec)
-	// TODO do something with Context
-	decryptOutput, err := kmsMK.kmsClient.Decrypt(context.TODO(), decryptRequest)
+
+	decryptOutput, err := kmsMK.kmsClient.Decrypt(ctx, decryptRequest)
 	if err != nil {
 		var smhErr1 *smithy.OperationError
 		if errors.As(err, &smhErr1) {

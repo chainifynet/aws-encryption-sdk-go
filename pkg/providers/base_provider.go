@@ -4,6 +4,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
@@ -26,11 +27,11 @@ type MasterKeyProvider interface {
 	ProviderBase
 
 	addMasterKey(keyID string) (keys.MasterKeyBase, error)
-	newMasterKey(keyID string) (keys.MasterKeyBase, error)
-	MasterKeysForEncryption(ec suite.EncryptionContext, plaintextRoStream []byte, plaintextLength int) (keys.MasterKeyBase, []keys.MasterKeyBase, error)
-	MasterKeyForDecrypt(metadata keys.KeyMeta) (keys.MasterKeyBase, error)
-	DecryptDataKey(encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
-	DecryptDataKeyFromList(encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
+	newMasterKey(ctx context.Context, keyID string) (keys.MasterKeyBase, error)
+	MasterKeysForEncryption(ctx context.Context, ec suite.EncryptionContext, plaintextRoStream []byte, plaintextLength int) (keys.MasterKeyBase, []keys.MasterKeyBase, error)
+	MasterKeyForDecrypt(ctx context.Context, metadata keys.KeyMeta) (keys.MasterKeyBase, error)
+	DecryptDataKey(ctx context.Context, encryptedDataKey keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
+	DecryptDataKeyFromList(ctx context.Context, encryptedDataKeys []keys.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, error)
 	validateMasterKey(keyID string) error
 	masterKeysForDecryption() []keys.MasterKeyBase
 }

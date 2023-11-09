@@ -6,6 +6,7 @@
 package main_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -344,6 +345,7 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
 			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+				ctx := context.Background()
 				log.Debug().
 					Int("len", len(tf.data)).
 					Str("bytes", logger.FmtBytes(tf.data)).
@@ -360,7 +362,7 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 					cmm = tc.tEnc.tCMMi
 				}
 				assert.NotNil(t, cmm)
-				ciphertextSdk1, header1, err := c.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk1, header1, err := c.EncryptWithOpts(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
 					require.Error(t, err)
 					return
@@ -409,6 +411,7 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
 			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+				ctx := context.Background()
 				log.Debug().
 					Int("len", len(tf.data)).
 					Str("bytes", logger.FmtBytes(tf.data)).
@@ -454,7 +457,7 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 				assert.NotNil(t, cmm)
 
 				// TODO assert header when implemented
-				plaintextSdk1, _, err := c.Decrypt(ciphertextCli1, cmm)
+				plaintextSdk1, _, err := c.Decrypt(ctx, ciphertextCli1, cmm)
 				if err != nil && tc.tWantErr {
 					require.Error(t, err)
 					return
@@ -477,6 +480,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
 			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+				ctx := context.Background()
 				tLog := log.With().
 					Str("test", tc.tName).
 					Logger()
@@ -496,7 +500,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 					cmm = tc.tEnc.tCMMi
 				}
 				assert.NotNil(t, cmm)
-				ciphertextSdk1, header1, err := c.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk1, header1, err := c.EncryptWithOpts(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)
@@ -561,7 +565,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// using the same cmm and client
 
 				// TODO assert header when implemented
-				plaintextSdk2, _, err := c.Decrypt(ciphertextCli2, cmm)
+				plaintextSdk2, _, err := c.Decrypt(ctx, ciphertextCli2, cmm)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrDecryption)
 					assert.NotErrorIs(t, err, crypto.ErrEncryption)
@@ -598,7 +602,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				assert.NotNil(t, cmm2)
 
 				// TODO assert header when implemented
-				plaintextSdk3, _, err := c2.Decrypt(ciphertextCli2, cmm2)
+				plaintextSdk3, _, err := c2.Decrypt(ctx, ciphertextCli2, cmm2)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrDecryption)
 					assert.NotErrorIs(t, err, crypto.ErrEncryption)
@@ -616,7 +620,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with SDK
 				// using cmm2 and c2 that was used to Decrypt
 
-				ciphertextSdk2, header2, err := c2.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm2, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk2, header2, err := c2.EncryptWithOpts(ctx, tf.data, tc.tEnc.tEC, cmm2, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)
@@ -635,7 +639,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with SDK
 				// using cmm and c that was used to Encrypt initially
 
-				ciphertextSdk3, header3, err := c.EncryptWithOpts(tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk3, header3, err := c.EncryptWithOpts(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)
@@ -654,7 +658,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// Decrypt with SDK
 				// using cmm and c that was used to Encrypt initially
 				// TODO assert header when implemented
-				plaintextSdk4, _, err := c.Decrypt(ciphertextSdk2, cmm)
+				plaintextSdk4, _, err := c.Decrypt(ctx, ciphertextSdk2, cmm)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrDecryption)
 					assert.NotErrorIs(t, err, crypto.ErrEncryption)
@@ -674,7 +678,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// Decrypt with SDK
 				// using cmm2 and c2 that was used Decrypt
 				// TODO assert header when implemented
-				plaintextSdk5, _, err := c2.Decrypt(ciphertextSdk3, cmm2)
+				plaintextSdk5, _, err := c2.Decrypt(ctx, ciphertextSdk3, cmm2)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrDecryption)
 					assert.NotErrorIs(t, err, crypto.ErrEncryption)
