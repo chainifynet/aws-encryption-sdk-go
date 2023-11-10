@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	ErrMasterKeyProvider             = errors.New("MKP error")
-	ErrMasterKeyProviderDecrypt      = errors.New("MKP decrypt error")
-	ErrMasterKeyProviderEncrypt      = errors.New("MKP encrypt error")
-	ErrMasterKeyProviderNoPrimaryKey = errors.New("MKP no primary key")
+	ErrMasterKeyProvider                 = errors.New("MKP error")
+	ErrMasterKeyProviderDecrypt          = errors.New("MKP decrypt error")
+	ErrMasterKeyProviderDecryptForbidden = errors.New("MKP decrypt forbidden error")
+	ErrMasterKeyProviderEncrypt          = errors.New("MKP encrypt error")
+	ErrMasterKeyProviderNoPrimaryKey     = errors.New("MKP no primary key")
 )
 
 type ProviderBase interface {

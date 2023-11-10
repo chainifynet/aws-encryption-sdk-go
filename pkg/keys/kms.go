@@ -183,7 +183,7 @@ func (kmsMK *KmsMasterKey) DecryptDataKey(ctx context.Context, encryptedDataKey 
 			}
 		}
 
-		log.Error().Caller().
+		log.Trace().Caller().
 			Err(err).
 			Stringer("MK", kmsMK.metadata).
 			Stringer("EDK", encryptedDataKey.KeyProvider()).

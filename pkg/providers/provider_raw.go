@@ -130,7 +130,7 @@ func (rawKP *RawKeyProvider[KT]) newMasterKey(_ context.Context, keyID string) (
 
 func (rawKP *RawKeyProvider[KT]) MasterKeysForEncryption(_ context.Context, _ suite.EncryptionContext, _ []byte, _ int) (keys.MasterKeyBase, []keys.MasterKeyBase, error) {
 	if rawKP.primaryMasterKey == nil {
-		return nil, nil, fmt.Errorf("RawKeyProvider no primary key: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderEncrypt))
+		return nil, nil, fmt.Errorf("RawKeyProvider no primary key: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderEncrypt, ErrMasterKeyProviderNoPrimaryKey))
 	}
 	members := make([]keys.MasterKeyBase, 0, len(rawKP.keyEntriesForEncrypt))
 	for _, k := range rawKP.keyEntriesForEncrypt {
@@ -146,6 +146,9 @@ func (rawKP *RawKeyProvider[KT]) MasterKeysForEncryption(_ context.Context, _ su
 }
 
 func (rawKP *RawKeyProvider[KT]) MasterKeyForDecrypt(ctx context.Context, metadata keys.KeyMeta) (keys.MasterKeyBase, error) {
+	if err := rawKP.ValidateProviderID(metadata.ProviderID); err != nil {
+		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, err))
+	}
 	if err := rawKP.validateMasterKey(metadata.KeyID); err != nil {
 		return nil, fmt.Errorf("MasterKeyForDecrypt error: %w", errors.Join(ErrMasterKeyProvider, err))
 	}
