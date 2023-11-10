@@ -39,6 +39,24 @@ lint-local:
 	@echo "Running golangci-lint locally"
 	@golangci-lint run --build-tags=${CI_TAGS} ./...
 
+.PHONY: examples lint-examples run-examples
+
+examples: lint-examples run-examples
+
+lint-examples:
+	@for dir in $(shell find ./example -type d -mindepth 1 -maxdepth 1); do \
+		echo "Running golangci-lint in: $$dir"; \
+		(cd $$dir && go get && golangci-lint run ./...) || exit $$?; \
+	done
+
+run-examples:
+	@for dir in $(shell find ./example -type d -mindepth 1 -maxdepth 1); do \
+		echo "Running example: $$dir"; \
+		(cd $$dir && go get && go run ./...) || exit $$?; \
+		echo "Done"; \
+		echo "================"; \
+	done
+
 vet:
 	@go vet ${BUILD_TAGS} --all ${SDK_PKGS}
 
