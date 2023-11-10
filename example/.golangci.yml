@@ -1,0 +1,182 @@
+linters:
+  disable-all: true
+  enable:
+    # default
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # extra
+    - asasalint
+    - asciicheck
+    - bidichk
+    - containedctx
+    - contextcheck
+    - cyclop
+    - decorder
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+#    - gomnd # disabled for examples
+    - goerr113
+    - goprintffuncname
+    - gosec
+    - grouper
+    - interfacebloat
+    - maintidx
+    - makezero
+    - mirror
+    - nakedret
+    - nestif
+    - nilerr
+    - prealloc
+    - predeclared
+    - reassign
+    - revive
+    - testableexamples
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - wrapcheck
+    - gofmt
+    - zerologlint
+
+linters-settings:
+  errorlint:
+    errorf: true
+    errorf-multi: true
+    asserts: true
+    comparison: true
+
+  wrapcheck:
+    ignorePackageGlobs:
+      - github.com/chainifynet/aws-encryption-sdk-go/pkg/*
+
+  cyclop:
+    max-complexity: 20 # set to 15 for examples
+    skip-tests: true
+
+
+  nestif:
+    min-complexity: 8
+
+
+  depguard:
+    rules:
+      main:
+        files:
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/chainifynet/aws-encryption-sdk-go
+          - github.com/aws
+          - github.com/rs/zerolog
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: Should be replaced by standard lib errors package
+      tests:
+        files:
+          - "$test"
+        allow:
+          - $gostd
+          - github.com/chainifynet/aws-encryption-sdk-go
+          - github.com/aws
+          - github.com/rs/zerolog
+          - github.com/stretchr/testify
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: Should be replaced by standard lib errors package
+
+  gomnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+      - assign
+    ignored-files:
+      - 'algorithm\.go'
+      - 'pkg/utils/conv/conv\.go'
+      - 'pkg/helpers/arn/validate\.go'
+    ignored-functions:
+      - '^math\.'
+      - '^http\.StatusText$'
+      - '^strings\.SplitN$'
+      - 'make'
+
+  gocritic:
+    disabled-checks:
+      - whyNoLint
+      - commentFormatting
+      - commentedOutCode
+      - captLocal
+      - unnamedResult
+      - stringXbytes # disabled for examples
+      - paramTypeCombine # disabled for examples
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    settings:
+      hugeParam:
+        sizeThreshold: 125
+
+issues:
+  fix: false
+  exclude-rules:
+    - path: 'helper\.go'
+      linters:
+        - revive
+      text: "indent-error-flow:"
+    - path: '_test\.go'
+      linters:
+        - dupl
+        - exhaustruct
+        - mirror
+        - makezero
+        - gochecknoglobals
+        - gochecknoinits
+        - gocritic
+        - revive
+        - errorlint
+        - wrapcheck
+        - maintidx
+        - thelper
+        - unused
+    - linters:
+        - gosimple
+      text: "S1021:"
+    - path: 'pkg/suite/algorithm.go'
+      linters:
+        - revive
+      text: "var-naming:"
+    - path: 'pkg/suite/algorithm.go'
+      linters:
+        - gochecknoglobals
+    - path: 'pkg/utils/conv/conv.go'
+      linters:
+        - gochecknoglobals
+    - linters:
+        - goerr113
+      text: "err113: do not define dynamic errors"
+  max-issues-per-linter: 100
+  max-same-issues: 20
