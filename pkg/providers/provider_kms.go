@@ -200,7 +200,7 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeyForDecrypt(ctx context.Context, metada
 		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, err))
 	}
 	if err := kmsKP.validateMasterKey(metadata.KeyID); err != nil {
-		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, err))
+		return nil, fmt.Errorf("MasterKeyForDecrypt: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderDecryptForbidden, err))
 	}
 
 	// first check available keys for Encrypt
@@ -209,7 +209,7 @@ func (kmsKP *KmsKeyProvider[KT]) MasterKeyForDecrypt(ctx context.Context, metada
 	}
 
 	if !kmsKP.options.discovery {
-		return nil, fmt.Errorf("MasterKeyForDecrypt: discovery not enabled: %w", ErrMasterKeyProvider)
+		return nil, fmt.Errorf("MasterKeyForDecrypt: discovery not enabled: %w", errors.Join(ErrMasterKeyProvider, ErrMasterKeyProviderDecryptForbidden))
 	}
 
 	// then check available keys for Decrypt

@@ -68,7 +68,10 @@ func (kp *KeyProvider) decryptDataKey(ctx context.Context, MKP MasterKeyProvider
 			Stringer("EDK", encryptedDataKey.KeyProvider()).
 			Str("MKP", MKP.Provider().providerID).
 			Str("method", "DecryptDataKey").
-			Msgf("cant reach MasterKey for EDK keyID: %v", encryptedDataKey.KeyID())
+			Err(err).Msgf("cant reach MasterKey for EDK keyID: %v", encryptedDataKey.KeyID())
+		if errors.Is(err, ErrMasterKeyProviderDecryptForbidden) {
+			return nil, fmt.Errorf("DecryptDataKey MKP.MasterKeyForDecrypt is forbidden for keyID %q with MKP %q: %w", encryptedDataKey.KeyID(), MKP.Provider().ID(), errors.Join(ErrMasterKeyProviderDecrypt, err))
+		}
 	} else {
 		allMembers = append(allMembers, decryptMasterKey)
 		allMemberKeys = append(allMemberKeys, decryptMasterKey.KeyID())

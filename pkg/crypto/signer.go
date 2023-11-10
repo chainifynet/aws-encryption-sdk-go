@@ -56,7 +56,7 @@ func (cs *signer) sign() ([]byte, error) {
 			signature = sign
 			break
 		}
-		log.Debug().Int("expectedLen", cs.signLen).
+		log.Trace().Int("expectedLen", cs.signLen).
 			Int("actualLen", len(sign)).
 			Msg("sign is not desired length. recalculating")
 		continue
