@@ -62,6 +62,14 @@ var testEncryptDecryptTableShort = []tableTestCase{
 			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
 		}, nil,
 	},
+	{
+		"Keys1_F64_Edk1", true, testFilesShort, algSig,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 64, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+		},
+		nil,
+	},
 }
 
 var testEncryptDecryptTable = []tableTestCase{

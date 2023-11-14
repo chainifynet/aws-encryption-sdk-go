@@ -5,6 +5,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
@@ -104,7 +105,7 @@ func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.Encryption
 	}
 	for _, optFn := range optFns {
 		if err := optFn(&opts); err != nil {
-			return nil, nil, fmt.Errorf("invalid encrypt option: %w", err)
+			return nil, nil, fmt.Errorf("invalid encrypt option: %w", errors.Join(crypto.ErrEncryption, err))
 		}
 	}
 	ciphertext, header, err := crypto.Encrypt(ctx, c.clientConfig(), source, ec, materialsManager, opts.Algorithm, opts.FrameLength)

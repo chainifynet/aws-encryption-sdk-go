@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
@@ -41,11 +42,11 @@ func (e *encrypter) encrypt(ctx context.Context, source []byte, ec suite.Encrypt
 	// TODO andrew clean up derivedDataKey
 
 	if e.signer != nil {
-		signature, err := e.signer.sign()
+		sign, err := e.signer.Sign()
 		if err != nil {
 			return nil, nil, fmt.Errorf("encrypt sign error: %w", err)
 		}
-		footer, err := serialization.MessageFooter.NewFooter(e.algorithm, signature)
+		footer, err := serialization.MessageFooter.NewFooter(e.algorithm, sign)
 		if err != nil {
 			return nil, nil, fmt.Errorf("encrypt sign error: %w", err)
 		}
@@ -89,7 +90,12 @@ func (e *encrypter) prepareMessage(ctx context.Context, plaintextBuffer *bytes.B
 	}
 
 	if e.algorithm.IsSigning() {
-		e.signer = newSigner(e.algorithm, encMaterials.SigningKey())
+		e.signer = signature.NewECCSigner(
+			e.algorithm.Authentication.HashFunc,
+			e.algorithm.Authentication.Algorithm,
+			e.algorithm.Authentication.SignatureLen,
+			encMaterials.SigningKey(),
+		)
 	}
 
 	// TODO validate frame length https://github.com/aws/aws-encryption-sdk-python/blob/93f01d655d6bce704bd8779cc9c4acb5f96b980c/src/aws_encryption_sdk/internal/utils/__init__.py#L44
@@ -237,7 +243,10 @@ func (e *encrypter) updateBuffers(b []byte) error {
 		return err
 	}
 	if e.signer != nil {
-		e.signer.update(b)
+		_, err := e.signer.Write(b)
+		if err != nil {
+			return fmt.Errorf("signer write error: %w", err)
+		}
 	}
 
 	return nil
