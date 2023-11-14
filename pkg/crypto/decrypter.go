@@ -9,6 +9,7 @@ import (
 	"crypto/hmac"
 	"fmt"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
@@ -48,10 +49,11 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, *se
 			return nil, nil, errFooter
 		}
 
-		if errSig := d.verifier.verify(footer.Signature); errSig != nil {
+		if errSig := d.verifier.Verify(footer.Signature); errSig != nil {
 			return nil, nil, errSig
 		}
 	}
+	// TODO check if alg is non-signing, but footer has signature, return error
 
 	return body, d.header, nil
 }
@@ -67,9 +69,16 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 	}
 
 	if header.AlgorithmSuite.IsSigning() {
-		d.verifier = newVerifier(header.AlgorithmSuite)
-		d.verifier.update(header.Bytes())
-		d.verifier.update(headerAuth.Serialize())
+		d.verifier = signature.NewECCVerifier(
+			header.AlgorithmSuite.Authentication.HashFunc,
+			header.AlgorithmSuite.Authentication.Algorithm,
+		)
+		if err := d.updateVerifier(header.Bytes()); err != nil {
+			return err
+		}
+		if err := d.updateVerifier(headerAuth.Serialize()); err != nil {
+			return err
+		}
 	}
 
 	dmr := materials.DecryptionMaterialsRequest{
@@ -85,7 +94,7 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 	}
 
 	if d.verifier != nil {
-		if errLK := d.verifier.loadECCVerificationKey(decMaterials.VerificationKey()); errLK != nil {
+		if errLK := d.verifier.LoadECCKey(decMaterials.VerificationKey()); errLK != nil {
 			return fmt.Errorf("decrypt verifier error: %w", errLK)
 		}
 	}
@@ -153,7 +162,9 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 		plaintext.Write(b)
 		// if alg is signing, write each frame bytes to verifier to update message hash
 		if d.verifier != nil {
-			d.verifier.update(frame.Bytes())
+			if err := d.updateVerifier(frame.Bytes()); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -174,4 +185,11 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 	plaintext.Reset()
 
 	return plaintextData, nil
+}
+
+func (d *decrypter) updateVerifier(b []byte) error {
+	if _, err := d.verifier.Write(b); err != nil {
+		return fmt.Errorf("verifier write error: %w", err)
+	}
+	return nil
 }

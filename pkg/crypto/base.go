@@ -9,18 +9,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/zerolog"
-
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-)
-
-var (
-	log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 )
 
 var (
@@ -42,7 +36,7 @@ type decrypter struct {
 	config          clientconfig.ClientConfig
 	aeadDecrypter   encryption.AEADDecrypter
 	header          *serialization.MessageHeader
-	verifier        *verifier
+	verifier        signature.Verifier
 	_derivedDataKey []byte
 }
 
@@ -74,7 +68,7 @@ type encrypter struct {
 	aeadEncrypter   encryption.AEADEncrypter
 	header          *serialization.MessageHeader
 	_derivedDataKey []byte
-	signer          *signer
+	signer          signature.Signer
 	ciphertextBuf   *bytes.Buffer
 }
 
