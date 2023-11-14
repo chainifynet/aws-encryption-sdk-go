@@ -124,7 +124,10 @@ func (rawKP *RawKeyProvider[KT]) newMasterKey(_ context.Context, keyID string) (
 	if err != nil {
 		return nil, err
 	}
-	key := keys.NewRawMasterKey(rawKP.keyProvider.providerID, keyID, staticKey)
+	key, err := keys.NewRawMasterKey(rawKP.keyProvider.providerID, keyID, staticKey)
+	if err != nil {
+		return nil, err
+	}
 	return key, nil
 }
 

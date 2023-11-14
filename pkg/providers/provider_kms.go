@@ -139,7 +139,10 @@ func (kmsKP *KmsKeyProvider[KT]) newMasterKey(ctx context.Context, keyID string)
 	if err != nil {
 		return nil, err
 	}
-	key := keys.NewKmsMasterKey(client, keyID)
+	key, err := keys.NewKmsMasterKey(client, keyID)
+	if err != nil {
+		return nil, err
+	}
 	return key, nil
 }
 

@@ -39,14 +39,20 @@ type KmsMasterKey struct {
 	kmsClient *kms.Client
 }
 
-func NewKmsMasterKey(client *kms.Client, keyID string) *KmsMasterKey {
+func NewKmsMasterKey(client *kms.Client, keyID string) (*KmsMasterKey, error) {
+	if client == nil {
+		return nil, fmt.Errorf("KMSMasterKey: client must not be nil")
+	}
+	if keyID == "" {
+		return nil, fmt.Errorf("KMSMasterKey: keyID must not be empty")
+	}
 	return &KmsMasterKey{
 		metadata: KeyMeta{
 			ProviderID: _kmsProviderID,
 			KeyID:      keyID,
 		},
 		kmsClient: client,
-	}
+	}, nil
 }
 
 // checking that KmsMasterKey implements both MasterKeyBase and KmsMasterKeyI interfaces.
