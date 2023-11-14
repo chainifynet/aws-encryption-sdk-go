@@ -6,6 +6,7 @@ package keys
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -107,9 +108,10 @@ func TestNewRawMasterKey(t *testing.T) {
 		rawKey     []byte
 	}
 	tests := []struct {
-		name string
-		args args
-		want *RawMasterKey
+		name    string
+		args    args
+		want    *RawMasterKey
+		wantErr assert.ErrorAssertionFunc
 	}{
 		{"key1",
 			args{providerID: "raw", keyID: "rawMK1", rawKey: []byte("raw1DataKeyRAWRAWRAW_12345678901")},
@@ -117,7 +119,7 @@ func TestNewRawMasterKey(t *testing.T) {
 				metadata:       KeyMeta{ProviderID: "raw", KeyID: "rawMK1"},
 				derivedDataKey: derivedKey1Mock,
 				Encrypter:      encryption.Gcm{}, keyWrapper: wrappingkey.WrappingKey{},
-			},
+			}, assert.NoError,
 		},
 		{"key2",
 			args{providerID: "static", keyID: "staticKey2", rawKey: []byte("raw2DataKeyRAWRAWRAW_12345678902")},
@@ -125,7 +127,7 @@ func TestNewRawMasterKey(t *testing.T) {
 				metadata:       KeyMeta{ProviderID: "static", KeyID: "staticKey2"},
 				derivedDataKey: derivedKey2Mock,
 				Encrypter:      encryption.Gcm{}, keyWrapper: wrappingkey.WrappingKey{},
-			},
+			}, assert.NoError,
 		},
 		{"key3_nil",
 			args{providerID: "static", keyID: "staticKey3", rawKey: nil},
@@ -133,12 +135,16 @@ func TestNewRawMasterKey(t *testing.T) {
 				metadata:       KeyMeta{ProviderID: "static", KeyID: "staticKey3"},
 				derivedDataKey: derivedKey3NilMock,
 				Encrypter:      encryption.Gcm{}, keyWrapper: wrappingkey.WrappingKey{},
-			},
+			}, assert.NoError,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, NewRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey), "NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			got, err := NewRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
 		})
 	}
 }

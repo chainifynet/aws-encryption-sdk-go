@@ -28,7 +28,7 @@ type RawMasterKey struct {
 	keyWrapper     wrappingkey.Wrapper
 }
 
-func NewRawMasterKey(providerID, keyID string, rawKey []byte) *RawMasterKey {
+func NewRawMasterKey(providerID, keyID string, rawKey []byte) (*RawMasterKey, error) {
 	rawKeyCpy := make([]byte, len(rawKey))
 	copy(rawKeyCpy, rawKey)
 
@@ -38,8 +38,7 @@ func NewRawMasterKey(providerID, keyID string, rawKey []byte) *RawMasterKey {
 		nil,
 	)
 	if err != nil {
-		log.Error().Err(err).Msg("derive data encryption key")
-		panic(err)
+		return nil, fmt.Errorf("RawMasterKey error: %w", err)
 	}
 
 	return &RawMasterKey{
@@ -50,7 +49,7 @@ func NewRawMasterKey(providerID, keyID string, rawKey []byte) *RawMasterKey {
 		derivedDataKey: derivedDataKey,
 		Encrypter:      encryption.Gcm{},
 		keyWrapper:     wrappingkey.WrappingKey{},
-	}
+	}, nil
 }
 
 // checking that RawMasterKey implements both MasterKeyBase and RawMasterKeyI interfaces.
