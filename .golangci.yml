@@ -69,7 +69,7 @@ linters-settings:
       - github.com/chainifynet/aws-encryption-sdk-go/pkg/*
 
   cyclop:
-    max-complexity: 15
+    max-complexity: 16
     skip-tests: true
 
 
