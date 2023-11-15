@@ -24,3 +24,141 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+
+# Version updates for examples
+  - package-ecosystem: "gomod"
+    directory: "/example/basicEncryption"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/customAwsKmsConfig"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/discoveryFilterKmsProvider"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/discoveryKmsProvider"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/multipleKeyProvider"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/multipleKmsKey"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/oneKmsKey"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/oneKmsKeyUnsigned"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
