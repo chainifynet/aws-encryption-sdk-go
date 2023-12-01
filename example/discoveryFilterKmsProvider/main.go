@@ -11,7 +11,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -47,11 +47,9 @@ func main() {
 	// setup Encryption SDK client with a custom config
 	sdkClient := client.NewClientWithConfig(cfg)
 
-	// setup KMS key provider with discovery filter to be used for encryption
-	kmsKeyProvider, err := providers.NewKmsKeyProviderWithOpts(
+	// setup KMS key provider for encryption
+	kmsKeyProvider, err := kmsprovider.NewWithOpts(
 		[]string{kmsKeyID}, // KMS CMK ARNs to be used for encryption
-		// enable discovery, and filter by accountIDs and partition
-		providers.WithDiscoveryFilter([]string{kmsKeyArn.Account}, kmsKeyArn.Partition),
 	)
 	if err != nil {
 		panic(err) // handle error
@@ -74,10 +72,10 @@ func main() {
 
 	// create a KMS key provider specifying explicitly nil for keyIDs, with
 	// discovery enabled filter by accountIDs and partition
-	provider, err := providers.NewKmsKeyProviderWithOpts(
+	provider, err := kmsprovider.NewWithOpts(
 		nil,
 		// enable discovery, and filter by accountIDs and partition
-		providers.WithDiscoveryFilter([]string{kmsKeyArn.Account}, kmsKeyArn.Partition),
+		kmsprovider.WithDiscoveryFilter([]string{kmsKeyArn.Account}, kmsKeyArn.Partition),
 	)
 	if err != nil {
 		panic(err) // handle error

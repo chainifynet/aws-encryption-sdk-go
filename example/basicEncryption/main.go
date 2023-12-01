@@ -9,7 +9,7 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/rawprovider"
 )
 
 func main() {
@@ -23,9 +23,9 @@ func main() {
 	sdkClient := client.NewClient()
 
 	// setup Raw Key provider
-	rawKeyProvider, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider, err := rawprovider.NewWithOpts(
 		"raw",
-		providers.WithStaticKey("static1", staticKey1),
+		rawprovider.WithStaticKey("static1", staticKey1),
 	)
 	if err != nil {
 		panic(err) // handle error

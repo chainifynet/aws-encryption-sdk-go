@@ -9,7 +9,7 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	sdkClient := client.NewClient()
 
 	// setup KMS key provider
-	kmsKeyProvider, err := providers.NewKmsKeyProvider(kmsKeyArn)
+	kmsKeyProvider, err := kmsprovider.New(kmsKeyArn)
 	if err != nil {
 		panic(err) // handle error
 	}
