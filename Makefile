@@ -38,7 +38,7 @@ mocks-build-tag:
 		find ./mocks/ -name '*_mock.go' -exec sed -i '/^package/ i //go:build mocks' {} +; \
 	fi
 
-lint: vet lint-ci
+lint: mocks vet lint-ci
 
 lint-ci:
 	@echo "Running golangci-lint"
@@ -74,7 +74,7 @@ vet:
 ##
 .PHONY: unit-race unit-pkg
 
-unit: mocks lint unit-pkg
+unit: lint unit-pkg
 
 unit-pkg:
 	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=1m ${BUILD_TAGS} ${SDK_PKGS}
