@@ -1,7 +1,7 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package keys
+package model
 
 type DataKey struct {
 	provider         KeyMeta
@@ -10,6 +10,10 @@ type DataKey struct {
 }
 
 var _ DataKeyI = (*DataKey)(nil)
+
+func NewDataKey(provider KeyMeta, dataKey, encryptedDataKey []byte) *DataKey {
+	return &DataKey{provider: provider, dataKey: dataKey, encryptedDataKey: encryptedDataKey}
+}
 
 func (dk DataKey) KeyProvider() KeyMeta {
 	return dk.provider
@@ -27,18 +31,18 @@ func (dk DataKey) DataKey() []byte {
 	return dk.dataKey
 }
 
+type EncryptedDataKey struct {
+	provider         KeyMeta
+	encryptedDataKey []byte
+}
+
+var _ EncryptedDataKeyI = (*EncryptedDataKey)(nil)
+
 func NewEncryptedDataKey(provider KeyMeta, encryptedDataKey []byte) *EncryptedDataKey {
 	return &EncryptedDataKey{
 		provider:         provider,
 		encryptedDataKey: encryptedDataKey,
 	}
-}
-
-var _ EncryptedDataKeyI = (*EncryptedDataKey)(nil)
-
-type EncryptedDataKey struct {
-	provider         KeyMeta
-	encryptedDataKey []byte
 }
 
 func (edk EncryptedDataKey) KeyProvider() KeyMeta {
