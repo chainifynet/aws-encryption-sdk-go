@@ -17,7 +17,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	u "github.com/chainifynet/aws-encryption-sdk-go/test/e2e/testutils"
 )
@@ -28,8 +28,8 @@ type testParam struct {
 	tFrame  int
 	tEdk    int
 	tClient func(maxEdk int) *client.Client
-	tCMM    func(keyIDs []string, opts ...func(options *config.LoadOptions) error) materials.CryptoMaterialsManager
-	tCMMi   materials.CryptoMaterialsManager
+	tCMM    func(keyIDs []string, opts ...func(options *config.LoadOptions) error) model.CryptoMaterialsManager
+	tCMMi   model.CryptoMaterialsManager
 	tCliCmd func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *u.CliCmd
 }
 
@@ -120,25 +120,25 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 	},
 	{
-		"Keys1_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
+		"Keys1_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"Keys1(2)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
+		"Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
@@ -150,7 +150,7 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
@@ -176,47 +176,47 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 	},
 	{
-		"CMM1(1)_Keys1(1)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
+		"CMM1(1)_Keys1(1)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
+		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"CMM1(2)_Keys2(23)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
+		"CMM1(2)_Keys2(23)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"CMM1(1)_Keys2(23)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
+		"CMM1(1)_Keys2(123)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
 		&testParam{
-			tKeys: []string{key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
-			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
+			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
@@ -231,21 +231,32 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 	},
 	{
-		"CMM2(23)_Keys2(23)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
+		"CMM2(23)_Keys2(23)_F1024_Edk2_CMM2(23)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm2keys23, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm2keys23, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"CMM2(23)_Keys1(1)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
+		"CMM2(23)_Keys1(2)_F1024_Edk2_CMM2(23)", false, testFilesTable, algSig,
 		&testParam{
-			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
+			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
 			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm2keys23, tCliCmd: u.SetupEncryptCmd,
+		},
+		&testParam{
+			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm2keys23, tCliCmd: u.SetupDecryptCmd,
+		},
+	},
+	{
+		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
+		&testParam{
+			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
@@ -253,37 +264,26 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 	},
 	{
-		"CMM1(1)_Keys1(2)_F1024_Edk2_CMM1(3)", false, testFilesTable, algSig,
+		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupEncryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys3, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
-		"CMM1(3)_Keys1(2)_F1024_Edk2_CMM1(1)", false, testFilesTable, algSig,
-		&testParam{
-			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys3, tCliCmd: u.SetupEncryptCmd,
-		},
-		&testParam{
-			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
-		},
-	},
-	{
-		"CMM1(3)_Keys1(2)_F1024_Edk2_CMM1(1)", false, testFilesTable,
+		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable,
 		algNoSig,
 		&testParam{
 			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys3, tCliCmd: u.SetupEncryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
 		},
 		&testParam{
 			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys, tCliCmd: u.SetupDecryptCmd,
+			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
 		},
 	},
 	{
@@ -363,7 +363,7 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 				// encrypt with SDK
 				c := tc.tEnc.tClient(tc.tEnc.tEdk)
 				assert.NotNil(t, c)
-				var cmm materials.CryptoMaterialsManager
+				var cmm model.CryptoMaterialsManager
 				if tc.tEnc.tCMM != nil {
 					cmm = tc.tEnc.tCMM(tc.tEnc.tKeys, testAwsLoadOptions...)
 				} else {
@@ -452,7 +452,7 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 				// decrypt with SDK
 				c := tc.tEnc.tClient(tc.tEnc.tEdk)
 				assert.NotNil(t, c)
-				var cmm materials.CryptoMaterialsManager
+				var cmm model.CryptoMaterialsManager
 				if tc.tDec == nil {
 					cmm = tc.tEnc.tCMM(tc.tEnc.tKeys, testAwsLoadOptions...)
 				} else {
@@ -501,7 +501,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with SDK
 				c := tc.tEnc.tClient(tc.tEnc.tEdk)
 				assert.NotNil(t, c)
-				var cmm materials.CryptoMaterialsManager
+				var cmm model.CryptoMaterialsManager
 				if tc.tEnc.tCMM != nil {
 					cmm = tc.tEnc.tCMM(tc.tEnc.tKeys, testAwsLoadOptions...)
 				} else {
@@ -597,7 +597,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 					c2 = tc.tDec.tClient(tc.tDec.tEdk)
 				}
 				assert.NotNil(t, c2)
-				var cmm2 materials.CryptoMaterialsManager
+				var cmm2 model.CryptoMaterialsManager
 				if tc.tDec == nil {
 					cmm2 = tc.tEnc.tCMM(tc.tEnc.tKeys, testAwsLoadOptions...)
 				} else {
