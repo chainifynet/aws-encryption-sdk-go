@@ -11,7 +11,7 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
@@ -32,7 +32,7 @@ type SdkDecrypter interface {
 }
 
 type decrypter struct {
-	cmm             materials.CryptoMaterialsManager
+	cmm             model.CryptoMaterialsManager
 	config          clientconfig.ClientConfig
 	aeadDecrypter   encryption.AEADDecrypter
 	header          *serialization.MessageHeader
@@ -40,7 +40,7 @@ type decrypter struct {
 	_derivedDataKey []byte
 }
 
-func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext []byte, cmm materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
+func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext []byte, cmm model.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
 	dec := decrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
@@ -61,7 +61,7 @@ type SdkEncrypter interface {
 }
 
 type encrypter struct {
-	cmm             materials.CryptoMaterialsManager
+	cmm             model.CryptoMaterialsManager
 	config          clientconfig.ClientConfig
 	algorithm       *suite.AlgorithmSuite
 	frameLength     int
@@ -72,7 +72,7 @@ type encrypter struct {
 	ciphertextBuf   *bytes.Buffer
 }
 
-func Encrypt(ctx context.Context, config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
+func Encrypt(ctx context.Context, config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
 	enc := encrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,

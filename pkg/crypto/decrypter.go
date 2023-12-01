@@ -12,7 +12,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
@@ -81,11 +81,10 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 		}
 	}
 
-	dmr := materials.DecryptionMaterialsRequest{
+	dmr := model.DecryptionMaterialsRequest{
 		Algorithm:         header.AlgorithmSuite,
 		EncryptedDataKeys: serialization.EDK.AsKeys(header.EncryptedDataKeys),
 		EncryptionContext: header.AADData.AsEncryptionContext(),
-		CommitmentPolicy:  d.config.CommitmentPolicy(),
 	}
 
 	decMaterials, err := d.cmm.DecryptMaterials(ctx, dmr)

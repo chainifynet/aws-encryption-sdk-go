@@ -12,7 +12,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
@@ -72,13 +72,10 @@ func (e *encrypter) prepareMessage(ctx context.Context, plaintextBuffer *bytes.B
 		return err // just return err
 	}
 
-	emr := materials.EncryptionMaterialsRequest{
+	emr := model.EncryptionMaterialsRequest{
 		EncryptionContext: ec,
-		FrameLength:       e.frameLength,
-		PlaintextRoStream: nil,
 		Algorithm:         e.algorithm,
 		PlaintextLength:   plaintextBuffer.Len(),
-		CommitmentPolicy:  e.config.CommitmentPolicy(),
 	}
 
 	encMaterials, err := e.cmm.GetEncryptionMaterials(ctx, emr)
@@ -120,7 +117,7 @@ func (e *encrypter) prepareMessage(ctx context.Context, plaintextBuffer *bytes.B
 	return nil
 }
 
-func (e *encrypter) generateHeader(messageID []byte, encMaterials *materials.EncryptionMaterials) error {
+func (e *encrypter) generateHeader(messageID []byte, encMaterials model.EncryptionMaterial) error {
 	aadData := serialization.AAD.NewAADWithEncryptionContext(encMaterials.EncryptionContext())
 
 	edks, err := serialization.EDK.FromEDKs(encMaterials.EncryptedDataKeys())
