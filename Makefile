@@ -1,8 +1,8 @@
 SHELL=/usr/bin/env bash
 
 UNIT_TEST_TAGS=
-BUILD_TAGS=-tags "example,codegen,integration,slow"
-CI_TAGS="example,codegen,integration"
+BUILD_TAGS=-tags "example,mocks,codegen,integration,slow"
+CI_TAGS="example,mocks,codegen,integration"
 
 GOTESTSUM_FMT="github-actions"
 #GOTESTSUM_FMT="standard-verbose"
@@ -14,7 +14,7 @@ SDK_PKGS=./pkg/...
 RUN_NONE=-run NOTHING
 RUN_INTEG=-run '^Test_Integration_'
 
-.PHONY: all deps mocks vet lint lint-ci lint-local unit
+.PHONY: all deps mocks mocks-build-tag vet lint lint-ci lint-local unit
 all: unit
 
 deps:
@@ -22,12 +22,21 @@ deps:
 	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.1
+	@go install github.com/vektra/mockery/v2@v2.38.0
 	@#go get github.com/stretchr/testify/mock@v1.8.4
-	@#go install github.com/vektra/mockery/v2@v2.36.1
 
 mocks:
 	@echo "Generating mocks"
-	@#mockery --all --keeptree --case=underscore --output=./test/mocks
+	@mockery --tags=mocks
+	@$(MAKE) mocks-build-tag
+
+mocks-build-tag:
+	@echo "Adding mocks build tag to mock files"
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		find ./mocks/ -name '*_mock.go' -exec gsed -i '/^package/ i //go:build mocks' {} +; \
+	else \
+		find ./mocks/ -name '*_mock.go' -exec sed -i '/^package/ i //go:build mocks' {} +; \
+	fi
 
 lint: vet lint-ci
 
@@ -65,7 +74,7 @@ vet:
 ##
 .PHONY: unit-race unit-pkg
 
-unit: lint unit-pkg
+unit: mocks lint unit-pkg
 
 unit-pkg:
 	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=1m ${BUILD_TAGS} ${SDK_PKGS}
@@ -103,3 +112,18 @@ e2e-test-full:
 e2e-test-slow:
 	@echo "Running very slow e2e tests"
 	@gotestsum -f testname -- -timeout=30m -tags "integration,slow" ${RUN_INTEG} ./test/e2e/...
+
+##
+# Coverage
+##
+
+.PHONY: test-cover cover-html
+
+test-cover:
+	@#CGO_ENABLED=0 go test -count=1 -coverpkg=./... -covermode=atomic -coverprofile coverage.out  ./...
+	@CGO_ENABLED=0 go test -tags ${CI_TAGS} -count=1 -coverpkg=./... -covermode=atomic -coverprofile coverage.out ./pkg/...
+	@grep -v -E -f .covignore coverage.out > coverage.filtered.out
+	@mv coverage.filtered.out coverage.out
+
+cover-html:
+	@go tool cover -html=coverage.out -o coverage.html

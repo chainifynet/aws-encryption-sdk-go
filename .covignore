@@ -2,3 +2,4 @@ e2e/testutils/cli.go
 e2e/testutils/helpers.go
 e2e/testutils/hits.go
 e2e/testutils/setup.go
+mocks/
