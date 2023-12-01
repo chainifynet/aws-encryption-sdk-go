@@ -112,3 +112,23 @@ func TestWrappingKey_DeserializeEncryptedDataKey(t *testing.T) {
 		})
 	}
 }
+
+func TestWrappingKey_SerializeKeyInfoPrefix(t *testing.T) {
+	type args struct {
+		keyID string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []byte
+	}{
+		{"empty keyID", args{""}, []byte{0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x0c}},
+		{"rawMK1", args{"rawMK1"}, []byte{0x72, 0x61, 0x77, 0x4d, 0x4b, 0x31, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x0c}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wk := wrappingkey.WrappingKey{}
+			assert.Equalf(t, tt.want, wk.SerializeKeyInfoPrefix(tt.args.keyID), "SerializeKeyInfoPrefix(%v)", tt.args.keyID)
+		})
+	}
+}
