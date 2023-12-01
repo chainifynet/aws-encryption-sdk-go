@@ -6,15 +6,15 @@ package materials
 import (
 	"context"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
 // TODO andrew refactor, for sure it needs to be moved under keys or providers likely package
-func prepareDataKeys(ctx context.Context, primaryMasterKey keys.MasterKeyBase, masterKeys []keys.MasterKeyBase, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (keys.DataKeyI, []keys.EncryptedDataKeyI, error) {
-	encryptedDataKeys := make([]keys.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
+func prepareDataKeys(ctx context.Context, primaryMasterKey model.MasterKey, masterKeys []model.MasterKey, algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.DataKeyI, []model.EncryptedDataKeyI, error) {
+	encryptedDataKeys := make([]model.EncryptedDataKeyI, 0, len(masterKeys)+1) // +1 for primaryMasterKey
 
-	var encryptedDataEncryptionKey keys.EncryptedDataKeyI
+	var encryptedDataEncryptionKey model.EncryptedDataKeyI
 
 	dataEncryptionKey, err := primaryMasterKey.GenerateDataKey(ctx, algorithm, ec)
 	if err != nil {
@@ -24,7 +24,7 @@ func prepareDataKeys(ctx context.Context, primaryMasterKey keys.MasterKeyBase, m
 
 	for _, masterKey := range masterKeys {
 		if masterKey.Metadata().Equal(primaryMasterKey.Metadata()) {
-			encryptedDataEncryptionKey = keys.NewEncryptedDataKey(dataEncryptionKey.KeyProvider(), dataEncryptionKey.EncryptedDataKey())
+			encryptedDataEncryptionKey = model.NewEncryptedDataKey(dataEncryptionKey.KeyProvider(), dataEncryptionKey.EncryptedDataKey())
 			encryptedDataKeys = append(encryptedDataKeys, encryptedDataEncryptionKey)
 			continue
 		}
