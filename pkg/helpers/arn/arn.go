@@ -9,17 +9,26 @@ import (
 	"strings"
 )
 
+const (
+	arnPrefix         = "arn:"
+	delim             = ":"
+	mrkPrefix         = "mrk-"
+	KeyResourceType   = "key"
+	aliasResourceType = "alias"
+)
+
 var ErrMalformedArn = errors.New("malformed Key ARN")
 
 type KeyArn struct {
-	Partition    string
-	Service      string
-	Region       string
-	Account      string
-	ResourceType string
-	ResourceID   string
+	Partition    string // AWS partition, e.g. aws, aws-cn, aws-us-gov
+	Service      string // AWS service, kms
+	Region       string // AWS region, us-east-1, eu-west-1
+	Account      string // AWS account ID, 12 digits
+	ResourceType string // AWS resource type, either "key" or "alias"
+	ResourceID   string // AWS resource ID, resource ID or alias name
 }
 
+// String returns the string representation of the ARN.
 func (a *KeyArn) String() string {
 	return fmt.Sprintf(
 		"%s/%s",
@@ -30,13 +39,27 @@ func (a *KeyArn) String() string {
 			a.Region,
 			a.Account,
 			a.ResourceType,
-		}, ":"),
+		}, delim),
 		a.ResourceID,
 	)
 }
 
+// IsMrk returns true if the ARN is a multi-region key (MRK) ARN, otherwise false.
+func (a *KeyArn) IsMrk() bool {
+	// If resource type is "alias", this is an AWS KMS alias ARN and MUST
+	// return "false".
+	//
+	// If resource type is "key" and resource ID does not start with "mrk-",
+	// this is a (single-region) AWS KMS key ARN and MUST return "false".
+	//
+	// If resource type is "key" and resource ID starts with
+	// "mrk-", this is an AWS KMS multi-Region key ARN and MUST return "true".
+	return a.ResourceType == KeyResourceType && strings.HasPrefix(a.ResourceID, mrkPrefix)
+}
+
+// ParseArn Parses str string as an ARN (KeyArn).
 func ParseArn(str string) (*KeyArn, error) {
-	elements := strings.SplitN(str, ":", 6)
+	elements := strings.SplitN(str, delim, 6)
 
 	if len(elements) < 6 {
 		return nil, fmt.Errorf("keyID is missing required ARN components, %w", ErrMalformedArn)
@@ -80,20 +103,17 @@ func ParseArn(str string) (*KeyArn, error) {
 	resourceType := resourceElements[0]
 	resourceID := resourceElements[1]
 
-	if resourceType == "alias" {
+	// TODO remove below to support aliases
+	if resourceType == aliasResourceType {
 		return nil, fmt.Errorf("alias keyID is not supported yet, %w", ErrMalformedArn)
 	}
 
-	if resourceType != "key" {
+	if resourceType != KeyResourceType {
 		return nil, fmt.Errorf("keyID has unknown resource type, %w", ErrMalformedArn)
 	}
 
 	if resourceID == "" {
 		return nil, fmt.Errorf("keyID is missing resource id, %w", ErrMalformedArn)
-	}
-
-	if resourceType == "key" && strings.HasPrefix(resourceID, "mrk-") {
-		return nil, fmt.Errorf("KMS MRK not supported yet, %w", ErrMalformedArn)
 	}
 
 	return &KeyArn{
