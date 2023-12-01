@@ -23,7 +23,7 @@ const (
 )
 
 func DeriveDataEncryptionKey(dataKey []byte, alg *suite.AlgorithmSuite, messageID []byte) ([]byte, error) {
-	if err := validateAlgorithm(alg); err != nil {
+	if err := validateInputs(dataKey, alg); err != nil {
 		return nil, fmt.Errorf("validate error: %v: %w", err.Error(), errKeyDerivation)
 	}
 	var buf []byte
@@ -41,7 +41,7 @@ func DeriveDataEncryptionKey(dataKey []byte, alg *suite.AlgorithmSuite, messageI
 }
 
 func CalculateCommitmentKey(dataKey []byte, alg *suite.AlgorithmSuite, messageID []byte) ([]byte, error) {
-	if err := validateAlgorithm(alg); err != nil {
+	if err := validateInputs(dataKey, alg); err != nil {
 		return nil, fmt.Errorf("validate error: %v: %w", err.Error(), errKeyDerivation)
 	}
 	var buf []byte
@@ -57,7 +57,10 @@ func CalculateCommitmentKey(dataKey []byte, alg *suite.AlgorithmSuite, messageID
 	return commitmentKey, nil
 }
 
-func validateAlgorithm(alg *suite.AlgorithmSuite) error {
+func validateInputs(dataKey []byte, alg *suite.AlgorithmSuite) error {
+	if len(dataKey) == 0 {
+		return fmt.Errorf("data key is empty")
+	}
 	if alg == nil {
 		return fmt.Errorf("algorithm suite is nil")
 	}

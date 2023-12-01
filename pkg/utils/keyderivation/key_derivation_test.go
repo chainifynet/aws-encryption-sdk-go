@@ -26,7 +26,6 @@ func Test_DeriveDataEncryptionKey(t *testing.T) {
 		{"key2", []byte{0x01}, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY, []byte{0x01}, []byte{0xd4, 0xfd, 0xcf, 0x9, 0x81, 0xa, 0x67, 0x64, 0xdd, 0xe7, 0x4d, 0x52, 0x42, 0xdf, 0x1c, 0x23, 0xfa, 0x3, 0x41, 0xaa, 0x7b, 0x58, 0x23, 0xf0, 0xf1, 0x69, 0xdc, 0x39, 0x36, 0xd9, 0x0, 0x78}},
 		{"key3", []byte{0x02}, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY, []byte{}, []byte{0x5d, 0x2, 0x70, 0x41, 0x30, 0x42, 0x1e, 0xee, 0x1d, 0x4, 0xae, 0x6a, 0xdb, 0x1, 0x9d, 0x8, 0x67, 0xea, 0x77, 0x5b, 0x3e, 0x2f, 0xdc, 0xb4, 0xfe, 0x31, 0x16, 0xbf, 0xa9, 0xa6, 0x3d, 0x79}},
 		{"key4_nil_messageID", []byte{0x02}, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY, nil, []byte{0x5d, 0x2, 0x70, 0x41, 0x30, 0x42, 0x1e, 0xee, 0x1d, 0x4, 0xae, 0x6a, 0xdb, 0x1, 0x9d, 0x8, 0x67, 0xea, 0x77, 0x5b, 0x3e, 0x2f, 0xdc, 0xb4, 0xfe, 0x31, 0x16, 0xbf, 0xa9, 0xa6, 0x3d, 0x79}},
-		{"key5_nil_dataKey", nil, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY, nil, []byte{0x2d, 0x79, 0x95, 0x6, 0x33, 0x98, 0xb2, 0xd0, 0xb2, 0xdd, 0x48, 0x31, 0x66, 0x8, 0xf, 0xfd, 0x2e, 0xd6, 0x97, 0xf9, 0x9b, 0xc5, 0x97, 0xce, 0x57, 0xcb, 0x7b, 0x50, 0x14, 0x6f, 0x77, 0xa8}},
 		{"key5_rawDataKey", []byte("raw1DataKeyRAWRAWRAW_12345678901"), suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, nil, []byte{0xa6, 0x85, 0x3b, 0xd4, 0xa6, 0x83, 0xb4, 0xc0, 0xc7, 0x27, 0xc5, 0x75, 0xc7, 0xf, 0x66, 0x76, 0x73, 0x3b, 0x6, 0xb1, 0x1e, 0xd6, 0xcb, 0xeb, 0xa8, 0xee, 0x68, 0xa2, 0xe3, 0x26, 0xd6, 0x9d}},
 		{"key6_rawDataKey2", []byte("raw2DataKeyRAWRAWRAW_12345678902"), suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, nil, []byte{0xb, 0xd0, 0xc9, 0xfb, 0x61, 0x3b, 0xb, 0x30, 0xcb, 0x27, 0x65, 0xf3, 0xb5, 0x99, 0xdc, 0x61, 0xeb, 0xc6, 0x70, 0x7f, 0xcb, 0xba, 0xb2, 0x9d, 0x37, 0x18, 0x90, 0x10, 0x27, 0xdf, 0x5d, 0x67}},
 	}
@@ -40,23 +39,25 @@ func Test_DeriveDataEncryptionKey(t *testing.T) {
 	}
 }
 
-func Test_validateAlgorithm(t *testing.T) {
+func Test_validateInputs(t *testing.T) {
 	tests := []struct {
 		name       string
 		wantErr    bool
 		wantErrStr string
+		dk         []byte
 		alg        *suite.AlgorithmSuite
 	}{
-		{"nil", true, "algorithm suite is nil", nil},
-		{"nil_kdf_suite", true, "kdf suite func is nil", &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(nil, nil), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
-		{"nil_kdf_hash", true, "hash func is nil", &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, nil), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
-		{"invalid_data_key_len", true, "data key length is invalid", &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, sha512.New), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
-		{"valid", false, "", &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, sha512.New), EncryptionSuite: suite.NewEncryptionSuite("", "", 16, 0, 0)}},
-		{"valid", false, "", suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384},
+		{"nil", true, "algorithm suite is nil", []byte{0x01}, nil},
+		{"nil_kdf_suite", true, "kdf suite func is nil", []byte{0x01}, &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(nil, nil), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
+		{"nil_kdf_hash", true, "hash func is nil", []byte{0x01}, &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, nil), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
+		{"invalid_data_key_len", true, "data key length is invalid", []byte{0x01}, &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, sha512.New), EncryptionSuite: suite.NewEncryptionSuite("", "", 0, 0, 0)}},
+		{"invalid_data_key", true, "data key is empty", nil, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384},
+		{"valid", false, "", []byte{0x01}, &suite.AlgorithmSuite{AlgorithmID: 0x0058, KDFSuite: suite.NewKdfSuite(hkdf.New, sha512.New), EncryptionSuite: suite.NewEncryptionSuite("", "", 16, 0, 0)}},
+		{"valid", false, "", []byte{0x01}, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateAlgorithm(tt.alg)
+			err := validateInputs(tt.dk, tt.alg)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.ErrorContains(t, err, tt.wantErrStr)
