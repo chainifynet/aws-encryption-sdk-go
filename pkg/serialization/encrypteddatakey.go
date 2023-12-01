@@ -12,8 +12,8 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
@@ -81,9 +81,9 @@ func (edk encryptedDataKey) String() string {
 	return fmt.Sprintf("%#v", edk)
 }
 
-func (edk encryptedDataKey) asKey() keys.EncryptedDataKeyI {
-	return keys.NewEncryptedDataKey(
-		keys.WithKeyMeta(string(edk.ProviderID), edk.ProviderInfo),
+func (edk encryptedDataKey) asKey() model.EncryptedDataKeyI {
+	return model.NewEncryptedDataKey(
+		model.WithKeyMeta(string(edk.ProviderID), edk.ProviderInfo),
 		edk.encryptedDataKey,
 	)
 }
@@ -107,8 +107,8 @@ func (edk encryptedDataKey) bytes() []byte {
 	return buf
 }
 
-func (e edk) AsKeys(msgEDKs []encryptedDataKey) []keys.EncryptedDataKeyI {
-	edks := make([]keys.EncryptedDataKeyI, 0, len(msgEDKs))
+func (e edk) AsKeys(msgEDKs []encryptedDataKey) []model.EncryptedDataKeyI {
+	edks := make([]model.EncryptedDataKeyI, 0, len(msgEDKs))
 	for _, k := range msgEDKs {
 		edks = append(edks, k.asKey())
 	}
@@ -147,7 +147,7 @@ func (e edk) fromBufferWithCount(buf *bytes.Buffer) (int, []encryptedDataKey, er
 	return encryptedDataKeyCount, edks, nil
 }
 
-func (e edk) FromEDKs(list []keys.EncryptedDataKeyI) ([]encryptedDataKey, error) {
+func (e edk) FromEDKs(list []model.EncryptedDataKeyI) ([]encryptedDataKey, error) {
 	edks := make([]encryptedDataKey, 0, len(list))
 	for _, keyI := range list {
 		encDataKey, err := e.new(providerIdentity(keyI.KeyProvider().ProviderID), keyI.KeyProvider().KeyID, keyI.EncryptedDataKey())

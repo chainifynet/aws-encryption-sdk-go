@@ -9,7 +9,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -31,19 +32,32 @@ var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk
 	return NewDecryptCmd(keyIDs, ec, frame, edk)
 }
 
-var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) error) materials.CryptoMaterialsManager { //nolint:gochecknoglobals
-	keyProvider, err := providers.NewKmsKeyProviderWithOpts(
-		keyIDs,
-		providers.WithAwsLoadOptions(opts...),
-		providers.WithDiscovery(true),
-	)
-	if err != nil {
-		log.Error().Err(err).Msg("setupCMM")
-		return nil
-		//panic(err)
+var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) error) model.CryptoMaterialsManager { //nolint:gochecknoglobals
+	var kp model.MasterKeyProvider
+	if len(keyIDs) > 0 {
+		keyProvider, err := kmsprovider.NewWithOpts(
+			keyIDs,
+			kmsprovider.WithAwsLoadOptions(opts...),
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("setupCMM")
+			return nil
+		}
+		kp = keyProvider
+	} else {
+		keyProvider, err := kmsprovider.NewWithOpts(
+			nil,
+			kmsprovider.WithAwsLoadOptions(opts...),
+			kmsprovider.WithDiscovery(),
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("setupCMM")
+			return nil
+		}
+		kp = keyProvider
 	}
 
-	cmm, _ := materials.NewDefault(keyProvider)
+	cmm, _ := materials.NewDefault(kp)
 
 	return cmm
 }

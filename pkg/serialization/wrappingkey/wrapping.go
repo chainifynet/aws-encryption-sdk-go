@@ -3,12 +3,47 @@
 
 package wrappingkey
 
-type Wrapper interface {
-	SerializeEncryptedDataKey(encryptedKey, tag, iv []byte) []byte
-	DeserializeEncryptedDataKey(b []byte, iVLen int) (encryptedData, iv []byte)
-}
+import "github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
+
+const (
+	tagLen             = 16
+	ivLen              = 12
+	oneByte            = 8 // bits
+	uint32BigEndianLen = 4 // bytes
+)
 
 type WrappingKey struct{}
+
+// SerializeKeyInfoPrefix is a method of the WrappingKey struct.
+// It takes a keyID string as input and returns a byte slice.
+//
+// The method first creates a byte slice, keyInfoPrefix, with a length equal to
+// the length of the keyID string plus twice the length of a uint32 in big
+// endian format.
+// It then copies the keyID string into the start of the keyInfoPrefix byte
+// slice.
+// Next, it converts the tag length (tagLen) multiplied by the size of a byte
+// (oneByte) into a uint32 in big endian format and copies this into
+// the keyInfoPrefix byte slice, starting at the position after the keyID.
+// Finally, it converts the initialization vector length (ivLen) into a uint32
+// in big endian format and copies this into the keyInfoPrefix byte slice,
+// starting at the position after the keyID and the tag length.
+//
+// Parameters:
+//
+//	keyID string: A string representing the key ID.
+//
+// Returns:
+//
+//	[]byte: A byte slice that includes the key ID, followed by the tag length
+//	        and the initialization vector length, all in big endian format.
+func (wk WrappingKey) SerializeKeyInfoPrefix(keyID string) []byte {
+	keyInfoPrefix := make([]byte, len(keyID)+uint32BigEndianLen+uint32BigEndianLen)
+	copy(keyInfoPrefix, keyID)
+	copy(keyInfoPrefix[len(keyID):], conv.FromInt.Uint32BigEndian(tagLen*oneByte))
+	copy(keyInfoPrefix[len(keyID)+uint32BigEndianLen:], conv.FromInt.Uint32BigEndian(ivLen))
+	return keyInfoPrefix
+}
 
 // SerializeEncryptedDataKey takes three separate byte slices that represent
 // the encrypted key, the authentication tag, and the initialization vector (IV),

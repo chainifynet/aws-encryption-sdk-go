@@ -7,14 +7,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 )
 
 type BaseCache interface {
-	PutEncryptionEntry(cacheKey []byte, m EncryptionMaterials, n int) (*CacheEntry[EncryptionMaterials], error)
-	PutDecryptionEntry(cacheKey []byte, m DecryptionMaterials) (*CacheEntry[DecryptionMaterials], error)
-	GetEncryptionEntry(cacheKey []byte, n int) (*CacheEntry[EncryptionMaterials], error)
-	GetDecryptionEntry(cacheKey []byte) (*CacheEntry[DecryptionMaterials], error)
+	PutEncryptionEntry(cacheKey []byte, m model.EncryptionMaterials, n int) (*CacheEntry[model.EncryptionMaterials], error)
+	PutDecryptionEntry(cacheKey []byte, m model.DecryptionMaterials) (*CacheEntry[model.DecryptionMaterials], error)
+	GetEncryptionEntry(cacheKey []byte, n int) (*CacheEntry[model.EncryptionMaterials], error)
+	GetDecryptionEntry(cacheKey []byte) (*CacheEntry[model.DecryptionMaterials], error)
 }
 
 type CachingCryptoMaterialsManager struct {
@@ -25,7 +25,7 @@ type CachingCryptoMaterialsManager struct {
 	maxBytes    int           //nolint:unused
 }
 
-func NewCaching(cache BaseCache, _ providers.MasterKeyProvider, _ ...providers.MasterKeyProvider) (*CachingCryptoMaterialsManager, error) {
+func NewCaching(cache BaseCache, _ model.MasterKeyProvider, _ ...model.MasterKeyProvider) (*CachingCryptoMaterialsManager, error) {
 	_ = &CachingCryptoMaterialsManager{
 		cache: cache,
 	}
@@ -34,19 +34,19 @@ func NewCaching(cache BaseCache, _ providers.MasterKeyProvider, _ ...providers.M
 }
 
 // compile checking that CachingCryptoMaterialsManager implements CryptoMaterialsManager interface
-var _ CryptoMaterialsManager = (*CachingCryptoMaterialsManager)(nil)
+var _ model.CryptoMaterialsManager = (*CachingCryptoMaterialsManager)(nil)
 
-func (c *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ context.Context, _ EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
+func (cm *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ context.Context, _ model.EncryptionMaterialsRequest) (model.EncryptionMaterial, error) {
 	//TODO implement me
 	panic("not implemented yet")
 }
 
-func (c *CachingCryptoMaterialsManager) DecryptMaterials(_ context.Context, _ DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
+func (cm *CachingCryptoMaterialsManager) DecryptMaterials(_ context.Context, _ model.DecryptionMaterialsRequest) (model.DecryptionMaterial, error) {
 	//TODO implement me
 	panic("not implemented yet")
 }
 
-func (c *CachingCryptoMaterialsManager) GetInstance() CryptoMaterialsManager {
+func (cm *CachingCryptoMaterialsManager) GetInstance() model.CryptoMaterialsManager {
 	//TODO implement me
 	panic("not implemented yet")
 }

@@ -12,33 +12,34 @@ import (
 	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
 type DefaultCryptoMaterialsManager struct {
-	primaryKeyProvider providers.MasterKeyProvider
-	masterKeyProviders []providers.MasterKeyProvider
+	primaryKeyProvider model.MasterKeyProvider
+	masterKeyProviders []model.MasterKeyProvider
 }
 
 // compile checking that DefaultCryptoMaterialsManager implements CryptoMaterialsManager interface
-var _ CryptoMaterialsManager = (*DefaultCryptoMaterialsManager)(nil)
+var _ model.CryptoMaterialsManager = (*DefaultCryptoMaterialsManager)(nil)
 
-func NewDefault(primary providers.MasterKeyProvider, extra ...providers.MasterKeyProvider) (*DefaultCryptoMaterialsManager, error) {
+func NewDefault(primary model.MasterKeyProvider, extra ...model.MasterKeyProvider) (*DefaultCryptoMaterialsManager, error) {
 	if len(extra) == 0 {
 		return &DefaultCryptoMaterialsManager{
 			primaryKeyProvider: primary,
 			masterKeyProviders: nil,
 		}, nil
 	}
-	types := []string{primary.Provider().ID()}
+	pTypes := []string{primary.ProviderID()}
 	for _, mkp := range extra {
-		if mkp.Provider().Type() == providers.Raw && structs.Contains(types, mkp.Provider().ID()) {
-			return nil, fmt.Errorf("duplicate Raw providerID: %s: %w", mkp.Provider().ID(), ErrCMM)
+		if mkp.ProviderKind() == types.Raw && structs.Contains(pTypes, mkp.ProviderID()) {
+			return nil, fmt.Errorf("duplicate Raw providerID: %s: %w", mkp.ProviderID(), ErrCMM)
 		}
-		types = append(types, mkp.Provider().ID())
+		pTypes = append(pTypes, mkp.ProviderID())
 	}
 	return &DefaultCryptoMaterialsManager{
 		primaryKeyProvider: primary,
@@ -46,7 +47,7 @@ func NewDefault(primary providers.MasterKeyProvider, extra ...providers.MasterKe
 	}, nil
 }
 
-func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx context.Context, encReq EncryptionMaterialsRequest) (*EncryptionMaterials, error) {
+func (dm *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx context.Context, encReq model.EncryptionMaterialsRequest) (model.EncryptionMaterial, error) {
 	// copy encryption context map
 	var encryptionContext suite.EncryptionContext
 	encryptionContext = make(suite.EncryptionContext)
@@ -55,23 +56,23 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx conte
 	}
 
 	// it only adds signing key to encryption context if signing algo
-	signingKey, err := composite.generateSigningKeyUpdateEncryptionContext(encReq.Algorithm, encryptionContext)
+	signingKey, err := dm.generateSigningKeyUpdateEncryptionContext(encReq.Algorithm, encryptionContext)
 	if err != nil {
 		return nil, fmt.Errorf("signing key update: %w", errors.Join(ErrCMM, err))
 	}
 
 	encryptionContext = structs.MapSort(encryptionContext)
 
-	var masterKeys []keys.MasterKeyBase
-	primaryMasterKey, primaryMemberKeys, err := composite.primaryKeyProvider.MasterKeysForEncryption(ctx, encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
+	var masterKeys []model.MasterKey
+	primaryMasterKey, primaryMemberKeys, err := dm.primaryKeyProvider.MasterKeysForEncryption(ctx, encryptionContext)
 	if err != nil {
 		return nil, fmt.Errorf("primary KeyProvider error: %w", errors.Join(ErrCMM, err))
 	}
 	masterKeys = append(masterKeys, primaryMemberKeys...)
-	if len(composite.masterKeyProviders) > 0 {
-		for _, mkp := range composite.masterKeyProviders {
+	if len(dm.masterKeyProviders) > 0 {
+		for _, mkp := range dm.masterKeyProviders {
 			// here we dont really need primary master key, it is already in memberKeys
-			_, memberKeys, errMember := mkp.MasterKeysForEncryption(ctx, encryptionContext, encReq.PlaintextRoStream, encReq.PlaintextLength)
+			_, memberKeys, errMember := mkp.MasterKeysForEncryption(ctx, encryptionContext)
 			// here we can ignore providers.ErrMasterKeyProviderNoPrimaryKey
 			//  assuming that provider could have only member keys
 			if errMember != nil && !errors.Is(errMember, providers.ErrMasterKeyProviderNoPrimaryKey) {
@@ -87,20 +88,14 @@ func (composite *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx conte
 	if err != nil {
 		return nil, fmt.Errorf("key error: %w", errors.Join(ErrCMM, err))
 	}
-	return &EncryptionMaterials{
-		algorithm:         encReq.Algorithm,
-		dataEncryptionKey: dataEncryptionKey,
-		encryptedDataKeys: encryptedDataKeys,
-		encryptionContext: encryptionContext,
-		signingKey:        signingKey,
-	}, nil
+	return model.NewEncryptionMaterials(dataEncryptionKey, encryptedDataKeys, encryptionContext, signingKey), nil
 
 }
 
-func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, decReq DecryptionMaterialsRequest) (*DecryptionMaterials, error) {
-	var dataKey keys.DataKeyI
+func (dm *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, decReq model.DecryptionMaterialsRequest) (model.DecryptionMaterial, error) {
+	var dataKey model.DataKeyI
 	var errDecryptDataKey error
-	dataKeyPrimary, err := composite.primaryKeyProvider.DecryptDataKeyFromList(ctx, decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
+	dataKeyPrimary, err := dm.primaryKeyProvider.DecryptDataKeyFromList(ctx, decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 	if err != nil {
 		if !errors.Is(err, providers.ErrMasterKeyProviderDecrypt) {
 			return nil, fmt.Errorf("primary KeyProvider error: %w", errors.Join(ErrCMM, err))
@@ -109,8 +104,8 @@ func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Con
 	}
 	if dataKeyPrimary != nil { //nolint:nestif
 		dataKey = dataKeyPrimary
-	} else if len(composite.masterKeyProviders) > 0 {
-		for _, mkp := range composite.masterKeyProviders {
+	} else if len(dm.masterKeyProviders) > 0 {
+		for _, mkp := range dm.masterKeyProviders {
 			dataKeyMember, errMember := mkp.DecryptDataKeyFromList(ctx, decReq.EncryptedDataKeys, decReq.Algorithm, decReq.EncryptionContext)
 			if errMember != nil {
 				if !errors.Is(errMember, providers.ErrMasterKeyProviderDecrypt) {
@@ -136,10 +131,7 @@ func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Con
 
 	// if not signing algo, return decryption materials without verification key
 	if !decReq.Algorithm.IsSigning() {
-		return &DecryptionMaterials{
-			dataKey:         dataKey,
-			verificationKey: nil,
-		}, nil
+		return model.NewDecryptionMaterials(dataKey, nil), nil
 	}
 
 	// handle signing algo
@@ -152,21 +144,17 @@ func (composite *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Con
 		return nil, fmt.Errorf("ECDSA key error: %w", errors.Join(ErrCMM, err))
 	}
 
-	return &DecryptionMaterials{
-		dataKey:         dataKey,
-		verificationKey: verificationKey,
-	}, nil
+	return model.NewDecryptionMaterials(dataKey, verificationKey), nil
 }
 
-func (composite *DefaultCryptoMaterialsManager) GetInstance() CryptoMaterialsManager {
-	//return composite
+func (dm *DefaultCryptoMaterialsManager) GetInstance() model.CryptoMaterialsManager {
 	return &DefaultCryptoMaterialsManager{
-		primaryKeyProvider: composite.primaryKeyProvider,
-		masterKeyProviders: composite.masterKeyProviders,
+		primaryKeyProvider: dm.primaryKeyProvider,
+		masterKeyProviders: dm.masterKeyProviders,
 	}
 }
 
-func (composite *DefaultCryptoMaterialsManager) generateSigningKeyUpdateEncryptionContext(algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (*ecdsa.PrivateKey, error) {
+func (dm *DefaultCryptoMaterialsManager) generateSigningKeyUpdateEncryptionContext(algorithm *suite.AlgorithmSuite, ec suite.EncryptionContext) (*ecdsa.PrivateKey, error) {
 	// if not signing algo, return nil signing key, and dont change encryption context
 	if !algorithm.IsSigning() {
 		return nil, nil

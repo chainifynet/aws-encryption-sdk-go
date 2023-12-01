@@ -10,7 +10,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/rawprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -52,7 +53,7 @@ func main() {
 	sdkClient := client.NewClientWithConfig(cfg)
 
 	// setup KMS key provider with two KMS CMK keys
-	kmsKeyProvider, err := providers.NewKmsKeyProviderWithOpts(
+	kmsKeyProvider, err := kmsprovider.NewWithOpts(
 		keyArns, // KMS CMK ARNs
 	)
 	if err != nil {
@@ -60,9 +61,9 @@ func main() {
 	}
 
 	// setup Raw Key provider
-	rawKeyProvider, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider, err := rawprovider.NewWithOpts(
 		"mynamespace",
-		providers.WithStaticKey("key1", staticKey1),
+		rawprovider.WithStaticKey("key1", staticKey1),
 	)
 	if err != nil {
 		panic(err) // handle error
@@ -89,7 +90,7 @@ func main() {
 	// decrypt the "encrypted" message using that CMM.
 	for i, keyID := range keyArns {
 		// create a KMS key provider that only lists the current key
-		provider, err := providers.NewKmsKeyProvider(keyID)
+		provider, err := kmsprovider.New(keyID)
 		if err != nil {
 			panic(err) // handle error
 		}
@@ -125,9 +126,9 @@ func main() {
 	// decrypt the "encrypted" message using that CMM.
 
 	// create a Raw key provider that only lists static key 1
-	rawProvider, err := providers.NewRawKeyProviderWithOpts(
+	rawProvider, err := rawprovider.NewWithOpts(
 		"mynamespace", // namespace must match the one used to encrypt
-		providers.WithStaticKey("key1", staticKey1),
+		rawprovider.WithStaticKey("key1", staticKey1),
 	)
 	if err != nil {
 		panic(err) // handle error

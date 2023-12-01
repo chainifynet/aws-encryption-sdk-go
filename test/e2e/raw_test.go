@@ -16,7 +16,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/rawprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -35,10 +35,10 @@ func Test_Integration_StaticKeysEncrypt(t *testing.T) {
 	require.NotNil(t, c)
 
 	// setup raw key provider
-	rawKeyProvider, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider, err := rawprovider.NewWithOpts(
 		"raw",
-		providers.WithStaticKey("static1", staticKey1),
-		providers.WithStaticKey("static2", staticKey2),
+		rawprovider.WithStaticKey("static1", staticKey1),
+		rawprovider.WithStaticKey("static2", staticKey2),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, rawKeyProvider)
@@ -81,17 +81,17 @@ func Test_Integration_StaticKeysDecrypt(t *testing.T) {
 	require.NotNil(t, c)
 
 	// setup raw key provider with only static key 1
-	rawKeyProvider1, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider1, err := rawprovider.NewWithOpts(
 		"raw",
-		providers.WithStaticKey("static1", staticKey1),
+		rawprovider.WithStaticKey("static1", staticKey1),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, rawKeyProvider1)
 
 	// setup raw key provider with only static key 2
-	rawKeyProvider2, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider2, err := rawprovider.NewWithOpts(
 		"raw",
-		providers.WithStaticKey("static2", staticKey2),
+		rawprovider.WithStaticKey("static2", staticKey2),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, rawKeyProvider2)
@@ -128,9 +128,9 @@ func Test_Integration_StaticKeysDecrypt(t *testing.T) {
 	assert.Equal(t, plaintext1, plaintext2)
 
 	// setup raw key provider with same providerID (it must match) and other keyID, static key 2
-	rawKeyProvider3, err := providers.NewRawKeyProviderWithOpts(
+	rawKeyProvider3, err := rawprovider.NewWithOpts(
 		"raw",
-		providers.WithStaticKey("other2", staticKey2),
+		rawprovider.WithStaticKey("static2", staticKey2),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, rawKeyProvider3)

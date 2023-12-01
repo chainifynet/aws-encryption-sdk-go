@@ -14,6 +14,14 @@ func MapContains[K comparable, V any](m map[K]V, k K) bool {
 	return false
 }
 
+func MapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func MapSort[K ~string | ~int, V any](m map[K]V) map[K]V {
 	keys := make([]K, 0, len(m))
 	for k := range m {

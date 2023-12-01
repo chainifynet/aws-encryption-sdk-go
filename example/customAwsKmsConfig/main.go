@@ -11,7 +11,7 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -33,9 +33,9 @@ func main() {
 	sdkClient := client.NewClient()
 
 	// setup KMS key provider with custom AWS Config options
-	kmsKeyProvider, err := providers.NewKmsKeyProviderWithOpts(
+	kmsKeyProvider, err := kmsprovider.NewWithOpts(
 		[]string{kmsKeyID},
-		providers.WithAwsLoadOptions(
+		kmsprovider.WithAwsLoadOptions(
 			// config.WithSharedConfigProfile("your_profile_name"),
 			config.WithDefaultRegion("us-east-2"),
 			config.WithRetryMaxAttempts(5),

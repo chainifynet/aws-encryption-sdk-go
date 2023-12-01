@@ -3,4 +3,4 @@
 
 package wrappingkey
 
-//go:generate mockery --name Wrapper --testonly --case underscore --structname MockWrapper --output ../../../test/mocks
+///go:generate mockery --name Wrapper --testonly --case underscore --structname MockWrapper --output ../../../test/mocks

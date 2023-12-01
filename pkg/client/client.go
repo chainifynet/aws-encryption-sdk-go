@@ -10,7 +10,7 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
@@ -30,9 +30,9 @@ func NewClientWithConfig(cfg *clientconfig.ClientConfig) *Client {
 
 type BaseClient interface {
 	clientConfig() clientconfig.ClientConfig
-	Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, *serialization.MessageHeader, error)
-	EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error)
-	Decrypt(ctx context.Context, ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error)
+	Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, *serialization.MessageHeader, error)
+	EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error)
+	Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error)
 }
 
 var _ BaseClient = (*Client)(nil)
@@ -60,7 +60,7 @@ func (c *Client) clientConfig() clientconfig.ClientConfig {
 //   - []byte: The encrypted data.
 //   - [serialization.MessageHeader]: The header of the encrypted message.
 //   - error: An error if encryption fails.
-func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
+func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
 	return c.Encrypt(ctx, source, ec, materialsManager, WithAlgorithm(algorithm), WithFrameLength(frameLength))
 }
 
@@ -98,7 +98,7 @@ func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.
 //  1. The Encrypt function allows customization of the encryption process through its optional parameters.
 //  2. The WithAlgorithm and WithFrameLength functions can be used to specify an encryption algorithm and frame length,
 //     respectively. If these functions are not used, default values are applied.
-func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager materials.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, *serialization.MessageHeader, error) {
+func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, *serialization.MessageHeader, error) {
 	opts := EncryptOptions{
 		Algorithm:   suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 		FrameLength: DefaultFrameLength,
@@ -129,7 +129,7 @@ func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.Encryption
 //   - []byte: The decrypted data.
 //   - [serialization.MessageHeader]: The header of the encrypted message.
 //   - error: An error if decryption fails.
-func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManager materials.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
+func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
 	b, header, err := crypto.Decrypt(ctx, c.clientConfig(), ciphertext, materialsManager)
 	if err != nil {
 		return nil, nil, err

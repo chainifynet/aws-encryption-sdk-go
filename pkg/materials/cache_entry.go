@@ -3,9 +3,13 @@
 
 package materials
 
-import "time"
+import (
+	"time"
 
-type CacheEntry[V EncryptionMaterials | DecryptionMaterials] struct {
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
+)
+
+type CacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials] struct {
 	key       []byte
 	value     V
 	createdAt time.Time
@@ -15,7 +19,7 @@ type CacheEntry[V EncryptionMaterials | DecryptionMaterials] struct {
 	valid     bool
 }
 
-func NewCacheEntry[V EncryptionMaterials | DecryptionMaterials](key []byte, value V, lifetime time.Duration) *CacheEntry[V] {
+func NewCacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials](key []byte, value V, lifetime time.Duration) *CacheEntry[V] {
 	return &CacheEntry[V]{
 		key:       key,
 		value:     value,

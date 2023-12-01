@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -44,7 +46,7 @@ func main() {
 	sdkClient := client.NewClientWithConfig(cfg)
 
 	// setup KMS key provider
-	kmsKeyProvider, err := providers.NewKmsKeyProvider(kmsKeyID)
+	kmsKeyProvider, err := kmsprovider.New(kmsKeyID)
 	if err != nil {
 		panic(err) // handle error
 	}
@@ -65,9 +67,12 @@ func main() {
 	fmt.Printf("encrypted encryption context: %v\n", header.AADData.AsEncryptionContext())
 
 	// create a KMS key provider specifying explicitly nil for keyIDs, and enable discovery
-	provider, err := providers.NewKmsKeyProviderWithOpts(
+	provider, err := kmsprovider.NewWithOpts(
 		nil,
-		providers.WithDiscovery(true), // enable discovery
+		kmsprovider.WithDiscovery(), // enable discovery
+		kmsprovider.WithAwsLoadOptions(
+			config.WithDefaultRegion("us-east-2"),
+		),
 	)
 	if err != nil {
 		panic(err) // handle error

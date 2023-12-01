@@ -1,0 +1,43 @@
+with-expecter: true
+filename: "{{.InterfaceName}}_mock.go"
+tags: "mocks"
+packages:
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/model:
+    config:
+      tags: "mocks"
+    interfaces:
+      KMSClient:
+      KMSClientFactory:
+      BaseKeyProvider:
+        config:
+          mockname: "MockKeyProvider"
+          filename: "KeyProvider_mock.go"
+      MasterKeyProvider:
+      MasterKeyBase:
+      MasterKey:
+      MasterKeyFactory:
+      Key:
+        config:
+          mockname: "MockKey"
+          filename: "Key_mock.go"
+      DataKeyI:
+        config:
+          mockname: "MockDataKey"
+          filename: "DataKey_mock.go"
+      EncryptedDataKeyI:
+        config:
+          mockname: "MockEncryptedDataKey"
+          filename: "EncryptedDataKey_mock.go"
+      CryptoMaterialsManager:
+      DecryptionMaterial:
+      EncryptionMaterial:
+      Wrapper:
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption:
+    interfaces:
+      GcmBase:
+        config:
+          mockname: "MockEncrypter"
+          filename: "Encrypter_mock.go"
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand:
+    interfaces:
+      RandomGenerator:
