@@ -52,7 +52,7 @@ func (c *Client) clientConfig() clientconfig.ClientConfig {
 //   - ctx context.Context: The context for the operation.
 //   - source []byte: The data to encrypt.
 //   - ec [suite.EncryptionContext]: The encryption context.
-//   - materialsManager [materials.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
+//   - materialsManager [model.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
 //   - algorithm [suite.AlgorithmSuite]: The algorithm suite to use for encryption.
 //   - frameLength int: The frame length for encryption.
 //
@@ -75,7 +75,7 @@ func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.
 //   - source []byte: The data to encrypt.
 //   - ec [suite.EncryptionContext]: The encryption context, a set of key-value pairs
 //     that are cryptographically bound to the encrypted data.
-//   - materialsManager [materials.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
+//   - materialsManager [model.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
 //   - optFns EncryptOptionFunc: A variadic set of optional functions for configuring encryption options such as
 //     custom algorithm or frame length.
 //
@@ -87,8 +87,8 @@ func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.
 // Example usage:
 //
 //	ciphertext, header, err := client.Encrypt(context.TODO(), plaintext, encryptionContext, materialsManager,
-//	                                             WithAlgorithm(customAlgorithm),
-//	                                             WithFrameLength(1024))
+//	    WithAlgorithm(customAlgorithm),
+//	    WithFrameLength(1024))
 //	if err != nil {
 //	    // handle error
 //	}
