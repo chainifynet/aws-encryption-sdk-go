@@ -3,6 +3,7 @@
 [![Go Unit](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml)
 [![Go E2E](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml)
 ![Code style: gofmt](https://img.shields.io/badge/code_style-gofmt-00ADD8.svg)
+[![Go Reference](https://pkg.go.dev/badge/github.com/chainifynet/aws-encryption-sdk-go.svg)](https://pkg.go.dev/github.com/chainifynet/aws-encryption-sdk-go)
 
 This project is an implementation of the [AWS Encryption SDK](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/reference.html) for the Go programming language, providing a set of libraries for developers to easily add encryption and decryption functionality to their Go applications. This implementation is inspired by the [aws-encryption-sdk-python](https://github.com/aws/aws-encryption-sdk-python) and follows the [AWS Encryption SDK specification](https://github.com/awslabs/aws-encryption-sdk-specification/tree/c35fbd91b28303d69813119088c44b5006395eb4) closely.
 
@@ -15,13 +16,14 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 
 - Support for Message Format Version 2 and related [algorithms](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/algorithms-reference.html).
 - AWS KMS Master Key Provider with a discovery filter.
+- AWS KMS Multi-Region Keys using [MRK-aware provider](example/mrkAwareKmsProvider) in Discovery or Strict mode.
 - Raw Master Key provider using static keys.
 - Comprehensive [end-to-end tests](test/e2e/enc_dec_test.go) ensuring compatibility with `aws-encryption-sdk-cli`.
 
 ### Current Limitations
 
 - Does not support the Caching Materials Manager feature yet.
-- Does not support KMS aliases and MRK keys at this stage.
+- Does not support KMS aliases at this stage.
 - Raw Master Key provider does not support RSA encryption.
 - Only framed content type is supported.
 
@@ -35,7 +37,7 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 To install the AWS Encryption SDK for Go, use the following command:
 
 ```bash
-$ go get github.com/chainify/aws-encryption-sdk-go
+$ go get github.com/chainifynet/aws-encryption-sdk-go@latest
 ```
 
 ## Usage
@@ -52,11 +54,12 @@ First, set up the client with the necessary configuration.
 
 ```go
 import (
-	"github.com/chainify/aws-encryption-sdk-go/client"
-	"github.com/chainify/aws-encryption-sdk-go/clientconfig"
-	"github.com/chainify/aws-encryption-sdk-go/materials"
-	"github.com/chainify/aws-encryption-sdk-go/providers"
-	"github.com/chainify/aws-encryption-sdk-go/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/client"
+	"github.com/chainifynet/aws-encryption-sdk-go/clientconfig"
+	"github.com/chainifynet/aws-encryption-sdk-go/materials"
+	"github.com/chainifynet/aws-encryption-sdk-go/providers/kmsprovider"
+	"github.com/chainifynet/aws-encryption-sdk-go/providers/rawprovider"
+	"github.com/chainifynet/aws-encryption-sdk-go/suite"
 )
 
 // setup Encryption SDK client with default config
@@ -86,7 +89,7 @@ sdkClient := client.NewClientWithConfig(cfg)
 #### Raw Key Provider using static keys
 
 ```go
-rawKeyProvider, err := providers.NewRawKeyProviderWithOpts(
+rawKeyProvider, err := rawprovider.NewWithOpts(
 	"raw",
 	providers.WithStaticKey("static1", []byte("superSecureKeySecureKey32bytes32")),
 )
@@ -104,9 +107,9 @@ You can optionally enable [discovery](example/discoveryKmsProvider) or specify a
 kmsKeyArn := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
 
 // setup KMS key provider
-kmsKeyProvider, err := providers.NewKmsKeyProvider(kmsKeyArn)
+kmsKeyProvider, err := kmsprovider.New(kmsKeyArn)
 if err != nil {
-	panic("raw key provider setup failed") // handle error
+	panic("kms key provider setup failed") // handle error
 }
 ```
 
@@ -181,9 +184,10 @@ if err != nil {
 ## TODO
 
 - [ ] Add support for Caching Materials Manager.
-- [ ] Add support for KMS aliases and MRK keys.
-- [ ] Cover `providers` package with tests.
-- [ ] Cover `keys` package with tests.
+- [x] Add support for AWS KMS Multi-Region Keys [#46](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
+- [ ] Add support for KMS aliases.
+- [x] Cover `providers` package with tests.
+- [x] Cover `keys` package with tests.
 - [ ] Cover `materials` package with tests.
 - [ ] GoDoc documentation.
 - [ ] Streamlined encryption and decryption.
