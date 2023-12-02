@@ -4,6 +4,7 @@
 [![Go E2E](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml)
 ![Code style: gofmt](https://img.shields.io/badge/code_style-gofmt-00ADD8.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/chainifynet/aws-encryption-sdk-go.svg)](https://pkg.go.dev/github.com/chainifynet/aws-encryption-sdk-go)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go?ref=badge_shield)
 
 This project is an implementation of the [AWS Encryption SDK](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/reference.html) for the Go programming language, providing a set of libraries for developers to easily add encryption and decryption functionality to their Go applications. This implementation is inspired by the [aws-encryption-sdk-python](https://github.com/aws/aws-encryption-sdk-python) and follows the [AWS Encryption SDK specification](https://github.com/awslabs/aws-encryption-sdk-specification/tree/c35fbd91b28303d69813119088c44b5006395eb4) closely.
 
@@ -205,3 +206,6 @@ For more information on how to use this SDK, please refer to the `example` direc
 ---
 
 Stay tuned for further updates and features. Contributions and feedback are welcome!
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go?ref=badge_large)
