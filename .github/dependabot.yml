@@ -34,6 +34,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -51,6 +53,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -68,6 +72,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -85,6 +91,27 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
+    groups:
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2"
+          - "github.com/aws/aws-sdk-go-v2/*"
+          - "github.com/aws/smithy-go"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "gomod"
+    directory: "/example/mrkAwareKmsProvider"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: "fix"
+      include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -102,6 +129,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -119,6 +148,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -136,6 +167,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
@@ -153,6 +186,8 @@ updates:
     commit-message:
       prefix: "fix"
       include: scope
+    allow:
+      - dependency-type: "all"
     groups:
       aws-sdk:
         patterns:
