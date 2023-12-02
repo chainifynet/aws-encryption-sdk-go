@@ -36,6 +36,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -55,6 +58,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -74,6 +80,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -93,6 +102,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -112,6 +124,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -131,6 +146,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -150,6 +168,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -169,6 +190,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
@@ -188,6 +212,9 @@ updates:
       include: scope
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws-sdk:
         patterns:
