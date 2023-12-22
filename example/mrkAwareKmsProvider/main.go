@@ -69,8 +69,8 @@ func main() {
 		panic(err) // handle error
 	}
 
-	fmt.Printf("encrypted data key count: %d\n", header.EncryptedDataKeyCount)
-	fmt.Printf("encrypted encryption context: %v\n", header.AADData.AsEncryptionContext())
+	fmt.Printf("encrypted data key count: %d\n", header.EncryptedDataKeyCount())
+	fmt.Printf("encrypted encryption context: %v\n", header.AADData().EncryptionContext())
 
 	// create a MRK-aware KMS key provider specifying KMS MRK keyID in second region
 	mrkKmsProvider2, err := kmsprovider.NewWithOpts(
@@ -93,7 +93,7 @@ func main() {
 
 	// verify that "decrypted" encryption context in header has the same keys and values
 	// as the original encryption context before using "decrypted" data.
-	decryptionContext := decHeader.AADData.AsEncryptionContext()
+	decryptionContext := decHeader.AADData().EncryptionContext()
 	for k, v := range encryptionContext {
 		if decryptionContext[k] != v {
 			panic("decrypted encryption context does not match with the original encryption context")
@@ -136,7 +136,7 @@ func main() {
 
 	// verify that "decrypted2" encryption context in header has the same keys and values
 	// as the original encryption context before using "decrypted2" data.
-	decryptionContext2 := decHeader2.AADData.AsEncryptionContext()
+	decryptionContext2 := decHeader2.AADData().EncryptionContext()
 	for k, v := range encryptionContext {
 		if decryptionContext2[k] != v {
 			panic("decrypted2 encryption context does not match with the original encryption context")
