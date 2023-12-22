@@ -3,11 +3,14 @@
 
 package suite
 
-import "math"
+import (
+	"math"
+)
 
 const (
-	MinFrameSize = int(128)
-	MaxFrameSize = math.MaxUint32
+	MinFrameSize = int(128)      // Minimum allowed frame size
+	MaxFrameSize = math.MaxInt32 // Maximum allowed frame size which is math.MaxInt32
+	BlockSize    = int(128)      // BlockSize is aes.BlockSize in bits (16 * 8)
 )
 
 type ContentType uint8
@@ -27,10 +30,10 @@ const (
 type CommitmentPolicy int8
 
 const (
-	_commitmentPolicyNone                        CommitmentPolicy = iota - 1 // -1 is NONE
-	CommitmentPolicyForbidEncryptAllowDecrypt                                // 0 - FORBID_ENCRYPT_ALLOW_DECRYPT
-	CommitmentPolicyRequireEncryptAllowDecrypt                               // 1 - REQUIRE_ENCRYPT_ALLOW_DECRYPT
-	CommitmentPolicyRequireEncryptRequireDecrypt                             // 2 - REQUIRE_ENCRYPT_REQUIRE_DECRYPT
+	_commitmentPolicyNone                        CommitmentPolicy = iota // 0 is NONE
+	CommitmentPolicyForbidEncryptAllowDecrypt                            // 1 - FORBID_ENCRYPT_ALLOW_DECRYPT
+	CommitmentPolicyRequireEncryptAllowDecrypt                           // 2 - REQUIRE_ENCRYPT_ALLOW_DECRYPT
+	CommitmentPolicyRequireEncryptRequireDecrypt                         // 3 - REQUIRE_ENCRYPT_REQUIRE_DECRYPT
 )
 
 func (cp CommitmentPolicy) String() string {
@@ -51,3 +54,16 @@ func (cp CommitmentPolicy) String() string {
 func (cp CommitmentPolicy) GoString() string {
 	return cp.String()
 }
+
+type MessageFormatVersion uint8
+
+const (
+	V1 MessageFormatVersion = iota + 1 // 1 is V1 MessageFormatVersion
+	V2                                 // 2 is V2 MessageFormatVersion
+)
+
+type MessageType int
+
+const (
+	CustomerAEData MessageType = 128 // 128 is 80 in hex
+)
