@@ -52,8 +52,8 @@ func NewConfigWithOpts(optFns ...ConfigOptionFunc) (*ClientConfig, error) {
 
 func WithCommitmentPolicy(policy suite.CommitmentPolicy) ConfigOptionFunc {
 	return func(o *ConfigOptions) error {
-		if policy < suite.CommitmentPolicyForbidEncryptAllowDecrypt || policy > suite.CommitmentPolicyRequireEncryptRequireDecrypt {
-			return fmt.Errorf("CommitmentPolicy not allowed")
+		if err := suite.ValidateCommitmentPolicy(policy); err != nil {
+			return err
 		}
 		o.CommitmentPolicy = policy
 		return nil

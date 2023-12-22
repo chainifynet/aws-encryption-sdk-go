@@ -65,12 +65,14 @@ func WithAlgorithm(alg *suite.AlgorithmSuite) EncryptOptionFunc {
 //   - EncryptOptionFunc: A function that sets the FrameLength field in EncryptOptions.
 //
 // Errors:
-//   - If frameLength is less than [suite.MinFrameSize] (128) or greater than [suite.MaxFrameSize] (4294967295),
+//   - If frameLength is less than [suite.MinFrameSize] (128) or greater than [suite.MaxFrameSize] (2147483647),
 //     it returns an error indicating that the frame length is out of range.
+//   - If frameLength is not a multiple of the [suite.BlockSize] (128) of the crypto
+//     algorithm, it returns an error indicating that.
 func WithFrameLength(frameLength int) EncryptOptionFunc {
 	return func(o *EncryptOptions) error {
-		if frameLength < suite.MinFrameSize || frameLength > suite.MaxFrameSize {
-			return fmt.Errorf("frame %d length out of range, allowed: min %d, max %d", frameLength, suite.MinFrameSize, suite.MaxFrameSize)
+		if err := suite.ValidateFrameLength(frameLength); err != nil {
+			return err
 		}
 		o.FrameLength = frameLength
 		return nil
