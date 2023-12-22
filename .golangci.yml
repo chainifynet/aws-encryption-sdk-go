@@ -149,7 +149,7 @@ linters-settings:
       - opinionated
     settings:
       hugeParam:
-        sizeThreshold: 125
+        sizeThreshold: 180
 
 issues:
   fix: false
@@ -169,6 +169,7 @@ issues:
         - maintidx
         - thelper
         - unused
+        - gocognit
     - linters:
         - gosimple
       text: "S1021:"
