@@ -107,7 +107,7 @@ e2e-test-short:
 
 e2e-test-full:
 	@echo "Running full e2e tests, it will take a while"
-	@gotestsum -f testname -- -timeout=15m -tags "integration" ${RUN_INTEG} ./test/e2e/...
+	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=15m -tags "integration" ${RUN_INTEG} ./test/e2e/...
 
 e2e-test-slow:
 	@echo "Running very slow e2e tests"
