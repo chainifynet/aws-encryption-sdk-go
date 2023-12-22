@@ -10,16 +10,17 @@ import (
 	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/bodyaad"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/policy"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/policy"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
 // decrypt ciphertext decryption
-func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, *serialization.MessageHeader, error) {
+func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, format.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(ciphertext))
 	copy(b, ciphertext)
@@ -29,7 +30,7 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, *se
 
 	// early stage check if cipher text contains needed first byte of message version
 	// by doing this we avoid mistakes with base64 byte sequence
-	if ciphertext[0] != firstByteEncryptedMessage {
+	if ciphertext[0] != firstByteEncryptedMessageV1 && ciphertext[0] != firstByteEncryptedMessageV2 {
 		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", ErrInvalidMessage)
 	}
 	buf := bytes.NewBuffer(b)
@@ -44,7 +45,7 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, *se
 	}
 
 	if d.verifier != nil {
-		footer, errFooter := serialization.MessageFooter.FromBuffer(d.header.AlgorithmSuite, buf)
+		footer, errFooter := serialization.MessageFooter.FromBuffer(d.header.AlgorithmSuite(), buf)
 		if errFooter != nil {
 			return nil, nil, errFooter
 		}
@@ -64,27 +65,27 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 		return err
 	}
 
-	if errPolicy := policy.Commitment.ValidatePolicyOnDecrypt(d.config.CommitmentPolicy(), header.AlgorithmSuite); errPolicy != nil {
+	if errPolicy := policy.ValidateOnDecrypt(d.config.CommitmentPolicy(), header.AlgorithmSuite()); errPolicy != nil {
 		return errPolicy
 	}
 
-	if header.AlgorithmSuite.IsSigning() {
+	if header.AlgorithmSuite().IsSigning() {
 		d.verifier = signature.NewECCVerifier(
-			header.AlgorithmSuite.Authentication.HashFunc,
-			header.AlgorithmSuite.Authentication.Algorithm,
+			header.AlgorithmSuite().Authentication.HashFunc,
+			header.AlgorithmSuite().Authentication.Algorithm,
 		)
 		if err := d.updateVerifier(header.Bytes()); err != nil {
 			return err
 		}
-		if err := d.updateVerifier(headerAuth.Serialize()); err != nil {
+		if err := d.updateVerifier(headerAuth.Bytes()); err != nil {
 			return err
 		}
 	}
 
 	dmr := model.DecryptionMaterialsRequest{
-		Algorithm:         header.AlgorithmSuite,
-		EncryptedDataKeys: serialization.EDK.AsKeys(header.EncryptedDataKeys),
-		EncryptionContext: header.AADData.AsEncryptionContext(),
+		Algorithm:         header.AlgorithmSuite(),
+		EncryptedDataKeys: serialization.EDK.AsKeys(header.EncryptedDataKeys()),
+		EncryptionContext: header.AADData().EncryptionContext(),
 	}
 
 	decMaterials, err := d.cmm.DecryptMaterials(ctx, dmr)
@@ -98,18 +99,18 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 		}
 	}
 
-	derivedDataKey, err := keyderivation.DeriveDataEncryptionKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite, header.MessageID)
+	derivedDataKey, err := keyderivation.DeriveDataEncryptionKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite(), header.MessageID())
 	if err != nil {
 		return fmt.Errorf("decrypt key derivation error: %w", err)
 	}
 
-	if header.AlgorithmSuite.IsCommitting() {
-		expectedCommitmentKey, err := keyderivation.CalculateCommitmentKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite, header.MessageID)
+	if header.AlgorithmSuite().IsCommitting() {
+		expectedCommitmentKey, err := keyderivation.CalculateCommitmentKey(decMaterials.DataKey().DataKey(), header.AlgorithmSuite(), header.MessageID())
 		if err != nil {
 			return fmt.Errorf("decrypt calculate commitment key error: %w", err)
 		}
 
-		if ok := hmac.Equal(expectedCommitmentKey, header.AlgorithmSuiteData); !ok {
+		if ok := hmac.Equal(expectedCommitmentKey, header.AlgorithmSuiteData()); !ok {
 			return fmt.Errorf("key commitment validation failed: key identity does not match the identity asserted in the message")
 		}
 	}
@@ -132,7 +133,7 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 }
 
 func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
-	body, err := serialization.DeserializeBody(buf, d.header.AlgorithmSuite, d.header.FrameLength)
+	body, err := serialization.DeserializeBody(buf, d.header.AlgorithmSuite(), d.header.FrameLength())
 	if err != nil {
 		return nil, fmt.Errorf("body error: %w", err)
 	}
@@ -141,9 +142,13 @@ func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
 	readBytes := 0
 
 	for _, frame := range body.Frames() {
-		associatedData := bodyaad.BodyAAD.ContentAADBytes(
-			d.header.MessageID,
-			bodyaad.BodyAAD.ContentString(suite.FramedContent, frame.IsFinal()),
+		contentString, err := bodyaad.ContentString(suite.FramedContent, frame.IsFinal())
+		if err != nil {
+			return nil, fmt.Errorf("decrypt frame error: %w", err)
+		}
+		associatedData := bodyaad.ContentAADBytes(
+			d.header.MessageID(),
+			contentString,
 			frame.SequenceNumber(),
 			len(frame.EncryptedContent()),
 		)

@@ -74,17 +74,17 @@ func Test_edk_new(t *testing.T) {
 
 	edk1Mock := &encryptedDataKey{
 		providerIDLen:       7,
-		ProviderID:          key1Mock.providerID,
+		providerID:          key1Mock.providerID,
 		providerInfoLen:     75,
-		ProviderInfo:        key1Mock.providerInfo,
+		providerInfo:        key1Mock.providerInfo,
 		encryptedDataKeyLen: 184,
 		encryptedDataKey:    key1Mock.encryptedDataKeyData,
 	}
 	edk2Mock := &encryptedDataKey{
 		providerIDLen:       7,
-		ProviderID:          key2Mock.providerID,
+		providerID:          key2Mock.providerID,
 		providerInfoLen:     75,
-		ProviderInfo:        key2Mock.providerInfo,
+		providerInfo:        key2Mock.providerInfo,
 		encryptedDataKeyLen: 184,
 		encryptedDataKey:    key2Mock.encryptedDataKeyData,
 	}
@@ -115,13 +115,13 @@ func Test_edk_new(t *testing.T) {
 			}
 			assert.Equalf(t, tt.want, got, "new(%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 			if tt.wantLen != 0 {
-				assert.Equalf(t, tt.wantBytes, got.bytes(), "bytes() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				assert.Equalf(t, tt.wantLen, got.len(), "len() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				buf := bytes.NewBuffer(got.bytes())
-				got2, err2 := e.fromBuffer(buf)
-				assert.NoErrorf(t, err2, "fromBuffer() error = %v, (%v, %v, %#v)", err2, tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				assert.Equalf(t, tt.want, got2, "fromBuffer() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				assert.Equalf(t, got, got2, "fromBuffer() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, tt.wantBytes, got.Bytes(), "bytes() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, tt.wantLen, got.Len(), "len() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				buf := bytes.NewBuffer(got.Bytes())
+				got2, err2 := e.deserialize(buf)
+				assert.NoErrorf(t, err2, "deserialize() error = %v, (%v, %v, %#v)", err2, tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, tt.want, got2, "deserialize() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, got, got2, "deserialize() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 				assert.Equalf(t, 0, buf.Len(), "buffer must have 0")
 			}
 		})
