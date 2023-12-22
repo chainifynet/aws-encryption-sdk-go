@@ -1,7 +1,7 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package bodyaad
+package bodyaad_test
 
 import (
 	"reflect"
@@ -9,35 +9,41 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
-func Test_bodyAAD_ContentString(t *testing.T) {
+func TestContentString(t *testing.T) {
 	type args struct {
 		contentType suite.ContentType
 		finalFrame  bool
 	}
 	tests := []struct {
-		name string
-		args args
-		want []byte
+		name    string
+		wantErr bool
+		args    args
+		want    []byte
 	}{
-		{"NotFinalFrame", args{suite.FramedContent, false}, []byte("AWSKMSEncryptionClient Frame")},
-		{"FinalFrame", args{suite.FramedContent, true}, []byte("AWSKMSEncryptionClient Final Frame")},
+		{"Not Final Frame", false, args{suite.FramedContent, false}, []byte("AWSKMSEncryptionClient Frame")},
+		{"Final Frame", false, args{suite.FramedContent, true}, []byte("AWSKMSEncryptionClient Final Frame")},
+		{"Non Framed Content", true, args{suite.NonFramedContent, true}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bo := bodyAAD{}
-			if got := bo.ContentString(tt.args.contentType, tt.args.finalFrame); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ContentString() = %v, want %v", got, tt.want)
+			got, err := bodyaad.ContentString(tt.args.contentType, tt.args.finalFrame)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
 }
 
-func Test_bodyAAD_ContentAADBytes(t *testing.T) {
-	contentString := BodyAAD.ContentString(suite.FramedContent, false)
-	contentStringFinal := BodyAAD.ContentString(suite.FramedContent, true)
+func TestContentAADBytes(t *testing.T) {
+	contentString, _ := bodyaad.ContentString(suite.FramedContent, false)
+	contentStringFinal, _ := bodyaad.ContentString(suite.FramedContent, true)
 	type args struct {
 		messageID     []byte
 		contentString []byte
@@ -55,31 +61,8 @@ func Test_bodyAAD_ContentAADBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bo := bodyAAD{}
-			if got := bo.ContentAADBytes(tt.args.messageID, tt.args.contentString, tt.args.seqNum, tt.args.length); !reflect.DeepEqual(got, tt.want) {
+			if got := bodyaad.ContentAADBytes(tt.args.messageID, tt.args.contentString, tt.args.seqNum, tt.args.length); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ContentAADBytes() = %#v, want %#v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestBodyAAD_ContentStringPanic(t *testing.T) {
-	tests := []struct {
-		name    string
-		f       func()
-		isPanic bool
-	}{
-		{"panicFinal", func() { BodyAAD.ContentString(suite.NonFramedContent, true) }, true},
-		{"panicNotFinal", func() { BodyAAD.ContentString(suite.NonFramedContent, false) }, true},
-		{"NotPanicFinal", func() { BodyAAD.ContentString(suite.FramedContent, true) }, false},
-		{"NotPanicNotFinal", func() { BodyAAD.ContentString(suite.FramedContent, false) }, false},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if test.isPanic {
-				assert.Panics(t, test.f)
-			} else {
-				assert.NotPanics(t, test.f)
 			}
 		})
 	}
