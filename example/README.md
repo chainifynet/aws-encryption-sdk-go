@@ -23,6 +23,8 @@ Alternatively, you can replace the values in `main.go` with the ARN of the keys 
 
 ### [Encrypt and Decrypt with Discovery enabled KMS provider](discoveryKmsProvider)
 
+### [Encrypt and Decrypt with MRK-aware enabled KMS provider](mrkAwareKmsProvider)
+
 ### [Using KMS and Raw providers to encrypt and decrypt](multipleKeyProvider)
 
 ### [Encryption and decryption under multiple AWS KMS CMK](multipleKmsKey)

@@ -15,7 +15,7 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 
 ## Features
 
-- Support for Message Format Version 2 and related [algorithms](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/algorithms-reference.html).
+- Support for Message Format Version 1 and 2 and related [algorithms](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/algorithms-reference.html).
 - AWS KMS Master Key Provider with a discovery filter.
 - AWS KMS Multi-Region Keys using [MRK-aware provider](example/mrkAwareKmsProvider) in Discovery or Strict mode.
 - Raw Master Key provider using static keys.
@@ -185,6 +185,7 @@ if err != nil {
 ## TODO
 
 - [ ] Add support for Caching Materials Manager.
+- [x] Add support for Message Format Version 1 [#170](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
 - [x] Add support for AWS KMS Multi-Region Keys [#46](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
 - [ ] Add support for KMS aliases.
 - [x] Cover `providers` package with tests.
