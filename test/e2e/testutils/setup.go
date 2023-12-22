@@ -18,18 +18,26 @@ func AlgSuffix(as *suite.AlgorithmSuite) string {
 	if as == nil {
 		return "NO_ALG"
 	}
-	if as.IsSigning() {
-		return "SIGN"
+	commit := ""
+	kdf := ""
+	if as.IsCommitting() {
+		commit = "_COMMIT"
 	}
-	return "NONE"
+	if as.IsKDFSupported() {
+		kdf = "HKDF_"
+	}
+	if as.IsSigning() {
+		return kdf + "SIGN" + commit
+	}
+	return kdf + "NONE" + commit
 }
 
-var SetupEncryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd { //nolint:gochecknoglobals,gocritic
-	return NewEncryptCmd(keyIDs, ec, frame, edk, alg)
+var SetupEncryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string, policy suite.CommitmentPolicy) *CliCmd { //nolint:gochecknoglobals,gocritic
+	return NewEncryptCmd(keyIDs, ec, frame, edk, alg, policy)
 }
 
-var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *CliCmd { //nolint:gochecknoglobals
-	return NewDecryptCmd(keyIDs, ec, frame, edk)
+var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string, policy suite.CommitmentPolicy) *CliCmd { //nolint:gochecknoglobals
+	return NewDecryptCmd(keyIDs, ec, frame, edk, policy)
 }
 
 var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) error) model.CryptoMaterialsManager { //nolint:gochecknoglobals
@@ -62,9 +70,15 @@ var SetupCMM = func(keyIDs []string, opts ...func(options *config.LoadOptions) e
 	return cmm
 }
 
-var SetupClient = func(maxEdk int) *client.Client { //nolint:gochecknoglobals
+var SetupClient = func(maxEdk int, cp suite.CommitmentPolicy) *client.Client { //nolint:gochecknoglobals
+	var p suite.CommitmentPolicy
+	if cp == 0 {
+		p = suite.CommitmentPolicyRequireEncryptRequireDecrypt
+	} else {
+		p = cp
+	}
 	cfg, err := clientconfig.NewConfigWithOpts(
-		clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyRequireEncryptRequireDecrypt),
+		clientconfig.WithCommitmentPolicy(p),
 		clientconfig.WithMaxEncryptedDataKeys(maxEdk),
 	)
 	if err != nil {
