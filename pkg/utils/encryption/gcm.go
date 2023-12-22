@@ -37,7 +37,7 @@ type GcmBase interface {
 
 type AEADEncrypter interface {
 	Encrypter
-	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, error)
+	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error)
 	ConstructIV(seqNum int) []byte
 }
 
@@ -131,13 +131,14 @@ func (ge Gcm) ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []by
 	return nil
 }
 
-func (ge Gcm) GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, error) {
-	_, headerAuth, err := ge.Encrypt(derivedDataKey, ge.ConstructIV(0), []byte(nil), headerBytes)
+func (ge Gcm) GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error) {
+	iv := ge.ConstructIV(0)
+	_, headerAuth, err := ge.Encrypt(derivedDataKey, iv, []byte(nil), headerBytes)
 	if err != nil {
-		return nil, fmt.Errorf("invalid header auth: %w", err)
+		return nil, nil, fmt.Errorf("invalid header auth: %w", err)
 	}
 
-	return headerAuth, nil
+	return headerAuth, iv, nil
 }
 
 // ConstructIV constructs IV
