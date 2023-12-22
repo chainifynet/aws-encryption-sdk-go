@@ -43,7 +43,7 @@ func main() {
 		panic(err) // handle error
 	}
 
-	fmt.Printf("encrypted encryption context: %v\n", header.AADData.AsEncryptionContext())
+	fmt.Printf("encrypted encryption context: %v\n", header.AADData().EncryptionContext())
 
 	// decrypt "encrypted" data
 	decrypted, _, err := sdkClient.Decrypt(context.TODO(), encrypted, cmm)

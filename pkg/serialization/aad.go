@@ -125,10 +125,10 @@ func (d *aadData) Bytes() []byte {
 	return buf
 }
 
-// AsEncryptionContext
+// EncryptionContext
 //
 // used during decryption process
-func (d *aadData) AsEncryptionContext() suite.EncryptionContext {
+func (d *aadData) EncryptionContext() suite.EncryptionContext {
 	ec := make(suite.EncryptionContext)
 
 	for _, pair := range d.kv {

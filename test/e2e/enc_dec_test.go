@@ -27,10 +27,11 @@ type testParam struct {
 	tEC     map[string]string
 	tFrame  int
 	tEdk    int
-	tClient func(maxEdk int) *client.Client
+	tClient func(maxEdk int, cp suite.CommitmentPolicy) *client.Client
 	tCMM    func(keyIDs []string, opts ...func(options *config.LoadOptions) error) model.CryptoMaterialsManager
 	tCMMi   model.CryptoMaterialsManager
-	tCliCmd func(keyIDs []string, ec map[string]string, frame int, edk int, alg string) *u.CliCmd
+	tCliCmd func(keyIDs []string, ec map[string]string, frame int, edk int, alg string, policy suite.CommitmentPolicy) *u.CliCmd
+	tPolicy suite.CommitmentPolicy
 }
 
 type tableTestCase struct {
@@ -43,6 +44,48 @@ type tableTestCase struct {
 }
 
 var testEncryptDecryptTableShort = []tableTestCase{
+	{
+		"Keys3_F256_Edk3", false, testFilesShort,
+		suite.AES_256_GCM_IV12_TAG16,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 256, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 256, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys3_F1024_Edk3", false, testFilesShort,
+		suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys2_F2048_Edk2", false, testFilesShort,
+		suite.AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn}, tEC: testEc, tFrame: 2048, tEdk: 2,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn}, tEC: testEc, tFrame: 2048, tEdk: 2,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
 	{
 		"Keys3_F1024_Edk3", false, testFilesShort, algSig,
 		&testParam{
@@ -63,6 +106,16 @@ var testEncryptDecryptTableShort = []tableTestCase{
 		}, nil,
 	},
 	{
+		"Keys1_F192_Edk1", true, testFilesShort,
+		suite.AES_192_GCM_IV12_TAG16_HKDF_SHA256,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 192, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
+	{
 		"Keys1_F64_Edk1", true, testFilesShort, algSig,
 		&testParam{
 			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 64, tEdk: 1,
@@ -73,6 +126,36 @@ var testEncryptDecryptTableShort = []tableTestCase{
 }
 
 var testEncryptDecryptTable = []tableTestCase{
+	{
+		"Keys1_F512_Edk1", false, testFilesTable,
+		suite.AES_128_GCM_IV12_TAG16,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 512, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
+	{
+		"Keys2_F256_Edk2", false, testFilesTable,
+		suite.AES_192_GCM_IV12_TAG16,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn}, tEC: testEc, tFrame: 256, tEdk: 2,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
+	{
+		"Keys3_F128_Edk3", false, testFilesTable,
+		suite.AES_256_GCM_IV12_TAG16,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 128, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
 	{
 		"Keys3_F1024_Edk3", false, testFilesTable, algSig,
 		&testParam{
@@ -94,6 +177,76 @@ var testEncryptDecryptTable = []tableTestCase{
 		&testParam{
 			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
 			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+		},
+	},
+	{
+		"Keys3_F1024_Edk3", false, testFilesTable,
+		suite.AES_128_GCM_IV12_TAG16_HKDF_SHA256,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys3_F1024_Edk3", false, testFilesTable,
+		suite.AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys3_F128_Edk3", false, testFilesTable,
+		suite.AES_192_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 128, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 128, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys3_F1024_Edk3", false, testFilesTable,
+		suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+	},
+	{
+		"Keys3_F1024_Edk3", false, testFilesTable,
+		suite.AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		&testParam{
+			tKeys: []string{key1Arn, key2Arn, key3Arn}, tEC: testEc, tFrame: 1024, tEdk: 3,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupDecryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
 		},
 	},
 	{
@@ -253,28 +406,6 @@ var testEncryptDecryptTable = []tableTestCase{
 		},
 	},
 	{
-		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
-		&testParam{
-			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
-		},
-		&testParam{
-			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
-		},
-	},
-	{
-		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable, algSig,
-		&testParam{
-			tKeys: []string{key2Arn}, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupEncryptCmd,
-		},
-		&testParam{
-			tKeys: nil, tEC: testEc, tFrame: 1024, tEdk: 2,
-			tClient: u.SetupClient, tCMM: nil, tCMMi: cmm1keys2, tCliCmd: u.SetupDecryptCmd,
-		},
-	},
-	{
 		"CMM1(2)_Keys1(2)_F1024_Edk2_CMM1(2)", false, testFilesTable,
 		algNoSig,
 		&testParam{
@@ -320,6 +451,26 @@ var testEncryptDecryptTable = []tableTestCase{
 		nil,
 	},
 	{
+		"Keys1_F128_Edk1", false, testFilesTable,
+		suite.AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 128, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
+	{
+		"Keys1_F192_Edk1", true, testFilesTable,
+		suite.AES_192_GCM_IV12_TAG16_HKDF_SHA256,
+		&testParam{
+			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 192, tEdk: 1,
+			tClient: u.SetupClient, tCMM: u.SetupCMM, tCMMi: nil, tCliCmd: u.SetupEncryptCmd,
+			tPolicy: suite.CommitmentPolicyForbidEncryptAllowDecrypt,
+		},
+		nil,
+	},
+	{
 		"Keys1_F64_Edk1", true, testFilesTable, algSig,
 		&testParam{
 			tKeys: []string{key1Arn}, tEC: testEc, tFrame: 64, tEdk: 1,
@@ -352,7 +503,7 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
-			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+			t.Run(strings.Join([]string{tc.tName, tc.tAlg.IDString(), u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
 				ctx := context.Background()
 				log.Debug().
 					Int("len", len(tf.data)).
@@ -361,7 +512,7 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 					Msg("Input")
 				///////////
 				// encrypt with SDK
-				c := tc.tEnc.tClient(tc.tEnc.tEdk)
+				c := tc.tEnc.tClient(tc.tEnc.tEdk, tc.tEnc.tPolicy)
 				assert.NotNil(t, c)
 				var cmm model.CryptoMaterialsManager
 				if tc.tEnc.tCMM != nil {
@@ -388,10 +539,10 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 				// decrypt with CLI
 				var cmdDecrypt1 *u.CliCmd
 				if tc.tDec == nil {
-					cmdDecrypt1 = u.NewDecryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk)
+					cmdDecrypt1 = u.NewDecryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tEnc.tPolicy)
 					require.NotNil(t, cmdDecrypt1)
 				} else {
-					cmdDecrypt1 = tc.tDec.tCliCmd(tc.tDec.tKeys, tc.tDec.tEC, tc.tDec.tFrame, tc.tDec.tEdk, tc.tAlg.Name())
+					cmdDecrypt1 = tc.tDec.tCliCmd(tc.tDec.tKeys, tc.tDec.tEC, tc.tDec.tFrame, tc.tDec.tEdk, tc.tAlg.Name(), tc.tDec.tPolicy)
 					require.NotNil(t, cmdDecrypt1)
 				}
 
@@ -418,7 +569,7 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
-			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+			t.Run(strings.Join([]string{tc.tName, tc.tAlg.IDString(), u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
 				ctx := context.Background()
 				log.Debug().
 					Int("len", len(tf.data)).
@@ -429,10 +580,10 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 				// encrypt with CLI
 				var cmdEncrypt1 *u.CliCmd
 				if tc.tDec == nil {
-					cmdEncrypt1 = u.NewEncryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name())
+					cmdEncrypt1 = u.NewEncryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name(), tc.tEnc.tPolicy)
 					require.NotNil(t, cmdEncrypt1)
 				} else {
-					cmdEncrypt1 = tc.tEnc.tCliCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name())
+					cmdEncrypt1 = tc.tEnc.tCliCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name(), tc.tEnc.tPolicy)
 					require.NotNil(t, cmdEncrypt1)
 				}
 
@@ -450,7 +601,12 @@ func Test_Integration_EncryptCLIDecryptSDK(t *testing.T) {
 
 				///////////
 				// decrypt with SDK
-				c := tc.tEnc.tClient(tc.tEnc.tEdk)
+				var c *client.Client
+				if tc.tDec == nil {
+					c = tc.tEnc.tClient(tc.tEnc.tEdk, tc.tEnc.tPolicy)
+				} else {
+					c = tc.tDec.tClient(tc.tDec.tEdk, tc.tDec.tPolicy)
+				}
 				assert.NotNil(t, c)
 				var cmm model.CryptoMaterialsManager
 				if tc.tDec == nil {
@@ -487,10 +643,11 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 
 	for _, tc := range tests {
 		for _, tf := range tc.tInputs {
-			t.Run(strings.Join([]string{tc.tName, u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
+			t.Run(strings.Join([]string{tc.tName, tc.tAlg.IDString(), u.AlgSuffix(tc.tAlg), tf.Name}, "_"), func(t *testing.T) {
 				ctx := context.Background()
 				tLog := log.With().
 					Str("test", tc.tName).
+					Str("algID", tc.tAlg.IDString()).
 					Logger()
 				tLog.Debug().
 					Str("alg", u.AlgSuffix(tc.tAlg)).
@@ -499,7 +656,7 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 					Msg("Input")
 				///////////
 				// encrypt with SDK
-				c := tc.tEnc.tClient(tc.tEnc.tEdk)
+				c := tc.tEnc.tClient(tc.tEnc.tEdk, tc.tEnc.tPolicy)
 				assert.NotNil(t, c)
 				var cmm model.CryptoMaterialsManager
 				if tc.tEnc.tCMM != nil {
@@ -527,10 +684,10 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// decrypt with CLI
 				var cmdDecrypt1 *u.CliCmd
 				if tc.tDec == nil {
-					cmdDecrypt1 = u.NewDecryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk)
+					cmdDecrypt1 = u.NewDecryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tEnc.tPolicy)
 					require.NotNil(t, cmdDecrypt1)
 				} else {
-					cmdDecrypt1 = tc.tDec.tCliCmd(tc.tDec.tKeys, tc.tDec.tEC, tc.tDec.tFrame, tc.tDec.tEdk, tc.tAlg.Name())
+					cmdDecrypt1 = tc.tDec.tCliCmd(tc.tDec.tKeys, tc.tDec.tEC, tc.tDec.tFrame, tc.tDec.tEdk, tc.tAlg.Name(), tc.tDec.tPolicy)
 					require.NotNil(t, cmdDecrypt1)
 				}
 
@@ -550,10 +707,10 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with CLI
 				var cmdEncrypt2 *u.CliCmd
 				if tc.tDec == nil {
-					cmdEncrypt2 = u.NewEncryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name())
+					cmdEncrypt2 = u.NewEncryptCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name(), tc.tEnc.tPolicy)
 					require.NotNil(t, cmdEncrypt2)
 				} else {
-					cmdEncrypt2 = tc.tEnc.tCliCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name())
+					cmdEncrypt2 = tc.tEnc.tCliCmd(tc.tEnc.tKeys, tc.tEnc.tEC, tc.tEnc.tFrame, tc.tEnc.tEdk, tc.tAlg.Name(), tc.tEnc.tPolicy)
 					require.NotNil(t, cmdEncrypt2)
 				}
 
@@ -592,9 +749,9 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// using new cmm and client
 				var c2 *client.Client
 				if tc.tDec == nil {
-					c2 = tc.tEnc.tClient(tc.tEnc.tEdk)
+					c2 = tc.tEnc.tClient(tc.tEnc.tEdk, tc.tEnc.tPolicy)
 				} else {
-					c2 = tc.tDec.tClient(tc.tDec.tEdk)
+					c2 = tc.tDec.tClient(tc.tDec.tEdk, tc.tDec.tPolicy)
 				}
 				assert.NotNil(t, c2)
 				var cmm2 model.CryptoMaterialsManager

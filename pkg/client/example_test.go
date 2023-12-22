@@ -14,7 +14,7 @@ import (
 func ExampleNewClient() {
 	var c = client.NewClient()
 	fmt.Printf("%#v", *c)
-	// Output: client.Client{config:clientconfig.ClientConfig{commitmentPolicy:2, maxEncryptedDataKeys:10}}
+	// Output: client.Client{config:clientconfig.ClientConfig{commitmentPolicy:3, maxEncryptedDataKeys:10}}
 }
 
 func ExampleNewClientWithConfig() {
@@ -27,5 +27,5 @@ func ExampleNewClientWithConfig() {
 	}
 	var c = client.NewClientWithConfig(cfg)
 	fmt.Printf("%#v", *c)
-	// Output: client.Client{config:clientconfig.ClientConfig{commitmentPolicy:2, maxEncryptedDataKeys:2}}
+	// Output: client.Client{config:clientconfig.ClientConfig{commitmentPolicy:3, maxEncryptedDataKeys:2}}
 }

@@ -48,7 +48,7 @@ func TestNewConfigWithOptsFaulty(t *testing.T) {
 	assert.Nil(t, cfg2)
 
 	cfg3, err3 := NewConfigWithOpts(
-		WithCommitmentPolicy(3),
+		WithCommitmentPolicy(4),
 		WithMaxEncryptedDataKeys(10),
 	)
 

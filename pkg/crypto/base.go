@@ -12,7 +12,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 )
@@ -24,23 +24,24 @@ var (
 )
 
 const (
-	firstByteEncryptedMessage = byte(0x02)
+	firstByteEncryptedMessageV1 = byte(0x01)
+	firstByteEncryptedMessageV2 = byte(0x02)
 )
 
 type SdkDecrypter interface {
-	decrypt(ctx context.Context, ciphertext []byte) ([]byte, *serialization.MessageHeader, error)
+	decrypt(ctx context.Context, ciphertext []byte) ([]byte, format.MessageHeader, error)
 }
 
 type decrypter struct {
 	cmm             model.CryptoMaterialsManager
 	config          clientconfig.ClientConfig
 	aeadDecrypter   encryption.AEADDecrypter
-	header          *serialization.MessageHeader
+	header          format.MessageHeader
 	verifier        signature.Verifier
 	_derivedDataKey []byte
 }
 
-func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext []byte, cmm model.CryptoMaterialsManager) ([]byte, *serialization.MessageHeader, error) {
+func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext []byte, cmm model.CryptoMaterialsManager) ([]byte, format.MessageHeader, error) {
 	dec := decrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,
@@ -57,7 +58,7 @@ func Decrypt(ctx context.Context, config clientconfig.ClientConfig, ciphertext [
 var _ SdkDecrypter = (*decrypter)(nil)
 
 type SdkEncrypter interface {
-	encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext) ([]byte, *serialization.MessageHeader, error)
+	encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext) ([]byte, format.MessageHeader, error)
 }
 
 type encrypter struct {
@@ -66,13 +67,13 @@ type encrypter struct {
 	algorithm       *suite.AlgorithmSuite
 	frameLength     int
 	aeadEncrypter   encryption.AEADEncrypter
-	header          *serialization.MessageHeader
+	header          format.MessageHeader
 	_derivedDataKey []byte
 	signer          signature.Signer
 	ciphertextBuf   *bytes.Buffer
 }
 
-func Encrypt(ctx context.Context, config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, *serialization.MessageHeader, error) {
+func Encrypt(ctx context.Context, config clientconfig.ClientConfig, source []byte, ec suite.EncryptionContext, cmm model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, format.MessageHeader, error) {
 	enc := encrypter{
 		cmm:           cmm.GetInstance(),
 		config:        config,

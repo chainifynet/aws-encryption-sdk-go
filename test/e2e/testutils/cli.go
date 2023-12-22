@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
 var log = logger.L().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
@@ -30,8 +31,8 @@ type CliCmd struct {
 	args    []string
 }
 
-func NewEncryptCmd(keyIDs []string, ec map[string]string, frame, edk int, alg string) *CliCmd {
-	command, args := encryptCmdArgs(keyIDs, ec, frame, edk, alg)
+func NewEncryptCmd(keyIDs []string, ec map[string]string, frame, edk int, alg string, policy suite.CommitmentPolicy) *CliCmd {
+	command, args := encryptCmdArgs(keyIDs, ec, frame, edk, alg, mapCommitmentPolicy(policy))
 	//log.Trace().Str("command", command).Strs("args", args).Msg("new EncryptCmd")
 	return &CliCmd{
 		stdout:  new(bytes.Buffer),
@@ -42,8 +43,8 @@ func NewEncryptCmd(keyIDs []string, ec map[string]string, frame, edk int, alg st
 	}
 }
 
-func NewDecryptCmd(keyIDs []string, ec map[string]string, frame, edk int) *CliCmd {
-	command, args := decryptCmdArgs(keyIDs, ec, frame, edk)
+func NewDecryptCmd(keyIDs []string, ec map[string]string, frame, edk int, policy suite.CommitmentPolicy) *CliCmd {
+	command, args := decryptCmdArgs(keyIDs, ec, frame, edk, mapCommitmentPolicy(policy))
 	//log.Trace().Str("command", command).Strs("args", args).Msg("new DecryptCmd")
 	return &CliCmd{
 		stdout:  new(bytes.Buffer),
@@ -127,7 +128,7 @@ func (c *CliCmd) Run(input []byte, wantErr bool) (output []byte, err error) {
 }
 
 //goland:noinspection GoUnusedParameter
-func decryptCmdArgs(keyIDs []string, ec map[string]string, _, edk int) (command string, args []string) {
+func decryptCmdArgs(keyIDs []string, ec map[string]string, _, edk int, policy string) (command string, args []string) {
 	wrappedKeys := wrappingKeysArg(keyIDs)
 	ecArgs := encryptionContextArg(ec)
 	cmdArgs := []string{
@@ -137,7 +138,7 @@ func decryptCmdArgs(keyIDs []string, ec map[string]string, _, edk int) (command 
 		"--suppress-metadata",
 		"--input", "-",
 		"--output", "-",
-		"--commitment-policy", "require-encrypt-require-decrypt", // decrypt optional
+		"--commitment-policy", policy, // decrypt optional
 		//"--frame-length", "1024", // enc only
 		"--max-encrypted-data-keys", strconv.Itoa(edk), // dec optional
 	}
@@ -154,7 +155,7 @@ func decryptCmdArgs(keyIDs []string, ec map[string]string, _, edk int) (command 
 	return cliCmd, cmdArgs
 }
 
-func encryptCmdArgs(keyIDs []string, ec map[string]string, frame, edk int, algorithm string) (command string, args []string) {
+func encryptCmdArgs(keyIDs []string, ec map[string]string, frame, edk int, algorithm, policy string) (command string, args []string) {
 	wrappedKeys := encryptWrappingKeysArg(keyIDs)
 	ecArgs := encryptionContextArg(ec)
 	cmdArgs := []string{
@@ -164,7 +165,7 @@ func encryptCmdArgs(keyIDs []string, ec map[string]string, frame, edk int, algor
 		"--suppress-metadata",
 		"--input", "-",
 		"--output", "-",
-		"--commitment-policy", "require-encrypt-require-decrypt",
+		"--commitment-policy", policy,
 		"--frame-length", strconv.Itoa(frame), // enc only
 		"--max-encrypted-data-keys", strconv.Itoa(edk), // enc only
 	}
@@ -178,6 +179,19 @@ func encryptCmdArgs(keyIDs []string, ec map[string]string, frame, edk int, algor
 		cmdArgs = append(cmdArgs, ecArgs...)
 	}
 	return cliCmd, cmdArgs
+}
+
+func mapCommitmentPolicy(p suite.CommitmentPolicy) string {
+	switch p {
+	case suite.CommitmentPolicyForbidEncryptAllowDecrypt:
+		return "forbid-encrypt-allow-decrypt"
+	case suite.CommitmentPolicyRequireEncryptAllowDecrypt:
+		return "require-encrypt-allow-decrypt"
+	case suite.CommitmentPolicyRequireEncryptRequireDecrypt:
+		return "require-encrypt-require-decrypt"
+	default:
+		return "require-encrypt-require-decrypt"
+	}
 }
 
 func encryptionContextArg(ec map[string]string) []string {

@@ -1,0 +1,65 @@
+name: Go E2E full
+
+on:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    name: Full Integration Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version: 1.21.x
+
+      - name: Load cached dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-e2e-full-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-e2e-full-
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Unit tests
+        run: make unit
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install E2E dependencies
+        run: make e2e-deps
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+          mask-aws-account-id: true
+          output-credentials: true
+          role-duration-seconds: 900
+          role-session-name: GithubOidcIntegAssumeRole
+          role-external-id: ${{ secrets.OIDC_AWS_ROLE_EXTERNAL_ID }}
+
+      - name: E2E full tests
+        run: make e2e-test-full
+        env:
+          KEY_1_ARN: ${{ secrets.KEY_1_ARN }}
+          KEY_2_ARN: ${{ secrets.KEY_2_ARN }}
+          KEY_3_ARN: ${{ secrets.KEY_3_ARN }}
+          MRK_KEY_1_ARN: ${{ secrets.MRK_KEY_1_ARN }}
+          MRK_KEY_2_ARN: ${{ secrets.MRK_KEY_2_ARN }}

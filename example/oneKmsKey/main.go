@@ -47,13 +47,13 @@ func main() {
 		panic(err) // handle error
 	}
 
-	fmt.Printf("encrypted data key count: %d\n", header.EncryptedDataKeyCount)
-	fmt.Printf("encrypted encryption context: %v\n", header.AADData.AsEncryptionContext())
+	fmt.Printf("encrypted data key count: %d\n", header.EncryptedDataKeyCount())
+	fmt.Printf("encrypted encryption context: %v\n", header.AADData().EncryptionContext())
 
-	fmt.Printf("header AlgorithmSuite: %s\n", header.AlgorithmSuite.String())
+	fmt.Printf("header AlgorithmSuite: %s\n", header.AlgorithmSuite().String())
 	// Output: header AlgorithmSuite: AlgID 0x0578: AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384
 
-	fmt.Printf("header frameLength: %d\n", header.FrameLength)
+	fmt.Printf("header frameLength: %d\n", header.FrameLength())
 	// Output: header frameLength: 4096
 
 	// decrypt "encrypted" data
