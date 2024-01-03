@@ -32,6 +32,11 @@ packages:
       DecryptionMaterial:
       EncryptionMaterial:
       Wrapper:
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format:
+    config:
+      tags: "mocks"
+    interfaces:
+      MessageAAD:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption:
     interfaces:
       GcmBase:

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -321,6 +322,38 @@ func Test_deserializeHeader(t *testing.T) {
 				assert.Equal(t, tt.want.IVLength(), got.IVLength())
 				assert.Equal(t, tt.want.AlgorithmSuiteData(), got.AlgorithmSuiteData())
 			}
+		})
+	}
+}
+
+func TestWriteAAD(t *testing.T) {
+	tests := []struct {
+		name          string
+		aadLen        int
+		mockBytes     []byte
+		want          []byte
+		wantBytesCall bool
+		wantMock      bool
+	}{
+		{"Empty Buffer and Blank AAD", 0, nil, []byte{}, false, false},
+		{"Empty Buffer and AADLen not zero", 5, nil, []byte{}, true, true},
+		{"Filled Buffer and AADLen zero", 0, []byte("mockaad"), []byte{}, false, true},
+		{"Filled Buffer and AADLen not zero", 5, []byte("mockaad"), []byte("mockaad"), true, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var mockData *mocks.MockMessageAAD
+			if tt.wantMock {
+				mockData = mocks.NewMockMessageAAD(t)
+				if tt.wantBytesCall {
+					mockData.EXPECT().Bytes().Return(tt.mockBytes).Once()
+				}
+			}
+
+			buf := &[]byte{}
+			writeAAD(buf, tt.aadLen, mockData)
+			assert.Equal(t, tt.want, *buf, "Buffers should be equal")
 		})
 	}
 }
