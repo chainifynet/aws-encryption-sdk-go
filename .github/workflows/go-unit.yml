@@ -58,11 +58,11 @@ jobs:
         run: make unit
 
       - name: Generate coverage report
-        if: ${{ github.actor != 'dependabot[bot]' && matrix.latest }}
+        if: matrix.latest
         run: make test-cover
 
       - name: Upload coverage to Codecov
-        if: ${{ github.actor != 'dependabot[bot]' && matrix.latest }}
+        if: matrix.latest
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
