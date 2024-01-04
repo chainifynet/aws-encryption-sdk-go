@@ -56,3 +56,14 @@ jobs:
 
       - name: Test
         run: make unit
+
+      - name: Generate coverage report
+        if: matrix.latest
+        run: make test-cover
+
+      - name: Upload coverage to Codecov
+        if: matrix.latest
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unittests
