@@ -2,7 +2,7 @@ module github.com/chainifynet/aws-encryption-sdk-go/example/multipleKmsKey
 
 go 1.20
 
-require github.com/chainifynet/aws-encryption-sdk-go v0.1.1
+require github.com/chainifynet/aws-encryption-sdk-go v0.2.1
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.0 // indirect
