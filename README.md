@@ -2,6 +2,7 @@
 
 [![Go Unit](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml)
 [![Go E2E](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml)
+[![codecov](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go/graph/badge.svg?token=YPZT7IOJMM)](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go)
 ![Code style: gofmt](https://img.shields.io/badge/code_style-gofmt-00ADD8.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/chainifynet/aws-encryption-sdk-go.svg)](https://pkg.go.dev/github.com/chainifynet/aws-encryption-sdk-go)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go?ref=badge_shield)
