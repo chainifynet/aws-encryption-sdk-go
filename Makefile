@@ -33,9 +33,9 @@ mocks:
 mocks-build-tag:
 	@echo "Adding mocks build tag to mock files"
 	@if [ "$$(uname)" = "Darwin" ]; then \
-		find ./mocks/ -name '*_mock.go' -exec gsed -i '/^package/ i //go:build mocks' {} +; \
+		find ./mocks/ -name '*_mock.go' -exec gsed -i '/^package/ i //go:build mocks\n' {} +; \
 	else \
-		find ./mocks/ -name '*_mock.go' -exec sed -i '/^package/ i //go:build mocks' {} +; \
+		find ./mocks/ -name '*_mock.go' -exec sed -i '/^package/ i //go:build mocks\n' {} +; \
 	fi
 
 lint: mocks vet lint-ci
