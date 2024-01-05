@@ -36,7 +36,7 @@ func TestNewCacheEntry(t *testing.T) {
 			name:     "minimal lifetime",
 			key:      []byte("yetAnotherKey"),
 			value:    model.EncryptionMaterials{},
-			lifetime: 20 * time.Microsecond,
+			lifetime: 100 * time.Millisecond,
 		},
 	}
 
