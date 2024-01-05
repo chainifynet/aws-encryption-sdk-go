@@ -28,6 +28,9 @@ type DefaultCryptoMaterialsManager struct {
 var _ model.CryptoMaterialsManager = (*DefaultCryptoMaterialsManager)(nil)
 
 func NewDefault(primary model.MasterKeyProvider, extra ...model.MasterKeyProvider) (*DefaultCryptoMaterialsManager, error) {
+	if primary == nil {
+		return nil, fmt.Errorf("primary MasterKeyProvider nil : %w", ErrCMM)
+	}
 	if len(extra) == 0 {
 		return &DefaultCryptoMaterialsManager{
 			primaryKeyProvider: primary,
@@ -125,7 +128,6 @@ func (dm *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, d
 		if errDecryptDataKey != nil {
 			return nil, fmt.Errorf("no data key, last error: %w", errors.Join(ErrCMM, errDecryptDataKey))
 		}
-		//return nil, fmt.Errorf("no data key: %w", ErrCMM)
 		return nil, fmt.Errorf("no data key: %w", ErrCMM)
 	}
 
@@ -135,10 +137,10 @@ func (dm *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, d
 	}
 
 	// handle signing algo
-	if _, ok := decReq.EncryptionContext[encryptedContextAWSKey]; !ok {
-		return nil, fmt.Errorf("missing %s in encryption context: %w", encryptedContextAWSKey, errors.Join(ErrCMM, err))
+	if _, ok := decReq.EncryptionContext[EcPublicKeyField]; !ok {
+		return nil, fmt.Errorf("missing %s in encryption context: %w", EcPublicKeyField, errors.Join(ErrCMM, err))
 	}
-	pubKeyStr := decReq.EncryptionContext[encryptedContextAWSKey]
+	pubKeyStr := decReq.EncryptionContext[EcPublicKeyField]
 	verificationKey, err := b64.StdEncoding.DecodeString(pubKeyStr)
 	if err != nil {
 		return nil, fmt.Errorf("ECDSA key error: %w", errors.Join(ErrCMM, err))
@@ -165,6 +167,6 @@ func (dm *DefaultCryptoMaterialsManager) generateSigningKeyUpdateEncryptionConte
 	}
 	pubCompressed := elliptic.MarshalCompressed(algorithm.Authentication.Algorithm, private.PublicKey.X, private.PublicKey.Y)
 
-	ec[encryptedContextAWSKey] = b64.StdEncoding.EncodeToString(pubCompressed)
+	ec[EcPublicKeyField] = b64.StdEncoding.EncodeToString(pubCompressed)
 	return private, nil
 }

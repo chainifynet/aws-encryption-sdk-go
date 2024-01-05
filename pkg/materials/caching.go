@@ -20,33 +20,36 @@ type BaseCache interface {
 type CachingCryptoMaterialsManager struct {
 	// TODO probably add DefaultCryptoMaterialsManager
 	cache       BaseCache
-	maxAge      time.Duration //nolint:unused
-	maxMessages uint64        //nolint:unused
-	maxBytes    int           //nolint:unused
+	maxAge      time.Duration
+	maxMessages uint64
+	maxBytes    int
 }
 
 func NewCaching(cache BaseCache, _ model.MasterKeyProvider, _ ...model.MasterKeyProvider) (*CachingCryptoMaterialsManager, error) {
-	_ = &CachingCryptoMaterialsManager{
-		cache: cache,
-	}
-	// TODO implement me
-	panic("not implemented yet")
+	return &CachingCryptoMaterialsManager{
+		cache:       cache,
+		maxAge:      300 * time.Second, //nolint:gomnd
+		maxMessages: 1000,              //nolint:gomnd
+		maxBytes:    1000000,           //nolint:gomnd
+	}, nil
 }
 
 // compile checking that CachingCryptoMaterialsManager implements CryptoMaterialsManager interface
 var _ model.CryptoMaterialsManager = (*CachingCryptoMaterialsManager)(nil)
 
 func (cm *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ context.Context, _ model.EncryptionMaterialsRequest) (model.EncryptionMaterial, error) {
-	//TODO implement me
-	panic("not implemented yet")
+	return nil, nil
 }
 
 func (cm *CachingCryptoMaterialsManager) DecryptMaterials(_ context.Context, _ model.DecryptionMaterialsRequest) (model.DecryptionMaterial, error) {
-	//TODO implement me
-	panic("not implemented yet")
+	return nil, nil
 }
 
 func (cm *CachingCryptoMaterialsManager) GetInstance() model.CryptoMaterialsManager {
-	//TODO implement me
-	panic("not implemented yet")
+	return &CachingCryptoMaterialsManager{
+		cache:       cm.cache,
+		maxAge:      cm.maxAge,
+		maxMessages: cm.maxMessages,
+		maxBytes:    cm.maxBytes,
+	}
 }
