@@ -4,5 +4,5 @@
 package materials
 
 const (
-	encryptedContextAWSKey = "aws-crypto-public-key"
+	EcPublicKeyField = "aws-crypto-public-key"
 )

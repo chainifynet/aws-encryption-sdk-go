@@ -14,8 +14,8 @@ type CacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials] struct 
 	value     V
 	createdAt time.Time
 	lifetime  time.Duration
-	messages  uint64 //nolint:unused
-	bytes     int    //nolint:unused
+	messages  uint64
+	bytes     int
 	valid     bool
 }
 
@@ -46,11 +46,11 @@ func (ce *CacheEntry[V]) IsTooOld() bool {
 	return ce.Age() > ce.lifetime.Seconds()
 }
 
-func (ce *CacheEntry[V]) updateMeta(b []byte) { //nolint:unused
+func (ce *CacheEntry[V]) updateMeta(b []byte) {
 	ce.bytes += len(b)
 	ce.messages++
 }
 
-func (ce *CacheEntry[V]) invalidate() { //nolint:unused
+func (ce *CacheEntry[V]) invalidate() {
 	ce.valid = false
 }
