@@ -33,7 +33,7 @@ func (ha headerAuth) IV() []byte {
 func NewHeaderAuth(v suite.MessageFormatVersion, iv, authData []byte) (format.MessageHeaderAuth, error) {
 	// TODO validate MessageFormatVersion and iv
 	if len(authData) != headerAuthDataLen {
-		return nil, fmt.Errorf("incorect len of authData %d", len(authData))
+		return nil, fmt.Errorf("incorrect len of authData %d", len(authData))
 	}
 	return &headerAuth{
 		version:            v,

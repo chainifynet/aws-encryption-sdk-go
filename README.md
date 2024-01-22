@@ -2,6 +2,7 @@
 
 [![Go Unit](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml)
 [![Go E2E](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/chainifynet/aws-encryption-sdk-go)](https://goreportcard.com/report/github.com/chainifynet/aws-encryption-sdk-go)
 [![codecov](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go/graph/badge.svg?token=YPZT7IOJMM)](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go)
 ![Code style: gofmt](https://img.shields.io/badge/code_style-gofmt-00ADD8.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/chainifynet/aws-encryption-sdk-go.svg)](https://pkg.go.dev/github.com/chainifynet/aws-encryption-sdk-go)
