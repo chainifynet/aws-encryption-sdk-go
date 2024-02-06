@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.6
 	github.com/aws/aws-sdk-go-v2/service/kms v1.27.9
 	github.com/aws/smithy-go v1.19.0
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.18.0
 )
