@@ -12,7 +12,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/hasher"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
@@ -33,7 +33,9 @@ type ECCSigner struct {
 
 var _ Signer = (*ECCSigner)(nil)
 
-func NewECCSigner(hashFn func() hash.Hash, c elliptic.Curve, signLen int, key *ecdsa.PrivateKey) *ECCSigner {
+type SignerFunc func(hashFn func() hash.Hash, c elliptic.Curve, signLen int, key *ecdsa.PrivateKey) Signer
+
+func NewECCSigner(hashFn func() hash.Hash, c elliptic.Curve, signLen int, key *ecdsa.PrivateKey) Signer {
 	return &ECCSigner{
 		Hasher:  hasher.NewECCHasher(hashFn, c),
 		signLen: signLen,

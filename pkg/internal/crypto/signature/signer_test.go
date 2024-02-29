@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/hasher"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 )
 
 func TestNewECCSigner(t *testing.T) {

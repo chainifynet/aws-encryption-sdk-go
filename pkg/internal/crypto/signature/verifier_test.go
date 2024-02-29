@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/hasher"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 )
 
 func TestNewECCVerifier(t *testing.T) {

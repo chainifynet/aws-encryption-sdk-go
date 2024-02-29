@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/hasher"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 )
 
 var (
@@ -30,7 +30,9 @@ type ECCVerifier struct {
 
 var _ Verifier = (*ECCVerifier)(nil)
 
-func NewECCVerifier(hashFn func() hash.Hash, c elliptic.Curve) *ECCVerifier {
+type VerifierFunc func(hashFn func() hash.Hash, c elliptic.Curve) Verifier
+
+func NewECCVerifier(hashFn func() hash.Hash, c elliptic.Curve) Verifier {
 	return &ECCVerifier{
 		Hasher: hasher.NewECCHasher(hashFn, c),
 	}
