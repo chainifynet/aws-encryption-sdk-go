@@ -36,10 +36,10 @@ func Test_footer_len(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &footer{
 				algorithmSuite: tt.algorithmSuite,
-				Signature:      make([]byte, tt.algorithmSuite.Authentication.SignatureLen),
+				signature:      make([]byte, tt.algorithmSuite.Authentication.SignatureLen),
 				signLen:        tt.algorithmSuite.Authentication.SignatureLen,
 			}
-			assert.Equalf(t, tt.want, f.len(), "len()")
+			assert.Equalf(t, tt.want, f.Len(), "Len()")
 		})
 	}
 }
@@ -63,7 +63,7 @@ func Test_footer_Bytes(t *testing.T) {
 			f := &footer{
 				algorithmSuite: tt.fields.algorithmSuite,
 				signLen:        tt.fields.signLen,
-				Signature:      tt.fields.Signature,
+				signature:      tt.fields.Signature,
 			}
 			assert.Equalf(t, tt.want, f.Bytes(), "Bytes()")
 		})
@@ -137,7 +137,7 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
 				signLen:        suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY.Authentication.SignatureLen,
-				Signature:      zeroSignature,
+				signature:      zeroSignature,
 			},
 			wantErr: false,
 		},
@@ -150,7 +150,7 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				signLen:        suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384.Authentication.SignatureLen,
-				Signature:      p384Signature,
+				signature:      p384Signature,
 			},
 			wantErr: false,
 		},
@@ -162,7 +162,7 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				signLen:        suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384.Authentication.SignatureLen,
-				Signature:      p384Signature,
+				signature:      p384Signature,
 			},
 			wantErr: false,
 		},
@@ -170,15 +170,15 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MessageFooter.FromBuffer(tt.args.alg, tt.args.buf)
+			got, err := deserializeFooter(tt.args.alg, tt.args.buf)
 			if err != nil && tt.wantErr {
 				require.ErrorIs(t, err, errFooter)
-				require.Errorf(t, err, "FromBuffer() error = %v, wantErr %v", err, tt.wantErr)
-				require.ErrorContainsf(t, err, tt.errString, "FromBuffer() error = %v, wantErr %v", err, tt.wantErr)
+				require.Errorf(t, err, "deserializeFooter() error = %v, wantErr %v", err, tt.wantErr)
+				require.ErrorContainsf(t, err, tt.errString, "deserializeFooter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equalf(t, tt.want, got, "FromBuffer() = %v, want %v", got, tt.want)
+			assert.Equalf(t, tt.want, got, "deserializeFooter() = %v, want %v", got, tt.want)
 		})
 	}
 }
@@ -195,7 +195,7 @@ func TestFooterString(t *testing.T) {
 			footer: footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
 				signLen:        2,
-				Signature:      []byte("signature1"),
+				signature:      []byte("signature1"),
 			},
 			signLen:      2,
 			signatureLen: 10,
@@ -205,7 +205,7 @@ func TestFooterString(t *testing.T) {
 			footer: footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				signLen:        3,
-				Signature:      []byte("signature384"),
+				signature:      []byte("signature384"),
 			},
 			signLen:      3,
 			signatureLen: 12,
@@ -214,7 +214,7 @@ func TestFooterString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			expectedStr := fmt.Sprintf("footer: %s, signLen: %d, Signature: %d", tt.footer.algorithmSuite, tt.signLen, tt.signatureLen)
+			expectedStr := fmt.Sprintf("footer: %s, signLen: %d, signature: %d", tt.footer.algorithmSuite, tt.signLen, tt.signatureLen)
 			assert.Equal(t, expectedStr, tt.footer.String())
 		})
 	}
@@ -238,7 +238,7 @@ func TestNewFooter(t *testing.T) {
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				signLen:        len(p384Signature),
-				Signature:      p384Signature,
+				signature:      p384Signature,
 			},
 			wantErr: false,
 		},
@@ -249,7 +249,7 @@ func TestNewFooter(t *testing.T) {
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
 				signLen:        len(zeroSignature),
-				Signature:      zeroSignature,
+				signature:      zeroSignature,
 			},
 			wantErr: false,
 		},
@@ -265,16 +265,18 @@ func TestNewFooter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MessageFooter.NewFooter(tt.algorithmSuite, tt.signature)
+			got, err := newFooter(tt.algorithmSuite, tt.signature)
 			if err != nil && tt.wantErr {
 				require.ErrorIs(t, err, errFooter)
-				require.Errorf(t, err, "NewFooter() error = %v, wantErr %v", err, tt.wantErr)
-				require.ErrorContainsf(t, err, tt.errString, "NewFooter() error = %v, wantErr %v", err, tt.wantErr)
+				require.Errorf(t, err, "newFooter() error = %v, wantErr %v", err, tt.wantErr)
+				require.ErrorContainsf(t, err, tt.errString, "newFooter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			assert.NoError(t, err)
-			assert.Equalf(t, tt.want, got, "NewFooter() = %v, want %v", got, tt.want)
+			assert.Equalf(t, tt.want, got, "newFooter() = %v, want %v", got, tt.want)
+			assert.Equal(t, len(tt.signature), got.SignLen())
+			assert.Equal(t, tt.signature, got.Signature())
 		})
 	}
 }

@@ -54,17 +54,7 @@ type messageHeaderV2 struct {
 	algorithmSuiteData []byte // 32 bytes, algorithmSuiteData aka commitmentKey, present only in V2
 }
 
-type HeaderParams struct {
-	AlgorithmSuite     *suite.AlgorithmSuite
-	MessageID          []byte
-	EncryptionContext  suite.EncryptionContext
-	EncryptedDataKeys  []format.MessageEDK
-	ContentType        suite.ContentType
-	FrameLength        int
-	AlgorithmSuiteData []byte
-}
-
-func NewHeader(p HeaderParams) (format.MessageHeader, error) {
+func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 	if p.AlgorithmSuite == nil {
 		return nil, fmt.Errorf("invalid AlgorithmSuite: %v", p.AlgorithmSuite)
 	}
@@ -222,7 +212,7 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 		algorithmSuiteData = buf.Next(algorithmSuite.AlgorithmSuiteDataLen())
 	}
 
-	return NewHeader(HeaderParams{
+	return newHeader(format.HeaderParams{
 		AlgorithmSuite:     algorithmSuite,
 		MessageID:          messageID,
 		EncryptionContext:  encryptionContext,

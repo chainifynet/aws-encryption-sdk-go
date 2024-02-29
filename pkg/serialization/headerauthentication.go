@@ -30,7 +30,7 @@ func (ha headerAuth) IV() []byte {
 	return ha.iv
 }
 
-func NewHeaderAuth(v suite.MessageFormatVersion, iv, authData []byte) (format.MessageHeaderAuth, error) {
+func newHeaderAuth(v suite.MessageFormatVersion, iv, authData []byte) (format.MessageHeaderAuth, error) {
 	// TODO validate MessageFormatVersion and iv
 	if len(authData) != headerAuthDataLen {
 		return nil, fmt.Errorf("incorrect len of authData %d", len(authData))
@@ -74,5 +74,5 @@ func deserializeHeaderAuth(v suite.MessageFormatVersion, buf *bytes.Buffer) (for
 	authData := buf.Next(headerAuthDataLen)
 	// TODO copy authData into new slice, otherwise authData capacity is equal to buf capacity
 
-	return NewHeaderAuth(v, iv, authData)
+	return newHeaderAuth(v, iv, authData)
 }

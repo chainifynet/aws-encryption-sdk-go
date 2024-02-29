@@ -16,32 +16,24 @@ var (
 	errFooter = errors.New("message footer error")
 )
 
-var MessageFooter = messageFooter{ //nolint:gochecknoglobals
-	lenFields: 1,
-}
-
-type messageFooter struct {
-	lenFields int
-}
-
 type footer struct {
 	algorithmSuite *suite.AlgorithmSuite // algorithmSuite in suite.AlgorithmSuite in order to check with Authentication.SignatureLen
-	signLen        int                   // 2, SignLen is a length of Signature
-	Signature      []byte                // vary, length is SignLen, ECDSA Signature
+	signLen        int                   // 2, SignLen is a length of signature
+	signature      []byte                // vary, length is SignLen, ECDSA signature
 }
 
-func (mf messageFooter) NewFooter(alg *suite.AlgorithmSuite, signature []byte) (*footer, error) {
+func newFooter(alg *suite.AlgorithmSuite, signature []byte) (*footer, error) {
 	if alg.Authentication.SignatureLen != len(signature) {
 		return nil, fmt.Errorf("invalid signature length, %w", errFooter)
 	}
 	return &footer{
 		algorithmSuite: alg,
 		signLen:        len(signature),
-		Signature:      signature,
+		signature:      signature,
 	}, nil
 }
 
-func (mf messageFooter) FromBuffer(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (*footer, error) {
+func deserializeFooter(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (*footer, error) {
 	signLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
 		return nil, fmt.Errorf("cant read signLen: %w", errors.Join(errFooter, err))
@@ -56,24 +48,31 @@ func (mf messageFooter) FromBuffer(alg *suite.AlgorithmSuite, buf *bytes.Buffer)
 	return &footer{
 		algorithmSuite: alg,
 		signLen:        signLen,
-		Signature:      signature,
+		signature:      signature,
 	}, nil
 }
 
-func (f *footer) len() int {
-	return (MessageFooter.lenFields * lenFieldBytes) +
-		f.signLen
+func (f *footer) Len() int {
+	return lenFieldBytes + f.signLen
 }
 
 func (f *footer) String() string {
-	return fmt.Sprintf("footer: %s, signLen: %d, Signature: %d", f.algorithmSuite, f.signLen, len(f.Signature))
+	return fmt.Sprintf("footer: %s, signLen: %d, signature: %d", f.algorithmSuite, f.signLen, len(f.signature))
 	//return fmt.Sprintf("%#v", *f)
 }
 
 func (f *footer) Bytes() []byte {
 	var buf []byte
-	buf = make([]byte, 0, f.len())
+	buf = make([]byte, 0, f.Len())
 	buf = append(buf, conv.FromInt.Uint16BigEndian(f.signLen)...)
-	buf = append(buf, f.Signature...)
+	buf = append(buf, f.signature...)
 	return buf
+}
+
+func (f *footer) SignLen() int {
+	return f.signLen
+}
+
+func (f *footer) Signature() []byte {
+	return f.signature
 }

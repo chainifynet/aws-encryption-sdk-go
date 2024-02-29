@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
@@ -23,14 +24,10 @@ var (
 	finalFrameIndicator = []uint8{0xFF, 0xFF, 0xFF, 0xFF} // 4, An indicator for the final frame. The value is encoded as the 4 bytes FF FF FF FF in hexadecimal notation.
 )
 
-var MessageBody messageBody //nolint:gochecknoglobals
-
-type messageBody struct{}
-
 type body struct {
 	algorithmSuite *suite.AlgorithmSuite
 	frameLength    int
-	frames         []frame
+	frames         []format.BodyFrame
 	sequenceNumber int
 }
 
@@ -43,7 +40,7 @@ type frame struct {
 	authenticationTag []byte // 16, authenticationTag for the frame
 }
 
-func (mb messageBody) NewBody(algorithmSuite *suite.AlgorithmSuite, frameLength int) (*body, error) {
+func newBody(algorithmSuite *suite.AlgorithmSuite, frameLength int) (*body, error) {
 	if algorithmSuite == nil {
 		return nil, fmt.Errorf("empty algorithm suite: %w", errBodyDeserialize)
 	}
@@ -53,12 +50,12 @@ func (mb messageBody) NewBody(algorithmSuite *suite.AlgorithmSuite, frameLength 
 	return &body{
 		algorithmSuite: algorithmSuite,
 		frameLength:    frameLength,
-		frames:         []frame{},
+		frames:         make([]format.BodyFrame, 0),
 		sequenceNumber: 1,
 	}, nil
 }
 
-func (mb messageBody) fromBuffer(algorithmSuite *suite.AlgorithmSuite, frameLength int, buf *bytes.Buffer) (*body, error) {
+func deserializeBody(algorithmSuite *suite.AlgorithmSuite, frameLength int, buf *bytes.Buffer) (*body, error) {
 	if buf == nil {
 		return nil, fmt.Errorf("empty buffer: %w", errBodyDeserialize)
 	}
@@ -67,7 +64,7 @@ func (mb messageBody) fromBuffer(algorithmSuite *suite.AlgorithmSuite, frameLeng
 	if buf.Len() < frameFieldBytes {
 		return nil, fmt.Errorf("malformed message: %w", errBodyDeserialize)
 	}
-	data, errBody := mb.NewBody(algorithmSuite, frameLength)
+	data, errBody := newBody(algorithmSuite, frameLength)
 	if errBody != nil {
 		return nil, errBody
 	}
@@ -93,24 +90,24 @@ func (mb messageBody) fromBuffer(algorithmSuite *suite.AlgorithmSuite, frameLeng
 	return data, nil
 }
 
-func (b *body) len() int {
+func (b *body) Len() int {
 	var framesLength int
 	for _, f := range b.frames {
-		framesLength += f.len()
+		framesLength += f.Len()
 	}
 	return framesLength
 }
 
 func (b *body) Bytes() []byte {
 	var buf []byte
-	buf = make([]byte, 0, b.len())
+	buf = make([]byte, 0, b.Len())
 	for _, f := range b.frames {
 		buf = append(buf, f.Bytes()...)
 	}
 	return buf
 }
 
-func (b *body) Frames() []frame {
+func (b *body) Frames() []format.BodyFrame {
 	return b.frames
 }
 
@@ -129,7 +126,7 @@ func (b *body) AddFrame(final bool, seqNum int, IV []byte, contentLength int, ci
 		return fmt.Errorf("contentLength mismatch: %w", errBodySerialize)
 	}
 
-	b.frames = append(b.frames, frame{
+	b.frames = append(b.frames, &frame{
 		isFinal:           final,
 		sequenceNumber:    seqNum,
 		iV:                IV,
@@ -141,12 +138,12 @@ func (b *body) AddFrame(final bool, seqNum int, IV []byte, contentLength int, ci
 	return nil
 }
 
-func (b *body) readFrame(buf *bytes.Buffer) (frame, error) {
+func (b *body) readFrame(buf *bytes.Buffer) (*frame, error) {
 	if buf == nil {
-		return frame{}, fmt.Errorf("empty buffer: %w", errFrame)
+		return nil, fmt.Errorf("empty buffer: %w", errFrame)
 	}
 	if buf.Len() < frameFieldBytes {
-		return frame{}, fmt.Errorf("empty buffer, cant read seqNum or finalFrameIndicator: %w", errFrame)
+		return nil, fmt.Errorf("empty buffer, cant read seqNum or finalFrameIndicator: %w", errFrame)
 	}
 
 	sequenceNumberOrFinal := buf.Next(frameFieldBytes)
@@ -162,16 +159,16 @@ func (b *body) readFrame(buf *bytes.Buffer) (frame, error) {
 		minBufferFrame := frameFieldBytes + b.algorithmSuite.EncryptionSuite.IVLen + frameFieldBytes +
 			b.algorithmSuite.EncryptionSuite.AuthLen
 		if buf.Len() < minBufferFrame {
-			return frame{}, fmt.Errorf("empty buffer, cant read a final frame: %w", errFrame)
+			return nil, fmt.Errorf("empty buffer, cant read a final frame: %w", errFrame)
 		}
 		sequenceNumber, err := fieldReader.ReadFrameField(buf) // checked by minBufferFrame
 		if err != nil {
-			return frame{}, fmt.Errorf("cant read sequenceNumber: %w", errors.Join(errFrame, err))
+			return nil, fmt.Errorf("cant read sequenceNumber: %w", errors.Join(errFrame, err))
 		}
 		IV := buf.Next(b.algorithmSuite.EncryptionSuite.IVLen) // checked by minBufferFrame
 		contentLength, err := fieldReader.ReadFrameField(buf)  // checked by minBufferFrame
 		if err != nil {
-			return frame{}, fmt.Errorf("cant read contentLength: %w", errors.Join(errFrame, err))
+			return nil, fmt.Errorf("cant read contentLength: %w", errors.Join(errFrame, err))
 		}
 
 		// contentLength of final frame will be 0 if both conditions are met:
@@ -179,17 +176,17 @@ func (b *body) readFrame(buf *bytes.Buffer) (frame, error) {
 		// - encryptedContent is empty
 		// otherwise make sure buffer has enough bytes to read encryptedContent
 		if contentLength != 0 && buf.Len() < contentLength {
-			return frame{}, fmt.Errorf("empty buffer, cant read encryptedContent: %w", errFrame)
+			return nil, fmt.Errorf("empty buffer, cant read encryptedContent: %w", errFrame)
 		}
 		// with contentLength 0, it will return an empty slice.
 		// The buffer's internal read position will not be advanced. nothing to worry about here.
 		encryptedContent := buf.Next(contentLength)
 
 		if buf.Len() < b.algorithmSuite.EncryptionSuite.AuthLen {
-			return frame{}, fmt.Errorf("empty buffer, cant read authenticationTag: %w", errFrame)
+			return nil, fmt.Errorf("empty buffer, cant read authenticationTag: %w", errFrame)
 		}
 		authenticationTag := buf.Next(b.algorithmSuite.EncryptionSuite.AuthLen)
-		return frame{
+		return &frame{
 			isFinal:           true,
 			sequenceNumber:    sequenceNumber,
 			iV:                IV,
@@ -207,13 +204,13 @@ func (b *body) readFrame(buf *bytes.Buffer) (frame, error) {
 		// 12 + N + 16 = 36 minimum bytes must be available in buffer in order to read a frame
 		minBufferFrame := b.algorithmSuite.EncryptionSuite.IVLen + b.frameLength + b.algorithmSuite.EncryptionSuite.AuthLen
 		if buf.Len() < minBufferFrame {
-			return frame{}, fmt.Errorf("empty buffer, cant read a regular frame: %w", errFrame)
+			return nil, fmt.Errorf("empty buffer, cant read a regular frame: %w", errFrame)
 		}
 		sequenceNumber := conv.FromBytes.Uint32IntBigEndian(sequenceNumberOrFinal)
 		IV := buf.Next(b.algorithmSuite.EncryptionSuite.IVLen)
 		encryptedContent := buf.Next(b.frameLength)
 		authenticationTag := buf.Next(b.algorithmSuite.EncryptionSuite.AuthLen)
-		return frame{
+		return &frame{
 			isFinal:           false,
 			sequenceNumber:    sequenceNumber,
 			iV:                IV,
@@ -224,7 +221,7 @@ func (b *body) readFrame(buf *bytes.Buffer) (frame, error) {
 	}
 }
 
-func (bf frame) len() int {
+func (bf frame) Len() int {
 	if bf.isFinal {
 		return 4 + // isFinal
 			4 + // sequenceNumber
@@ -242,7 +239,7 @@ func (bf frame) len() int {
 
 func (bf frame) Bytes() []byte {
 	var buf []byte
-	buf = make([]byte, 0, bf.len())
+	buf = make([]byte, 0, bf.Len())
 	if bf.isFinal {
 		buf = append(buf, finalFrameIndicator...)
 	}

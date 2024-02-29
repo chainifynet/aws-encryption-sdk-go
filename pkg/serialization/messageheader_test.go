@@ -18,7 +18,7 @@ import (
 
 func TestNewHeader(t *testing.T) {
 	type args struct {
-		p HeaderParams
+		p format.HeaderParams
 	}
 
 	edk1Mock, _ := EDK.new(awsKmsProviderID, "test", []byte("test"))
@@ -109,35 +109,35 @@ func TestNewHeader(t *testing.T) {
 		wantFromBuffer format.MessageHeader
 		wantErr        bool
 	}{
-		{"nilAlgorithmSuite", args{HeaderParams{nil, []byte("test"), nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"unsupportedAlgorithm", args{HeaderParams{&suite.AlgorithmSuite{AlgorithmID: 0x0050}, nil, nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidMessageID", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, nil, nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidMessageID", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("test"), nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidMessageID_V1", args{HeaderParams{suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, []byte("testtesttestt15"), nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidEncryptedDataKeys", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, nil, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidAlgorithmSuiteDataLen", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidAlgorithmSuiteDataLen_V1", args{HeaderParams{suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, []byte("MessageMessage16"), nil, []format.MessageEDK{edk1Mock}, suite.NonFramedContent, 10, []byte("test")}}, nil, nil, true},
-		{"invalidFrameLength", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.NonFramedContent, 10, []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
-		{"invalidContentType", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.ContentType(3), 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
-		{"invalidContentType", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.ContentType(0), 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
-		{"invalidContentType", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.NonFramedContent, 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
-		{"valid", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, mh1Mock, nil, false},
-		{"valid", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), nil, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, mh1Mock, mh1Mock, false},
-		{"valid", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), map[string]string{}, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, mh2Mock, mh1Mock, false},
-		{"valid", args{HeaderParams{suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, []byte("MessageID12MessageID12MessageID1"), map[string]string{"test": "testing"}, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, []byte("Algorithm12Algorithm12Algorithm1")}}, mh3Mock, mh3Mock, false},
-		{"valid_V1", args{HeaderParams{suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, []byte("MessageMessage16"), nil, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, nil}}, mh1MockV1, nil, false},
-		{"valid_V1", args{HeaderParams{suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, []byte("MessageMessage16"), nil, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, nil}}, mh1MockV1, mh1MockV1, false},
-		{"valid_V1", args{HeaderParams{suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, []byte("MessageMessage16"), map[string]string{"test": "testing"}, []format.MessageEDK{edk1Mock}, suite.FramedContent, 1024, nil}}, mh3MockV1, mh3MockV1, false},
+		{"nilAlgorithmSuite", args{format.HeaderParams{MessageID: []byte("test"), ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"unsupportedAlgorithm", args{format.HeaderParams{AlgorithmSuite: &suite.AlgorithmSuite{AlgorithmID: 0x0050}, ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidMessageID", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidMessageID", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("test"), ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidMessageID_V1", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, MessageID: []byte("testtesttestt15"), ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidEncryptedDataKeys", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidAlgorithmSuiteDataLen", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidAlgorithmSuiteDataLen_V1", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, MessageID: []byte("MessageMessage16"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("test")}}, nil, nil, true},
+		{"invalidFrameLength", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.NonFramedContent, FrameLength: 10, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
+		{"invalidContentType", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.ContentType(3), FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
+		{"invalidContentType", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.ContentType(0), FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
+		{"invalidContentType", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.NonFramedContent, FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, nil, nil, true},
+		{"valid", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, mh1Mock, nil, false},
+		{"valid", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, mh1Mock, mh1Mock, false},
+		{"valid", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptionContext: map[string]string{}, EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, mh2Mock, mh1Mock, false},
+		{"valid", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, MessageID: []byte("MessageID12MessageID12MessageID1"), EncryptionContext: map[string]string{"test": "testing"}, EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024, AlgorithmSuiteData: []byte("Algorithm12Algorithm12Algorithm1")}}, mh3Mock, mh3Mock, false},
+		{"valid_V1", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, MessageID: []byte("MessageMessage16"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024}}, mh1MockV1, nil, false},
+		{"valid_V1", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, MessageID: []byte("MessageMessage16"), EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024}}, mh1MockV1, mh1MockV1, false},
+		{"valid_V1", args{format.HeaderParams{AlgorithmSuite: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256, MessageID: []byte("MessageMessage16"), EncryptionContext: map[string]string{"test": "testing"}, EncryptedDataKeys: []format.MessageEDK{edk1Mock}, ContentType: suite.FramedContent, FrameLength: 1024}}, mh3MockV1, mh3MockV1, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewHeader(tt.args.p)
+			got, err := newHeader(tt.args.p)
 			if err != nil && tt.wantErr {
-				assert.Errorf(t, err, "NewHeader(%#v) error = %v, wantErr %v", tt.args.p, err, tt.wantErr)
+				assert.Errorf(t, err, "newHeader(%#v) error = %v, wantErr %v", tt.args.p, err, tt.wantErr)
 				return
 			}
-			assert.NoErrorf(t, err, "NewHeader(%#v) error = %v, wantErr %v", tt.args.p, err, tt.wantErr)
-			assert.Equalf(t, tt.want, got, "NewHeader(%#v)", tt.args.p)
+			assert.NoErrorf(t, err, "newHeader(%#v) error = %v, wantErr %v", tt.args.p, err, tt.wantErr)
+			assert.Equalf(t, tt.want, got, "newHeader(%#v)", tt.args.p)
 
 			assert.Equal(t, tt.want.Version(), got.Version())
 			assert.Equal(t, tt.want.AlgorithmSuite(), got.AlgorithmSuite())
