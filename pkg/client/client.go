@@ -10,6 +10,8 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/decrypter"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/encrypter"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
@@ -32,7 +34,7 @@ type BaseClient interface {
 	clientConfig() clientconfig.ClientConfig
 	Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, format.MessageHeader, error)
 	EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, format.MessageHeader, error)
-	Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager) ([]byte, format.MessageHeader, error)
+	Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager, optFns ...DecryptOptionFunc) ([]byte, format.MessageHeader, error)
 }
 
 var _ BaseClient = (*Client)(nil)
@@ -47,6 +49,8 @@ func (c *Client) clientConfig() clientconfig.ClientConfig {
 
 // EncryptWithParams is similar to Encrypt but allows specifying additional options such as
 // the algorithm suite and frame length as arguments instead of functional EncryptOptionFunc options.
+//
+// Deprecated: Will be removed in upcoming version. Use Encrypt instead.
 //
 // Parameters:
 //   - ctx context.Context: The context for the operation.
@@ -99,16 +103,26 @@ func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.
 //  2. The WithAlgorithm and WithFrameLength functions can be used to specify an encryption algorithm and frame length,
 //     respectively. If these functions are not used, default values are applied.
 func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, format.MessageHeader, error) {
+	if err := validateParams(ctx, source, materialsManager); err != nil {
+		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(crypto.ErrEncryption, err))
+	}
 	opts := EncryptOptions{
 		Algorithm:   suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 		FrameLength: DefaultFrameLength,
+		Handler:     encrypter.New,
 	}
 	for _, optFn := range optFns {
 		if err := optFn(&opts); err != nil {
 			return nil, nil, fmt.Errorf("invalid encrypt option: %w", errors.Join(crypto.ErrEncryption, err))
 		}
 	}
-	ciphertext, header, err := crypto.Encrypt(ctx, c.clientConfig(), source, ec, materialsManager, opts.Algorithm, opts.FrameLength)
+	conf := crypto.EncrypterConfig{
+		ClientCfg:   c.clientConfig(),
+		Algorithm:   opts.Algorithm,
+		FrameLength: opts.FrameLength,
+	}
+	handler := opts.Handler(conf, materialsManager)
+	ciphertext, header, err := handler.Encrypt(ctx, source, ec)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -123,14 +137,29 @@ func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.Encryption
 //   - ctx: context.Context.
 //   - ciphertext []byte: The data to decrypt.
 //   - materialsManager [model.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
+//   - optFns DecryptOptionFunc: A variadic set of optional functions for configuring decryption options such as
+//     custom decryption handler.
 //
 // Returns:
 //
 //   - []byte: The decrypted data.
 //   - [format.MessageHeader]: The header of the encrypted message.
 //   - error: An error if decryption fails.
-func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager) ([]byte, format.MessageHeader, error) {
-	b, header, err := crypto.Decrypt(ctx, c.clientConfig(), ciphertext, materialsManager)
+func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager, optFns ...DecryptOptionFunc) ([]byte, format.MessageHeader, error) {
+	if err := validateParams(ctx, ciphertext, materialsManager); err != nil {
+		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(crypto.ErrDecryption, err))
+	}
+
+	opts := DecryptOptions{
+		Handler: decrypter.New,
+	}
+	for _, optFn := range optFns {
+		if err := optFn(&opts); err != nil {
+			return nil, nil, fmt.Errorf("invalid decrypt option: %w", errors.Join(crypto.ErrDecryption, err))
+		}
+	}
+	handler := opts.Handler(crypto.DecrypterConfig{ClientCfg: c.clientConfig()}, materialsManager)
+	b, header, err := handler.Decrypt(ctx, ciphertext)
 	if err != nil {
 		return nil, nil, err
 	}
