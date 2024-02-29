@@ -21,7 +21,7 @@ deps:
 	@echo "Installing dependencies"
 	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.1
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 	@go install github.com/vektra/mockery/v2@v2.38.0
 	@#go get github.com/stretchr/testify/mock@v1.8.4
 

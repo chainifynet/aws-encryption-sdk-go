@@ -35,13 +35,13 @@ func Test_NewHeaderAuth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewHeaderAuth(tt.args.version, tt.args.iv, tt.args.authData)
+			got, err := newHeaderAuth(tt.args.version, tt.args.iv, tt.args.authData)
 			if err != nil && tt.wantErr {
-				assert.Errorf(t, err, "NewHeaderAuth(%#v) error = %v, wantErr %v", tt.args.authData, err, tt.wantErr)
+				assert.Errorf(t, err, "newHeaderAuth(%#v) error = %v, wantErr %v", tt.args.authData, err, tt.wantErr)
 				return
 			}
-			assert.NoErrorf(t, err, "NewHeaderAuth(%#v) error = %v, wantErr %v", tt.args.authData, err, tt.wantErr)
-			assert.Equalf(t, tt.want, got, "NewHeaderAuth() got = %#v, want %#v", got, tt.args.authData)
+			assert.NoErrorf(t, err, "newHeaderAuth(%#v) error = %v, wantErr %v", tt.args.authData, err, tt.wantErr)
+			assert.Equalf(t, tt.want, got, "newHeaderAuth() got = %#v, want %#v", got, tt.args.authData)
 		})
 	}
 }

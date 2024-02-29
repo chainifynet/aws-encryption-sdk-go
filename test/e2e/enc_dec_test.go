@@ -521,7 +521,10 @@ func Test_Integration_EncryptSDKDecryptCLI(t *testing.T) {
 					cmm = tc.tEnc.tCMMi
 				}
 				assert.NotNil(t, cmm)
-				ciphertextSdk1, header1, err := c.EncryptWithParams(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk1, header1, err := c.Encrypt(ctx, tf.data, tc.tEnc.tEC, cmm,
+					client.WithAlgorithm(tc.tAlg),
+					client.WithFrameLength(tc.tEnc.tFrame),
+				)
 				if err != nil && tc.tWantErr {
 					require.Error(t, err)
 					return
@@ -665,7 +668,10 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 					cmm = tc.tEnc.tCMMi
 				}
 				assert.NotNil(t, cmm)
-				ciphertextSdk1, header1, err := c.EncryptWithParams(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk1, header1, err := c.Encrypt(ctx, tf.data, tc.tEnc.tEC, cmm,
+					client.WithAlgorithm(tc.tAlg),
+					client.WithFrameLength(tc.tEnc.tFrame),
+				)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)
@@ -785,7 +791,10 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with SDK
 				// using cmm2 and c2 that was used to Decrypt
 
-				ciphertextSdk2, header2, err := c2.EncryptWithParams(ctx, tf.data, tc.tEnc.tEC, cmm2, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk2, header2, err := c2.Encrypt(ctx, tf.data, tc.tEnc.tEC, cmm2,
+					client.WithAlgorithm(tc.tAlg),
+					client.WithFrameLength(tc.tEnc.tFrame),
+				)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)
@@ -804,7 +813,10 @@ func Test_Integration_EncryptSDK_DecryptCLI_EncryptCLI_DecryptSDK(t *testing.T) 
 				// encrypt with SDK
 				// using cmm and c that was used to Encrypt initially
 
-				ciphertextSdk3, header3, err := c.EncryptWithParams(ctx, tf.data, tc.tEnc.tEC, cmm, tc.tAlg, tc.tEnc.tFrame)
+				ciphertextSdk3, header3, err := c.Encrypt(ctx, tf.data, tc.tEnc.tEC, cmm,
+					client.WithAlgorithm(tc.tAlg),
+					client.WithFrameLength(tc.tEnc.tFrame),
+				)
 				if err != nil && tc.tWantErr {
 					assert.ErrorIs(t, err, crypto.ErrEncryption)
 					assert.NotErrorIs(t, err, crypto.ErrDecryption)

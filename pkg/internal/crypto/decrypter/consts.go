@@ -1,6 +1,9 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package pkg
+package decrypter
 
-const Version = "0.3.0"
+const (
+	firstByteEncryptedMessageV1 = byte(0x01)
+	firstByteEncryptedMessageV2 = byte(0x02)
+)

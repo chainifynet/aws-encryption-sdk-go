@@ -6,6 +6,8 @@ package client
 import (
 	"fmt"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -20,9 +22,21 @@ const (
 //   - Algorithm [suite.AlgorithmSuite]: AlgorithmSuite that defines the encryption algorithm to be used.
 //     If nil, a default [suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384] algorithm is used.
 //   - FrameLength int: Specifies the frame length for encryption. If not set, a default value of DefaultFrameLength is used.
+//   - Handler: Specifies a function that creates [model.EncryptionHandler] encryption handler.
+//     If not set, a default [encrypter.New] function is used.
 type EncryptOptions struct {
 	Algorithm   *suite.AlgorithmSuite
 	FrameLength int
+	Handler     func(config crypto.EncrypterConfig, cmm model.CryptoMaterialsManager) model.EncryptionHandler
+}
+
+// DecryptOptions defines the configuration options for the decryption process.
+//
+// Fields:
+//   - Handler: Specifies a function that creates [model.DecryptionHandler] decryption handler.
+//     If not set, a default [decrypter.New] function is used.
+type DecryptOptions struct {
+	Handler func(config crypto.DecrypterConfig, cmm model.CryptoMaterialsManager) model.DecryptionHandler
 }
 
 // EncryptOptionFunc is a function type that applies a configuration option to an EncryptOptions struct.
@@ -33,6 +47,15 @@ type EncryptOptions struct {
 //
 // Use WithAlgorithm and WithFrameLength to create EncryptOptionFunc functions.
 type EncryptOptionFunc func(o *EncryptOptions) error
+
+// DecryptOptionFunc is a function type that applies a configuration option to an DecryptOptions struct.
+// It is used to customize the decryption process by setting various options in DecryptOptions.
+//
+// Each function of this type takes a pointer to an DecryptOptions struct and modifies it accordingly.
+// It returns an error if the provided option is invalid or cannot be applied.
+//
+// Use WithDecryptionHandler to create DecryptOptionFunc function.
+type DecryptOptionFunc func(o *DecryptOptions) error
 
 // WithAlgorithm returns an EncryptOptionFunc that sets the encryption algorithm in EncryptOptions.
 // This function allows the caller to specify a custom algorithm for encryption.
@@ -49,6 +72,9 @@ func WithAlgorithm(alg *suite.AlgorithmSuite) EncryptOptionFunc {
 	return func(o *EncryptOptions) error {
 		if alg == nil {
 			return fmt.Errorf("algorithm must not be nil")
+		}
+		if _, err := suite.Algorithm.ByID(alg.AlgorithmID); err != nil {
+			return fmt.Errorf("algorithm error: %w", err)
 		}
 		o.Algorithm = alg
 		return nil
@@ -75,6 +101,40 @@ func WithFrameLength(frameLength int) EncryptOptionFunc {
 			return err
 		}
 		o.FrameLength = frameLength
+		return nil
+	}
+}
+
+// WithEncryptionHandler returns an EncryptOptionFunc that sets the encryption handler in EncryptOptions.
+// This function allows the caller to specify a custom encryption handler.
+//
+// Used mainly for testing purposes.
+//
+// Parameters:
+//   - h: A function that returns [model.EncryptionHandler].
+func WithEncryptionHandler(h func(config crypto.EncrypterConfig, cmm model.CryptoMaterialsManager) model.EncryptionHandler) EncryptOptionFunc {
+	return func(o *EncryptOptions) error {
+		if h == nil {
+			return fmt.Errorf("handler must not be nil")
+		}
+		o.Handler = h
+		return nil
+	}
+}
+
+// WithDecryptionHandler returns an DecryptOptionFunc that sets the decryption handler in DecryptOptions.
+// This function allows the caller to specify a custom decryption handler.
+//
+// Used mainly for testing purposes.
+//
+// Parameters:
+//   - h: A function that returns [model.DecryptionHandler].
+func WithDecryptionHandler(h func(config crypto.DecrypterConfig, cmm model.CryptoMaterialsManager) model.DecryptionHandler) DecryptOptionFunc {
+	return func(o *DecryptOptions) error {
+		if h == nil {
+			return fmt.Errorf("handler must not be nil")
+		}
+		o.Handler = h
 		return nil
 	}
 }

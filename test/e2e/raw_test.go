@@ -51,7 +51,10 @@ func Test_Integration_StaticKeysEncrypt(t *testing.T) {
 	log.Debug().Str("bytes", logger.FmtBytes(random32kb)).Msg("Input")
 
 	// encrypt data
-	ciphertext1, header1, err := c.EncryptWithParams(ctx, random32kb, testEc, cmm, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, 4096)
+	ciphertext1, header1, err := c.Encrypt(ctx, random32kb, testEc, cmm,
+		client.WithAlgorithm(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384),
+		client.WithFrameLength(4096),
+	)
 	require.NoError(t, err)
 	assert.NotNil(t, ciphertext1)
 	assert.NotNil(t, header1)

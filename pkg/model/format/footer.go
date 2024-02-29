@@ -1,6 +1,10 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package pkg
+package format
 
-const Version = "0.3.0"
+type MessageFooter interface {
+	Serializable
+	SignLen() int
+	Signature() []byte
+}

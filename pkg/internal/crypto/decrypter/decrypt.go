@@ -1,26 +1,59 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package crypto
+package decrypter
 
 import (
 	"bytes"
 	"context"
 	"crypto/hmac"
+	"errors"
 	"fmt"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto/signature"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/policy"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
-// decrypt ciphertext decryption
-func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, format.MessageHeader, error) {
+type Decrypter struct {
+	cmm             model.CryptoMaterialsManager
+	cfg             crypto.DecrypterConfig
+	aeadDecrypter   encryption.AEADDecrypter
+	deser           format.Deserializer
+	header          format.MessageHeader
+	verifier        signature.Verifier
+	verifierFn      signature.VerifierFunc
+	_derivedDataKey []byte
+}
+
+func New(cfg crypto.DecrypterConfig, cmm model.CryptoMaterialsManager) model.DecryptionHandler {
+	return &Decrypter{
+		cmm:           cmm.GetInstance(),
+		cfg:           cfg,
+		aeadDecrypter: encryption.Gcm{},
+		deser:         serialization.NewDeserializer(),
+		verifierFn:    signature.NewECCVerifier,
+	}
+}
+
+func (d *Decrypter) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, format.MessageHeader, error) {
+	b, header, err := d.decryptData(ctx, ciphertext)
+	if err != nil {
+		d.reset(err)
+		return nil, nil, fmt.Errorf("SDK error: %w", errors.Join(crypto.ErrDecryption, err))
+	}
+	d.reset(nil)
+	return b, header, nil
+}
+
+// decryptData ciphertext decryption
+func (d *Decrypter) decryptData(ctx context.Context, ciphertext []byte) ([]byte, format.MessageHeader, error) {
 	var b []byte
 	b = make([]byte, len(ciphertext))
 	copy(b, ciphertext)
@@ -31,7 +64,7 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, for
 	// early stage check if cipher text contains needed first byte of message version
 	// by doing this we avoid mistakes with base64 byte sequence
 	if ciphertext[0] != firstByteEncryptedMessageV1 && ciphertext[0] != firstByteEncryptedMessageV2 {
-		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", ErrInvalidMessage)
+		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", crypto.ErrInvalidMessage)
 	}
 	buf := bytes.NewBuffer(b)
 
@@ -45,12 +78,12 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, for
 	}
 
 	if d.verifier != nil {
-		footer, errFooter := serialization.MessageFooter.FromBuffer(d.header.AlgorithmSuite(), buf)
+		footer, errFooter := d.deser.DeserializeFooter(d.header.AlgorithmSuite(), buf)
 		if errFooter != nil {
 			return nil, nil, errFooter
 		}
 
-		if errSig := d.verifier.Verify(footer.Signature); errSig != nil {
+		if errSig := d.verifier.Verify(footer.Signature()); errSig != nil {
 			return nil, nil, errSig
 		}
 	}
@@ -59,18 +92,18 @@ func (d *decrypter) decrypt(ctx context.Context, ciphertext []byte) ([]byte, for
 	return body, d.header, nil
 }
 
-func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error {
-	header, headerAuth, err := serialization.DeserializeHeader(buf, d.config.MaxEncryptedDataKeys())
+func (d *Decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error {
+	header, headerAuth, err := d.deser.DeserializeHeader(buf, d.cfg.ClientCfg.MaxEncryptedDataKeys())
 	if err != nil {
 		return err
 	}
 
-	if errPolicy := policy.ValidateOnDecrypt(d.config.CommitmentPolicy(), header.AlgorithmSuite()); errPolicy != nil {
+	if errPolicy := policy.ValidateOnDecrypt(d.cfg.ClientCfg.CommitmentPolicy(), header.AlgorithmSuite()); errPolicy != nil {
 		return errPolicy
 	}
 
 	if header.AlgorithmSuite().IsSigning() {
-		d.verifier = signature.NewECCVerifier(
+		d.verifier = d.verifierFn(
 			header.AlgorithmSuite().Authentication.HashFunc,
 			header.AlgorithmSuite().Authentication.Algorithm,
 		)
@@ -119,81 +152,77 @@ func (d *decrypter) decryptHeader(ctx context.Context, buf *bytes.Buffer) error 
 		return fmt.Errorf("decrypt header auth error: %w", errHeaderAuth)
 	}
 
-	if d._derivedDataKey != nil {
-		return fmt.Errorf("decrypt derived data key already exists")
-	}
 	d._derivedDataKey = derivedDataKey
-
-	if d.header != nil {
-		return fmt.Errorf("decrypt header already exists")
-	}
 	d.header = header
 
 	return nil
 }
 
-func (d *decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
-	body, err := serialization.DeserializeBody(buf, d.header.AlgorithmSuite(), d.header.FrameLength())
+func (d *Decrypter) decryptBody(buf *bytes.Buffer) ([]byte, error) {
+	body, err := d.deser.DeserializeBody(buf, d.header.AlgorithmSuite(), d.header.FrameLength())
 	if err != nil {
-		return nil, fmt.Errorf("body error: %w", err)
+		return nil, fmt.Errorf("deserialize body error: %w", err)
 	}
 
 	plaintext := new(bytes.Buffer)
-	readBytes := 0
 
 	for _, frame := range body.Frames() {
-		contentString, err := bodyaad.ContentString(suite.FramedContent, frame.IsFinal())
-		if err != nil {
-			return nil, fmt.Errorf("decrypt frame error: %w", err)
+		b, errFrame := d.decryptFrame(frame)
+		if errFrame != nil {
+			return nil, fmt.Errorf("decrypt frame error: %w", errFrame)
 		}
-		associatedData := bodyaad.ContentAADBytes(
-			d.header.MessageID(),
-			contentString,
-			frame.SequenceNumber(),
-			len(frame.EncryptedContent()),
-		)
-		b, errAead := d.aeadDecrypter.Decrypt(
-			d._derivedDataKey,
-			frame.IV(),
-			frame.EncryptedContent(),
-			frame.AuthenticationTag(),
-			associatedData,
-		)
-		if errAead != nil {
-			return nil, fmt.Errorf("decrypt frame error: %w", errAead)
-		}
-		readBytes += len(b)
 		plaintext.Write(b)
-		// if alg is signing, write each frame bytes to verifier to update message hash
-		if d.verifier != nil {
-			if err := d.updateVerifier(frame.Bytes()); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if plaintext.Len() != readBytes {
-		return nil, fmt.Errorf("malformed body message size")
 	}
 
 	var plaintextData []byte
 	plaintextData = make([]byte, plaintext.Len())
 
-	wb, err := plaintext.Read(plaintextData)
-	if err != nil {
-		return nil, fmt.Errorf("malformed body message size: %w", err)
-	}
-	if wb != readBytes {
-		return nil, fmt.Errorf("malformed body message size")
-	}
+	_, _ = plaintext.Read(plaintextData)
 	plaintext.Reset()
 
 	return plaintextData, nil
 }
 
-func (d *decrypter) updateVerifier(b []byte) error {
+func (d *Decrypter) decryptFrame(frame format.BodyFrame) ([]byte, error) {
+	contentString, err := bodyaad.ContentString(d.header.ContentType(), frame.IsFinal())
+	if err != nil {
+		return nil, fmt.Errorf("bodyaad error: %w", err)
+	}
+	associatedData := bodyaad.ContentAADBytes(
+		d.header.MessageID(),
+		contentString,
+		frame.SequenceNumber(),
+		len(frame.EncryptedContent()),
+	)
+	b, err := d.aeadDecrypter.Decrypt(
+		d._derivedDataKey,
+		frame.IV(),
+		frame.EncryptedContent(),
+		frame.AuthenticationTag(),
+		associatedData,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt frame AEAD error: %w", err)
+	}
+	// if alg is signing, write each frame bytes to verifier to update message hash
+	if d.verifier != nil {
+		if err := d.updateVerifier(frame.Bytes()); err != nil {
+			return nil, err
+		}
+	}
+	return b, nil
+}
+
+func (d *Decrypter) updateVerifier(b []byte) error {
 	if _, err := d.verifier.Write(b); err != nil {
 		return fmt.Errorf("verifier write error: %w", err)
 	}
 	return nil
+}
+
+func (d *Decrypter) reset(err error) {
+	d._derivedDataKey = nil
+	if err != nil {
+		d.header = nil
+	}
 }

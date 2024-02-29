@@ -50,3 +50,13 @@ type MessageHeaderAuth interface {
 	AuthData() []byte
 	IV() []byte // present only in V1
 }
+
+type HeaderParams struct {
+	AlgorithmSuite     *suite.AlgorithmSuite
+	MessageID          []byte
+	EncryptionContext  suite.EncryptionContext
+	EncryptedDataKeys  []MessageEDK
+	ContentType        suite.ContentType
+	FrameLength        int
+	AlgorithmSuiteData []byte
+}
