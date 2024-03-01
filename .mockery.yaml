@@ -1,10 +1,8 @@
 with-expecter: true
 filename: "{{.InterfaceName}}_mock.go"
-tags: "mocks"
+mock-build-tags: "mocks"
 packages:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/model:
-    config:
-      tags: "mocks"
     interfaces:
       KMSClient:
       KMSClientFactory:
@@ -42,8 +40,6 @@ packages:
           mockname: "MockEncrypter"
           filename: "Encrypter_mock.go"
   github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format:
-    config:
-      tags: "mocks"
     interfaces:
       MessageAAD:
       MessageEDK:

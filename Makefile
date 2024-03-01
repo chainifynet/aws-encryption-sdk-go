@@ -22,13 +22,13 @@ deps:
 	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
-	@go install github.com/vektra/mockery/v2@v2.38.0
+	@go install github.com/vektra/mockery/v2@v2.42.0
 	@#go get github.com/stretchr/testify/mock@v1.8.4
 
 mocks:
 	@echo "Generating mocks"
-	@mockery --tags=mocks
-	@$(MAKE) mocks-build-tag
+	@mockery
+	@#$(MAKE) mocks-build-tag
 
 mocks-build-tag:
 	@echo "Adding mocks build tag to mock files"
