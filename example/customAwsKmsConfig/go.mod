@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.5
-	github.com/chainifynet/aws-encryption-sdk-go v0.2.1
+	github.com/chainifynet/aws-encryption-sdk-go v0.3.1
 )
 
 require (
