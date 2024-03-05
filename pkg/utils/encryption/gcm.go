@@ -95,10 +95,8 @@ func (ge Gcm) Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error
 		return nil, nil, fmt.Errorf("cipher error: %v: %w", err.Error(), ErrGcmEncrypt)
 	}
 
-	aesGCM, err := cipher.NewGCMWithTagSize(c, aesGCMTagSize)
-	if err != nil {
-		return nil, nil, fmt.Errorf("AEAD error: %v: %w", err.Error(), ErrGcmEncrypt)
-	}
+	// error is always nil can be ignored due to the constant aesGCMTagSize fixed size
+	aesGCM, _ := cipher.NewGCMWithTagSize(c, aesGCMTagSize)
 
 	// ciphertext[:ciphertext len - tagSize], tag[:ciphertext len - tagSize]
 	//	= nil, IV/nonce, plaintext, aadData
@@ -121,12 +119,10 @@ func (ge Gcm) Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error
 //	headerAuthTag: header.HeaderAuthentication
 //	headerBytes: header.SerializeBytes(), all header bytes not including header.HeaderAuthentication
 func (ge Gcm) ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error {
-	out, err := ge.Decrypt(derivedDataKey, ge.ConstructIV(0), []byte(nil), headerAuthTag, headerBytes)
+	// decrypted plaintext always have a length of 0 due to the empty ciphertext input, so it can be ignored
+	_, err := ge.Decrypt(derivedDataKey, ge.ConstructIV(0), []byte(nil), headerAuthTag, headerBytes)
 	if err != nil {
 		return fmt.Errorf("invalid header auth: %w", err)
-	}
-	if len(out) != 0 {
-		return fmt.Errorf("invalid header auth length: %d", len(out))
 	}
 	return nil
 }
