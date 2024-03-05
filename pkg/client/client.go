@@ -33,7 +33,6 @@ func NewClientWithConfig(cfg *clientconfig.ClientConfig) *Client {
 type BaseClient interface {
 	clientConfig() clientconfig.ClientConfig
 	Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, format.MessageHeader, error)
-	EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, format.MessageHeader, error)
 	Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager, optFns ...DecryptOptionFunc) ([]byte, format.MessageHeader, error)
 }
 
@@ -45,27 +44,6 @@ type Client struct {
 
 func (c *Client) clientConfig() clientconfig.ClientConfig {
 	return c.config
-}
-
-// EncryptWithParams is similar to Encrypt but allows specifying additional options such as
-// the algorithm suite and frame length as arguments instead of functional EncryptOptionFunc options.
-//
-// Deprecated: Will be removed in upcoming version. Use Encrypt instead.
-//
-// Parameters:
-//   - ctx context.Context: The context for the operation.
-//   - source []byte: The data to encrypt.
-//   - ec [suite.EncryptionContext]: The encryption context.
-//   - materialsManager [model.CryptoMaterialsManager]: The manager that provides the cryptographic materials.
-//   - algorithm [suite.AlgorithmSuite]: The algorithm suite to use for encryption.
-//   - frameLength int: The frame length for encryption.
-//
-// Returns:
-//   - []byte: The encrypted data.
-//   - [format.MessageHeader]: The header of the encrypted message.
-//   - error: An error if encryption fails.
-func (c *Client) EncryptWithParams(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, algorithm *suite.AlgorithmSuite, frameLength int) ([]byte, format.MessageHeader, error) {
-	return c.Encrypt(ctx, source, ec, materialsManager, WithAlgorithm(algorithm), WithFrameLength(frameLength))
 }
 
 // Encrypt encrypts the given source data using the provided materials manager and encryption context.
