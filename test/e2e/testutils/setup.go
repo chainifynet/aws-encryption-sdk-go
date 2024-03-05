@@ -36,7 +36,7 @@ var SetupEncryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk
 	return NewEncryptCmd(keyIDs, ec, frame, edk, alg, policy)
 }
 
-var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, alg string, policy suite.CommitmentPolicy) *CliCmd { //nolint:gochecknoglobals
+var SetupDecryptCmd = func(keyIDs []string, ec map[string]string, frame int, edk int, _ string, policy suite.CommitmentPolicy) *CliCmd { //nolint:gochecknoglobals
 	return NewDecryptCmd(keyIDs, ec, frame, edk, policy)
 }
 

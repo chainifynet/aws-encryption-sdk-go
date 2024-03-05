@@ -67,3 +67,11 @@ packages:
     interfaces:
       Verifier:
       Signer:
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher:
+    config:
+      dir: mocks/{{ replaceAll .PackagePath "internal" "internal_" }}
+    interfaces:
+      Hasher:
+  hash:
+    interfaces:
+      Hash:
