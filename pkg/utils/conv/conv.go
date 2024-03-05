@@ -28,12 +28,14 @@ func intUint32(v int) uint32 {
 }
 
 func intUint64(v int) uint64 {
+	if v < 0 {
+		panic("int value out of range unsigned 64-bit integer")
+	}
 	return uint64(v)
 }
 
 func (fi fromInt) Uint16BigEndian(v int) []byte {
-	ui := intUint16(v)
-	return fi.UUint16BigEndian(ui)
+	return fi.UUint16BigEndian(intUint16(v))
 }
 
 func (fi fromInt) UUint16BigEndian(v uint16) []byte {
@@ -43,8 +45,7 @@ func (fi fromInt) UUint16BigEndian(v uint16) []byte {
 }
 
 func (fi fromInt) Uint32BigEndian(v int) []byte {
-	ui := intUint32(v)
-	return fi.uint32BigEndian(ui)
+	return fi.uint32BigEndian(intUint32(v))
 }
 
 func (fi fromInt) uint32BigEndian(v uint32) []byte {
@@ -54,8 +55,7 @@ func (fi fromInt) uint32BigEndian(v uint32) []byte {
 }
 
 func (fi fromInt) Uint64BigEndian(v int) []byte {
-	ui := intUint64(v)
-	return fi.uint64BigEndian(ui)
+	return fi.uint64BigEndian(intUint64(v))
 }
 
 func (fi fromInt) uint64BigEndian(v uint64) []byte {
@@ -65,21 +65,25 @@ func (fi fromInt) uint64BigEndian(v uint64) []byte {
 }
 
 func (fb fromBytes) Uint16IntBigEndian(data []byte) int {
-	ui := fb.UUint16BigEndian(data)
-	return int(ui)
+	return int(fb.UUint16BigEndian(data))
 }
 
 func (fb fromBytes) UUint16BigEndian(data []byte) uint16 {
+	if len(data) < 2 {
+		panic("not enough bytes to convert to uint16")
+	}
 	ui := uint16(data[1]) | uint16(data[0])<<8
 	return ui
 }
 
 func (fb fromBytes) Uint32IntBigEndian(data []byte) int {
-	ui := fb.uint32BigEndian(data)
-	return int(ui)
+	return int(fb.uint32BigEndian(data))
 }
 
 func (fb fromBytes) uint32BigEndian(data []byte) uint32 {
+	if len(data) < 4 {
+		panic("not enough bytes to convert to uint32")
+	}
 	ui := uint32(data[3]) | uint32(data[2])<<8 | uint32(data[1])<<16 | uint32(data[0])<<24
 	return ui
 }
