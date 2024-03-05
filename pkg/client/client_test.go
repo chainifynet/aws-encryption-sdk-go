@@ -10,16 +10,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	mocksformat "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/client"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/materials"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/rawprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
@@ -375,36 +372,4 @@ func TestClient_Encrypt(t *testing.T) {
 			}
 		})
 	}
-}
-
-// TODO remove this test along with deprecated EncryptWithParams
-func TestClient_EncryptWithParams(t *testing.T) {
-	//t.Skip("skipped for now, will be removed in the future.")
-	ctx := context.Background()
-
-	// setup SDK client
-	c := client.NewClient()
-	require.NotNil(t, c)
-
-	// setup raw key provider
-	rawKeyProvider, err := rawprovider.NewWithOpts(
-		"raw",
-		rawprovider.WithStaticKey("static1", []byte("raw1DataKeyRAWRAWRAW_12345678901")),
-	)
-	require.NoError(t, err)
-	assert.NotNil(t, rawKeyProvider)
-
-	// setup crypto materials manager
-	cmm, err := materials.NewDefault(rawKeyProvider)
-	require.NoError(t, err)
-	assert.NotNil(t, cmm)
-
-	// encrypt data
-	//goland:noinspection GoDeprecation
-	ciphertext, header, err := c.EncryptWithParams(ctx, []byte("plaintext"), nil, cmm,
-		suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384, 4096,
-	)
-	require.NoError(t, err)
-	assert.NotNil(t, ciphertext)
-	assert.NotNil(t, header)
 }
