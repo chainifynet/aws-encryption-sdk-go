@@ -23,7 +23,7 @@ import (
 )
 
 func resolveProviderType(opts *Options) ProviderType {
-	if len(opts.discoveryRegion) > 0 {
+	if opts.discoveryRegion != "" {
 		return MrkAwareDiscoveryKmsProvider
 	}
 	if opts.discovery {
@@ -125,7 +125,7 @@ func validateConfig(t ProviderType, keyIDs []string, options *Options) error { /
 		if options.discoveryFilter != nil {
 			return fmt.Errorf("discovery filter must not be set for %q: %w", t, providers.ErrConfig)
 		}
-		if len(options.discoveryRegion) > 0 {
+		if options.discoveryRegion != "" {
 			return fmt.Errorf("discovery region must not be set for %q: %w", t, providers.ErrConfig)
 		}
 	case DiscoveryKmsProvider, MrkAwareDiscoveryKmsProvider:
@@ -151,7 +151,7 @@ func validateConfig(t ProviderType, keyIDs []string, options *Options) error { /
 			return fmt.Errorf("MRK keyIDs validation: %w", errors.Join(providers.ErrConfig, err))
 		}
 	case DiscoveryKmsProvider:
-		if len(options.discoveryRegion) > 0 {
+		if options.discoveryRegion != "" {
 			return fmt.Errorf("discovery region must not be set for %q: %w", t, providers.ErrConfig)
 		}
 	case MrkAwareDiscoveryKmsProvider:
