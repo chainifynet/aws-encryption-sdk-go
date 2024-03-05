@@ -6,6 +6,7 @@ package signature
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	randpkg "crypto/rand"
 	"crypto/sha512"
 	b64 "encoding/base64"
 	"hash"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	hashermocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/internal_/crypto/hasher"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 )
 
@@ -89,6 +91,82 @@ func TestECCVerifier_LoadECCKey(t *testing.T) {
 				Y:     y,
 			}
 			assert.Equal(t, wantKey, v.key)
+		})
+	}
+}
+
+func TestECCVerifier_Verify(t *testing.T) {
+	type mocksParams struct {
+		hasher *hashermocks.MockHasher
+		priv   *ecdsa.PrivateKey
+	}
+	tests := []struct {
+		name        string
+		setupMocks  func(t *testing.T, m mocksParams) []byte
+		curve       elliptic.Curve
+		wantErr     bool
+		wantErrStr  string
+		wantErrType error
+	}{
+		{
+			name: "Valid P384",
+			setupMocks: func(t *testing.T, m mocksParams) []byte {
+				m.hasher.EXPECT().Sum().Return([]byte{0x01}).Twice()
+				sig, err := ecdsa.SignASN1(randpkg.Reader, m.priv, m.hasher.Sum())
+				require.NoError(t, err)
+				return sig
+			},
+			curve:   elliptic.P384(),
+			wantErr: false,
+		},
+		{
+			name: "Valid P256",
+			setupMocks: func(t *testing.T, m mocksParams) []byte {
+				m.hasher.EXPECT().Sum().Return([]byte{0x02}).Twice()
+				sig, err := ecdsa.SignASN1(randpkg.Reader, m.priv, m.hasher.Sum())
+				require.NoError(t, err)
+				return sig
+			},
+			curve:   elliptic.P256(),
+			wantErr: false,
+		},
+		{
+			name: "Invalid Signature",
+			setupMocks: func(t *testing.T, m mocksParams) []byte {
+				m.hasher.EXPECT().Sum().Return([]byte{0x03}).Once()
+				return []byte("invalid signature")
+			},
+			curve:       elliptic.P256(),
+			wantErr:     true,
+			wantErrStr:  "signature not valid",
+			wantErrType: ErrSignVerification,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := hashermocks.NewMockHasher(t)
+
+			privKey, err := ecdsa.GenerateKey(tt.curve, randpkg.Reader)
+			require.NoError(t, err)
+
+			sign := tt.setupMocks(t, mocksParams{
+				hasher: h,
+				priv:   privKey,
+			})
+
+			v := &ECCVerifier{
+				Hasher: h,
+				key:    &privKey.PublicKey,
+			}
+
+			err = v.Verify(sign)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.wantErrStr)
+				assert.ErrorIs(t, err, tt.wantErrType)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
