@@ -5,178 +5,692 @@ package serialization
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
-func TestAad_NewAAD(t *testing.T) {
-	aad1 := AAD.NewAAD()
-
-	log.Trace().
-		Int("len", aad1.Len()).
-		Str("bytes", logger.FmtBytes(aad1.Bytes())).
-		Stringer("obj", aad1).
-		Msg("empty AAD")
-
-	assert.Equal(t, 0, aad1.Len())
-	assert.Equal(t, []byte(nil), aad1.Bytes())
-
-	if err := aad1.addKeyValue("test", "testing"); err != nil {
-		panic(err)
+func Test_newAAD(t *testing.T) {
+	tests := []struct {
+		name        string
+		ec          map[string]string
+		want        *messageAAD
+		wantErr     bool
+		wantErrType error
+	}{
+		{
+			name: "Empty Encryption Context",
+			ec:   map[string]string{},
+			want: &messageAAD{
+				kv: []*keyValuePair{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Nil Encryption Context",
+			ec:   nil,
+			want: &messageAAD{
+				kv: []*keyValuePair{},
+			},
+			wantErr: false,
+		},
+		{
+			name:        "Key Value Pair Error",
+			ec:          map[string]string{"test": ""},
+			want:        nil,
+			wantErr:     true,
+			wantErrType: errAAD,
+		},
+		{
+			name: "Valid Encryption Context Sorted",
+			ec:   map[string]string{"test": "testing", "aws": "awsValue"},
+			want: &messageAAD{
+				kv: []*keyValuePair{
+					{
+						keyLen:   3,
+						key:      "aws",
+						valueLen: 8,
+						value:    "awsValue",
+					},
+					{
+						keyLen:   4,
+						key:      "test",
+						valueLen: 7,
+						value:    "testing",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
-
-	log.Trace().
-		Int("len", aad1.Len()).
-		Str("bytes", logger.FmtBytes(aad1.Bytes())).
-		Stringer("obj", aad1).
-		Msg("AAD")
-
-	var aad1Expected = []byte{0x0, 0x1, 0x0, 0x4, 0x74, 0x65, 0x73, 0x74, 0x0, 0x7, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67}
-	assert.Equal(t, len(aad1Expected), aad1.Len())
-	assert.Equal(t, aad1Expected, aad1.Bytes())
-
-	aad1Bytes := AAD.FromBuffer(bytes.NewBuffer(aad1Expected))
-
-	log.Trace().
-		Stringer("obj", aad1Bytes).
-		Int("len", aad1Bytes.Len()).
-		Str("bytes", logger.FmtBytes(aad1Bytes.Bytes())).
-		Msg("AAD aad1Bytes")
-
-	assert.Equal(t, len(aad1Expected), aad1Bytes.Len())
-	assert.Equal(t, aad1Expected, aad1Bytes.Bytes())
-
-	var aad1ExpectedCopy []byte
-	aad1ExpectedCopy = make([]byte, len(aad1Expected))
-	copy(aad1ExpectedCopy, aad1Expected)
-	buf := bytes.NewBuffer(aad1ExpectedCopy)
-
-	log.Trace().Int("cap", buf.Cap()).Int("len", buf.Len()).
-		Msg("Initial Buffer")
-
-	assert.Equal(t, len(aad1Expected), buf.Len())
-	assert.Equal(t, len(aad1Expected), buf.Cap())
-
-	aad1BufferBytes := AAD.FromBuffer(buf)
-
-	assert.Equal(t, 0, buf.Len())
-	assert.Equal(t, aad1BufferBytes.Len(), buf.Cap())
-
-	assert.Equal(t, len(aad1Expected), aad1BufferBytes.Len())
-	assert.Equal(t, aad1Expected, aad1BufferBytes.Bytes())
-
-	log.Trace().Int("cap", buf.Cap()).Int("len", buf.Len()).
-		Msg("After Buffer")
-
-	log.Trace().
-		Stringer("obj", aad1BufferBytes).
-		Int("len", aad1BufferBytes.Len()).
-		Str("bytes", logger.FmtBytes(aad1BufferBytes.Bytes())).
-		Msg("AAD aad1BufferBytes")
-
-	// finals and most reliable
-	buf2 := bytes.NewBuffer(aad1.Bytes())
-	aad2 := AAD.FromBuffer(buf2)
-
-	assert.Equal(t, aad1.Len(), aad2.Len())
-	assert.Equal(t, aad1.Bytes(), aad2.Bytes())
-
-	log.Trace().
-		Stringer("obj", aad2).
-		Int("len", aad2.Len()).
-		Str("bytes", logger.FmtBytes(aad2.Bytes())).
-		Msg("AAD aad2")
-
-	aad3 := AAD.FromBuffer(bytes.NewBuffer(aad1.Bytes()))
-
-	assert.Equal(t, aad1.Len(), aad3.Len())
-	assert.Equal(t, aad1.Bytes(), aad3.Bytes())
-
-	log.Trace().
-		Stringer("obj", aad3).
-		Int("len", aad3.Len()).
-		Str("bytes", logger.FmtBytes(aad3.Bytes())).
-		Msg("AAD aad3")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := newAAD(tt.ec)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+				if tt.wantErrType != nil {
+					assert.ErrorIs(t, err, tt.wantErrType)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
 }
 
-func TestAad_NewAADWithEncryptionContext(t *testing.T) {
-	var aad1Expected = []byte{0x0, 0x1, 0x0, 0x4, 0x74, 0x65, 0x73, 0x74, 0x0, 0x7, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67}
-
-	encryptionContext := map[string]string{
-		"test": "testing",
+func buildAADKVPair(keyLen int, key string, valueLen int, value string) []byte {
+	var keyLenBytes, keyBytes, valueLenBytes, valueBytes []byte
+	if keyLen > 0 {
+		keyLenBytes = conv.FromInt.Uint16BigEndian(keyLen)
 	}
-
-	aad1withEmptyEncryptionContext := AAD.NewAADWithEncryptionContext(map[string]string{})
-	assert.Equal(t, 0, aad1withEmptyEncryptionContext.Len())
-	assert.Equal(t, 0, len(aad1withEmptyEncryptionContext.kv))
-	assert.Equal(t, []byte(nil), aad1withEmptyEncryptionContext.Bytes())
-
-	aad1 := AAD.NewAADWithEncryptionContext(encryptionContext)
-	log.Trace().
-		Stringer("obj", aad1).
-		Int("len", aad1.Len()).
-		Str("bytes", logger.FmtBytes(aad1.Bytes())).
-		Msg("AAD aad1")
-
-	assert.Equal(t, len(aad1Expected), aad1.Len())
-	assert.Equal(t, len(encryptionContext), len(aad1.kv))
-	assert.Equal(t, aad1Expected, aad1.Bytes())
-
-	encryptionContext2 := map[string]string{
-		"test": "testing",
-		"cert": "mops",
-		"abra": "abracadabra",
+	if key != "" {
+		keyBytes = []byte(key)
 	}
+	if valueLen > 0 {
+		valueLenBytes = conv.FromInt.Uint16BigEndian(valueLen)
+	}
+	if value != "" {
+		valueBytes = []byte(value)
+	}
+	return concatSlices(keyLenBytes, keyBytes, valueLenBytes, valueBytes)
+}
 
-	var aad2Expected = []byte{0x0, 0x3, 0x0, 0x4, 0x61, 0x62, 0x72, 0x61, 0x0, 0xb, 0x61, 0x62, 0x72, 0x61, 0x63, 0x61, 0x64, 0x61, 0x62, 0x72, 0x61, 0x0, 0x4, 0x63, 0x65, 0x72, 0x74, 0x0, 0x4, 0x6d, 0x6f, 0x70, 0x73, 0x0, 0x4, 0x74, 0x65, 0x73, 0x74, 0x0, 0x7, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67}
+func Test_validateKeyValuePair(t *testing.T) {
+	tests := []struct {
+		name          string
+		key           string
+		value         string
+		wantErr       bool
+		wantErrString string
+		wantErrType   error
+	}{
+		{
+			name:          "Empty Key",
+			key:           "",
+			value:         "testing",
+			wantErr:       true,
+			wantErrString: "key and value cannot be empty",
+		},
+		{
+			name:          "Empty Value",
+			key:           "test",
+			value:         "",
+			wantErr:       true,
+			wantErrString: "key and value cannot be empty",
+		},
+		{
+			name:        "Out of Range",
+			key:         strings.Repeat("a", 65536),
+			value:       "testing",
+			wantErr:     true,
+			wantErrType: errAadLen,
+		},
+		{
+			name:    "Valid Key Value",
+			key:     "test",
+			value:   "testing",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateKeyValuePair(tt.key, tt.value)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrString != "" {
+					assert.ErrorContains(t, err, tt.wantErrString)
+				}
+				if tt.wantErrType != nil {
+					assert.ErrorIs(t, err, tt.wantErrType)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
-	aad2 := AAD.NewAADWithEncryptionContext(encryptionContext2)
-	log.Trace().
-		Stringer("obj", aad2).
-		Int("len", aad2.Len()).
-		Str("bytes", logger.FmtBytes(aad2.Bytes())).
-		Msg("AAD aad2")
+func Test_messageAAD_readKeyValuePair(t *testing.T) {
+	tests := []struct {
+		name          string
+		buf           *bytes.Buffer
+		want          *keyValuePair
+		wantErr       bool
+		wantErrString string
+	}{
+		{
+			name:          "Empty Buffer",
+			buf:           bytes.NewBuffer([]byte{}),
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "cant read keyLen",
+		},
+		{
+			name:          "Empty Key Data",
+			buf:           bytes.NewBuffer(buildAADKVPair(4, "", 0, "")),
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "empty buffer, cant read key data",
+		},
+		{
+			name:          "Empty Value Len",
+			buf:           bytes.NewBuffer(buildAADKVPair(4, "test", 0, "")),
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "cant read valueLen",
+		},
+		{
+			name:          "Empty Value Data",
+			buf:           bytes.NewBuffer(buildAADKVPair(4, "test", 7, "")),
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "empty buffer, cant read value data",
+		},
+		{
+			name: "Valid Read",
+			buf:  bytes.NewBuffer(buildAADKVPair(5, "tests", 7, "testing")),
+			want: &keyValuePair{
+				keyLen:   5,
+				key:      "tests",
+				valueLen: 7,
+				value:    "testing",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: []*keyValuePair{},
+			}
+			got, err := a.readKeyValuePair(tt.buf)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+				if tt.wantErrString != "" {
+					assert.ErrorContains(t, err, tt.wantErrString)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
 
-	assert.Equal(t, len(aad2Expected), aad2.Len())
-	assert.Equal(t, len(encryptionContext2), len(aad2.kv))
-	assert.Equal(t, aad2Expected, aad2.Bytes())
+func Test_messageAAD_addKeyValue(t *testing.T) {
+	tests := []struct {
+		name          string
+		key           string
+		value         string
+		want          *messageAAD
+		wantErr       bool
+		wantErrString string
+	}{
+		{
+			name:          "Invalid Key",
+			key:           "",
+			value:         "testing",
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "invalid key-value pair",
+		},
+		{
+			name:          "Invalid Value",
+			key:           "test",
+			value:         "",
+			want:          nil,
+			wantErr:       true,
+			wantErrString: "invalid key-value pair",
+		},
+		{
+			name:  "Valid Key Value",
+			key:   "test",
+			value: "testing",
+			want: &messageAAD{
+				kv: []*keyValuePair{
+					{
+						keyLen:   4,
+						key:      "test",
+						valueLen: 7,
+						value:    "testing",
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: []*keyValuePair{},
+			}
+			err := a.addKeyValue(tt.key, tt.value)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrString != "" {
+					assert.ErrorContains(t, err, tt.wantErrString)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, a)
+			}
+		})
+	}
+}
 
-	// finals and most reliable
-	buf2 := bytes.NewBuffer(aad2.Bytes())
-	log.Trace().Int("cap", buf2.Cap()).Int("len", buf2.Len()).
-		Msg("Initial Buffer")
-	assert.Equal(t, len(aad2Expected), buf2.Len())
-	assert.Equal(t, len(aad2Expected), buf2.Cap())
+func Test_deserializeAAD(t *testing.T) {
+	tests := []struct {
+		name          string
+		buf           *bytes.Buffer
+		want          *messageAAD
+		wantErr       bool
+		wantErrType   error
+		wantErrString string
+	}{
+		{
+			name:          "Empty Buffer",
+			buf:           bytes.NewBuffer([]byte{}),
+			want:          nil,
+			wantErr:       true,
+			wantErrType:   errAAD,
+			wantErrString: "cant read keyValueCount",
+		},
+		{
+			name: "KeyValue Count Zero",
+			buf:  bytes.NewBuffer([]byte{0x00, 0x00}),
+			want: &messageAAD{
+				kv: []*keyValuePair{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Key Value Error",
+			buf: bytes.NewBuffer(concatSlices(
+				[]byte{0x00, 0x01},
+				buildAADKVPair(4, "", 0, "")),
+			),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Key Value Count Exceeds Buffer",
+			buf: bytes.NewBuffer(concatSlices(
+				[]byte{0x00, 0x03},
+				buildAADKVPair(4, "test", 7, "testing"),
+				buildAADKVPair(5, "test2", 8, "testing2"),
+			)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Valid Deserialize",
+			buf: bytes.NewBuffer(concatSlices(
+				[]byte{0x00, 0x01},
+				buildAADKVPair(5, "tests", 8, "testings"),
+			)),
+			want: &messageAAD{
+				kv: []*keyValuePair{
+					{
+						keyLen:   5,
+						key:      "tests",
+						valueLen: 8,
+						value:    "testings",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Valid Deserialize Keep KV Order",
+			buf: bytes.NewBuffer(concatSlices(
+				[]byte{0x00, 0x02},
+				buildAADKVPair(4, "test", 7, "testing"),
+				buildAADKVPair(3, "aws", 8, "awsValue"),
+			)),
+			want: &messageAAD{
+				kv: []*keyValuePair{
+					{
+						keyLen:   4,
+						key:      "test",
+						valueLen: 7,
+						value:    "testing",
+					},
+					{
+						keyLen:   3,
+						key:      "aws",
+						valueLen: 8,
+						value:    "awsValue",
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := deserializeAAD(tt.buf)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+				if tt.wantErrType != nil {
+					assert.ErrorIs(t, err, tt.wantErrType)
+				}
+				if tt.wantErrString != "" {
+					assert.ErrorContains(t, err, tt.wantErrString)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
 
-	aad3 := AAD.FromBuffer(buf2)
+func Test_keyValuePair_Len(t *testing.T) {
+	type fields struct {
+		keyLen   int
+		valueLen int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   int
+	}{
+		{
+			name: "Empty",
+			fields: fields{
+				keyLen:   0,
+				valueLen: 0,
+			},
+			want: 4,
+		},
+		{
+			name: "Valid",
+			fields: fields{
+				keyLen:   4,
+				valueLen: 7,
+			},
+			want: 15,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := keyValuePair{
+				keyLen:   tt.fields.keyLen,
+				valueLen: tt.fields.valueLen,
+			}
+			assert.Equal(t, tt.want, kv.Len())
+		})
+	}
+}
 
-	log.Trace().Int("cap", buf2.Cap()).Int("len", buf2.Len()).
-		Msg("After Buffer")
-	assert.Equal(t, 0, buf2.Len())
-	assert.Equal(t, aad3.Len(), buf2.Cap())
+func Test_keyValuePair_Bytes(t *testing.T) {
+	type fields struct {
+		keyLen   int
+		key      string
+		valueLen int
+		value    string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []byte
+	}{
+		{
+			name: "Empty",
+			fields: fields{
+				keyLen:   0,
+				key:      "",
+				valueLen: 0,
+				value:    "",
+			},
+			want: []byte{0x00, 0x00, 0x00, 0x00},
+		},
+		{
+			name: "Empty Values",
+			fields: fields{
+				keyLen:   1,
+				key:      "",
+				valueLen: 1,
+				value:    "",
+			},
+			want: []byte{0x00, 0x01, 0x00, 0x01},
+		},
+		{
+			name: "Valid Values",
+			fields: fields{
+				keyLen:   4,
+				key:      "test",
+				valueLen: 7,
+				value:    "testing",
+			},
+			want: buildAADKVPair(4, "test", 7, "testing"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := keyValuePair{
+				keyLen:   tt.fields.keyLen,
+				key:      tt.fields.key,
+				valueLen: tt.fields.valueLen,
+				value:    tt.fields.value,
+			}
+			assert.Equal(t, tt.want, kv.Bytes())
+		})
+	}
+}
 
-	assert.Equal(t, aad2.Len(), aad3.Len())
-	assert.Equal(t, len(aad2.kv), len(aad3.kv))
-	assert.Equal(t, aad2.Bytes(), aad3.Bytes())
+func Test_messageAAD_kvLen(t *testing.T) {
+	tests := []struct {
+		name string
+		kv   []*keyValuePair
+		want int
+	}{
+		{
+			name: "Empty",
+			kv:   []*keyValuePair{},
+			want: 0,
+		},
+		{
+			name: "One Pair",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					valueLen: 7,
+				},
+			},
+			want: 15,
+		},
+		{
+			name: "Two Pairs",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					valueLen: 7,
+				},
+				{
+					keyLen:   5,
+					valueLen: 8,
+				},
+			},
+			want: 32,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: tt.kv,
+			}
+			assert.Equal(t, tt.want, a.kvLen())
+		})
+	}
+}
 
-	log.Trace().
-		Stringer("obj", aad3).
-		Int("len", aad3.Len()).
-		Str("bytes", logger.FmtBytes(aad3.Bytes())).
-		Msg("AAD aad3")
+func Test_messageAAD_Len(t *testing.T) {
+	tests := []struct {
+		name string
+		kv   []*keyValuePair
+		want int
+	}{
+		{
+			name: "Empty",
+			kv:   []*keyValuePair{},
+			want: 0,
+		},
+		{
+			name: "One Pair",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					valueLen: 7,
+				},
+			},
+			want: 2 + 15, // 2 bytes count field + 15 bytes kv
+		},
+		{
+			name: "Two Pairs",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					valueLen: 7,
+				},
+				{
+					keyLen:   5,
+					valueLen: 8,
+				},
+			},
+			want: 2 + 32, // 2 bytes count field + 32 bytes kv
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: tt.kv,
+			}
+			assert.Equal(t, tt.want, a.Len())
+		})
+	}
+}
 
-	aad4 := AAD.FromBuffer(bytes.NewBuffer(aad2.Bytes()))
+func Test_messageAAD_Bytes(t *testing.T) {
+	tests := []struct {
+		name string
+		kv   []*keyValuePair
+		want []byte
+	}{
+		{
+			name: "Empty",
+			kv:   []*keyValuePair{},
+			want: nil,
+		},
+		{
+			name: "One Pair",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					key:      "test",
+					valueLen: 7,
+					value:    "testing",
+				},
+			},
+			want: concatSlices(
+				[]byte{0x00, 0x01},
+				buildAADKVPair(4, "test", 7, "testing"),
+			),
+		},
+		{
+			name: "Two Pairs",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					key:      "test",
+					valueLen: 7,
+					value:    "testing",
+				},
+				{
+					keyLen:   3,
+					key:      "aws",
+					valueLen: 8,
+					value:    "awsValue",
+				},
+			},
+			want: concatSlices(
+				[]byte{0x00, 0x02},
+				buildAADKVPair(4, "test", 7, "testing"),
+				buildAADKVPair(3, "aws", 8, "awsValue"),
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: tt.kv,
+			}
+			assert.Equal(t, tt.want, a.Bytes())
+		})
+	}
+}
 
-	assert.Equal(t, aad2.Len(), aad4.Len())
-	assert.Equal(t, len(aad2.kv), len(aad4.kv))
-	assert.Equal(t, aad2.Bytes(), aad4.Bytes())
-
-	log.Trace().
-		Stringer("obj", aad4).
-		Int("len", aad4.Len()).
-		Str("bytes", logger.FmtBytes(aad4.Bytes())).
-		Msg("AAD aad4")
+func Test_messageAAD_EncryptionContext(t *testing.T) {
+	tests := []struct {
+		name string
+		kv   []*keyValuePair
+		want suite.EncryptionContext
+	}{
+		{
+			name: "Empty",
+			kv:   []*keyValuePair{},
+			want: suite.EncryptionContext{},
+		},
+		{
+			name: "One Pair",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					key:      "test",
+					valueLen: 7,
+					value:    "testing",
+				},
+			},
+			want: suite.EncryptionContext{
+				"test": "testing",
+			},
+		},
+		{
+			name: "Two Pairs Ordered",
+			kv: []*keyValuePair{
+				{
+					keyLen:   4,
+					key:      "test",
+					valueLen: 7,
+					value:    "testing",
+				},
+				{
+					keyLen:   3,
+					key:      "aws",
+					valueLen: 8,
+					value:    "awsValue",
+				},
+			},
+			want: suite.EncryptionContext{
+				"aws":  "awsValue",
+				"test": "testing",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &messageAAD{
+				kv: tt.kv,
+			}
+			assert.Equal(t, tt.want, a.EncryptionContext())
+		})
+	}
 }

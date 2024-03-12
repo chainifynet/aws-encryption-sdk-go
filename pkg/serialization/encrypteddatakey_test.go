@@ -6,9 +6,14 @@ package serialization
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 func Test_edk_validateMinMaxEDKs(t *testing.T) {
@@ -102,28 +107,227 @@ func Test_edk_new(t *testing.T) {
 		{"valid_key2", edkMock, key2Mock, edk2Mock, assert.NoError, 272, []byte{0x0, 0x7, 0x61, 0x77, 0x73, 0x2d, 0x6b, 0x6d, 0x73, 0x0, 0x4b, 0x61, 0x72, 0x6e, 0x3a, 0x61, 0x77, 0x73, 0x3a, 0x6b, 0x6d, 0x73, 0x3a, 0x65, 0x75, 0x2d, 0x77, 0x65, 0x73, 0x74, 0x2d, 0x31, 0x3a, 0x31, 0x32, 0x33, 0x34, 0x35, 0x34, 0x36, 0x37, 0x38, 0x39, 0x30, 0x31, 0x3a, 0x6b, 0x65, 0x79, 0x2f, 0x65, 0x30, 0x37, 0x30, 0x64, 0x66, 0x61, 0x35, 0x2d, 0x62, 0x66, 0x34, 0x34, 0x2d, 0x34, 0x38, 0x38, 0x64, 0x2d, 0x61, 0x66, 0x61, 0x64, 0x2d, 0x34, 0x64, 0x35, 0x37, 0x63, 0x35, 0x63, 0x38, 0x66, 0x33, 0x63, 0x35, 0x0, 0xb8, 0x1, 0x2, 0x2, 0x0, 0x78, 0x34, 0x28, 0xaa, 0x31, 0x8a, 0xbd, 0x1b, 0x42, 0x22, 0x29, 0xae, 0x7, 0x25, 0xf8, 0x29, 0x5f, 0x17, 0xdb, 0x91, 0x25, 0xb7, 0xa4, 0x3e, 0x79, 0xf0, 0x86, 0xb9, 0x40, 0xd3, 0xdd, 0x2, 0x91, 0x1, 0x0, 0xd4, 0x58, 0xfe, 0x9a, 0xc8, 0x5f, 0x4d, 0xd, 0x7c, 0xd9, 0x97, 0x24, 0x9f, 0xf1, 0xc0, 0x0, 0x0, 0x0, 0x7e, 0x30, 0x7c, 0x6, 0x9, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0xd, 0x1, 0x7, 0x6, 0xa0, 0x6f, 0x30, 0x6d, 0x2, 0x1, 0x0, 0x30, 0x68, 0x6, 0x9, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0xd, 0x1, 0x7, 0x1, 0x30, 0x1e, 0x6, 0x9, 0x60, 0x86, 0x48, 0x1, 0x65, 0x3, 0x4, 0x1, 0x2e, 0x30, 0x11, 0x4, 0xc, 0x37, 0x93, 0x75, 0x61, 0x2b, 0x43, 0xd, 0x7a, 0x5b, 0x15, 0x32, 0xb8, 0x2, 0x1, 0x10, 0x80, 0x3b, 0x9c, 0xdc, 0x38, 0x6b, 0x70, 0xc2, 0xac, 0x97, 0x3e, 0x5a, 0x9f, 0xba, 0xa9, 0xf8, 0x2b, 0x94, 0xdf, 0x64, 0xf1, 0x32, 0xc7, 0xaa, 0x57, 0x31, 0xe8, 0x5a, 0x22, 0x40, 0xd, 0xe2, 0xb7, 0x8f, 0x37, 0x59, 0x60, 0x1e, 0xe9, 0x28, 0x2e, 0x26, 0xe5, 0xbd, 0xc4, 0xae, 0x53, 0xb3, 0x41, 0x8e, 0xd4, 0xfd, 0x9a, 0x1c, 0x95, 0xcd, 0x56, 0x38, 0xa2, 0xb0, 0x4a}},
 		{"invalid_provider_id", edkMock, args{"aws-kms-invalid", "wrong", bytes.Repeat([]byte{0x0}, 100)}, nil, assert.Error, 0, []byte{0x0}},
 		{"invalid_aws_provider_id", edkMock, args{"random", "aws:", bytes.Repeat([]byte{0x0}, 100)}, nil, assert.Error, 0, []byte{0x0}},
+		{"invalid_provider_info_size", edkMock, args{"aws-kms", strings.Repeat("a", 4294967296), make([]byte, 100)}, nil, assert.Error, 0, []byte{0x0}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := edk{
-				ProviderID: tt.fields.ProviderID,
-				LenFields:  tt.fields.LenFields,
-			}
-			got, err := e.new(tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-			if !tt.wantErr(t, err, fmt.Sprintf("new(%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)) {
+			got, err := newEDK(tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+			if !tt.wantErr(t, err, fmt.Sprintf("newEDK(%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "new(%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+			assert.Equalf(t, tt.want, got, "newEDK(%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 			if tt.wantLen != 0 {
 				assert.Equalf(t, tt.wantBytes, got.Bytes(), "bytes() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 				assert.Equalf(t, tt.wantLen, got.Len(), "len() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 				buf := bytes.NewBuffer(got.Bytes())
-				got2, err2 := e.deserialize(buf)
-				assert.NoErrorf(t, err2, "deserialize() error = %v, (%v, %v, %#v)", err2, tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				assert.Equalf(t, tt.want, got2, "deserialize() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
-				assert.Equalf(t, got, got2, "deserialize() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				got2, err2 := deserializeEDK(buf)
+				assert.NoErrorf(t, err2, "deserializeEDK() error = %v, (%v, %v, %#v)", err2, tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, tt.want, got2, "deserializeEDK() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
+				assert.Equalf(t, got, got2, "deserializeEDK() (%v, %v, %#v)", tt.args.providerID, tt.args.providerInfo, tt.args.encryptedDataKeyData)
 				assert.Equalf(t, 0, buf.Len(), "buffer must have 0")
 			}
+		})
+	}
+}
+
+func Test_encryptedDataKey_Fields(t *testing.T) {
+	type fields struct {
+		providerID       string
+		providerInfo     string
+		encryptedDataKey []byte
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   fields
+	}{
+		{
+			name: "valid",
+			fields: fields{
+				providerID:       "test-provider",
+				providerInfo:     "test-provider-info",
+				encryptedDataKey: make([]byte, 100),
+			},
+			want: fields{
+				providerID:       "test-provider",
+				providerInfo:     "test-provider-info",
+				encryptedDataKey: make([]byte, 100),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := encryptedDataKey{
+				providerID:       providerIdentity(tt.fields.providerID),
+				providerInfo:     tt.fields.providerInfo,
+				encryptedDataKey: tt.fields.encryptedDataKey,
+			}
+			assert.Equalf(t, tt.want.providerID, e.ProviderID(), "ProviderID()")
+			assert.Equalf(t, tt.want.providerInfo, e.ProviderInfo(), "ProviderInfo()")
+			assert.Equalf(t, tt.want.encryptedDataKey, e.EncryptedDataKey(), "EncryptedDataKey()")
+			assert.Equalf(t,
+				fmt.Sprintf("ID: %s, Info: %s, Data: %d", tt.want.providerID, tt.want.providerInfo, len(tt.want.encryptedDataKey)),
+				fmt.Sprintf("%v", e),
+				"String()",
+			)
+		})
+	}
+}
+
+func buildEDK(providerIDLen int, providerID string, infoLen int, info string, dataLen, data int) []byte {
+	var providerIDLenBytes, providerIDBytes, infoLenBytes, infoBytes, dataLenBytes, dataBytes []byte
+	if providerIDLen > 0 {
+		providerIDLenBytes = conv.FromInt.Uint16BigEndian(providerIDLen)
+	}
+	if providerID != "" {
+		providerIDBytes = []byte(providerID)
+	}
+	if infoLen > 0 {
+		infoLenBytes = conv.FromInt.Uint16BigEndian(infoLen)
+	}
+	if info != "" {
+		infoBytes = []byte(info)
+	}
+	if dataLen > 0 {
+		dataLenBytes = conv.FromInt.Uint16BigEndian(dataLen)
+	}
+	if data > 0 {
+		dataBytes = make([]byte, data)
+	}
+	return concatSlices(providerIDLenBytes, providerIDBytes, infoLenBytes, infoBytes, dataLenBytes, dataBytes)
+}
+
+func Test_deserializeEDK(t *testing.T) {
+	tests := []struct {
+		name    string
+		buf     *bytes.Buffer
+		want    *encryptedDataKey
+		wantErr bool
+	}{
+		{
+			name:    "Buffer providerIDLen Error",
+			buf:     bytes.NewBuffer([]byte{0x0}),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Buffer providerID Error",
+			buf:     bytes.NewBuffer(buildEDK(4, "", 0, "", 0, 0)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Buffer providerInfoLen Error",
+			buf:     bytes.NewBuffer(buildEDK(4, "test", 0, "", 0, 0)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Buffer providerInfo Error",
+			buf:     bytes.NewBuffer(buildEDK(4, "test", 8, "", 0, 0)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Buffer encryptedDataKeyLen Error",
+			buf:     bytes.NewBuffer(buildEDK(4, "test", 9, "test-info", 0, 0)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Buffer encryptedDataKeyData Error",
+			buf:     bytes.NewBuffer(buildEDK(4, "test", 9, "test-info", 20, 0)),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Valid Deserialize",
+			buf:  bytes.NewBuffer(buildEDK(6, "testID", 9, "test-info", 20, 20)),
+			want: &encryptedDataKey{
+				providerIDLen:       6,
+				providerID:          "testID",
+				providerInfoLen:     9,
+				providerInfo:        "test-info",
+				encryptedDataKeyLen: 20,
+				encryptedDataKey:    make([]byte, 20),
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := deserializeEDK(tt.buf)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func Test_edk_AsKeys(t *testing.T) {
+	edkMock1, _ := newEDK("test", "test-info", make([]byte, 100))
+	tests := []struct {
+		name    string
+		msgEDKs []format.MessageEDK
+		want    []model.EncryptedDataKeyI
+	}{
+		{
+			name:    "valid",
+			msgEDKs: []format.MessageEDK{edkMock1},
+			want: []model.EncryptedDataKeyI{
+				model.NewEncryptedDataKey(model.WithKeyMeta("test", "test-info"), make([]byte, 100)),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := edk{}
+			assert.Equalf(t, tt.want, e.AsKeys(tt.msgEDKs), "AsKeys(%v)", tt.msgEDKs)
+		})
+	}
+}
+
+func Test_edk_FromEDKs(t *testing.T) {
+	edkMock1, _ := newEDK("test", "test-info", make([]byte, 100))
+	tests := []struct {
+		name    string
+		list    []model.EncryptedDataKeyI
+		want    []format.MessageEDK
+		wantErr bool
+	}{
+		{
+			name: "invalid",
+			list: []model.EncryptedDataKeyI{
+				model.NewEncryptedDataKey(model.WithKeyMeta("aws-wrong", "test-info"), make([]byte, 100)),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "valid",
+			list: []model.EncryptedDataKeyI{
+				model.NewEncryptedDataKey(model.WithKeyMeta("test", "test-info"), make([]byte, 100)),
+			},
+			want:    []format.MessageEDK{edkMock1},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := edk{}
+			got, err := e.FromEDKs(tt.list)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+
 		})
 	}
 }

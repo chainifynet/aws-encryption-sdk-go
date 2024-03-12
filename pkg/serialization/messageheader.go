@@ -72,8 +72,10 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 		return nil, fmt.Errorf("invalid AlgorithmSuiteData length")
 	}
 
-	authenticatedData := AAD.NewAADWithEncryptionContext(p.EncryptionContext)
-	aadLen := authenticatedData.Len()
+	authenticatedData, err := newAAD(p.EncryptionContext)
+	if err != nil {
+		return nil, fmt.Errorf("AADData: %w", err)
+	}
 
 	if err := suite.ValidateFrameLength(p.FrameLength); err != nil {
 		return nil, fmt.Errorf("%v frame length out of range", p.FrameLength)
@@ -86,7 +88,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 		version:               p.AlgorithmSuite.MessageFormatVersion,
 		algorithmSuite:        p.AlgorithmSuite,
 		messageID:             p.MessageID,
-		aadLen:                aadLen,
+		aadLen:                authenticatedData.Len(),
 		authenticatedData:     authenticatedData,
 		encryptedDataKeyCount: len(p.EncryptedDataKeys),
 		encryptedDataKeys:     p.EncryptedDataKeys,
@@ -109,7 +111,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 	}, nil
 }
 
-func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //nolint:cyclop
+func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //nolint:cyclop,gocognit
 	if buf == nil {
 		return nil, fmt.Errorf("empty buffer: %w", errHeaderDeserialize)
 	}
@@ -152,15 +154,20 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 
 	// here we ignore error since 0 is valid value for aadLen even with error
 	// the rest will be handled by AADData.fromBuffer
-	aadLen, _ := fieldReader.ReadLenField(buf)
-	var aadData *aadData
+	aadLen, err := fieldReader.ReadLenField(buf)
+	if err != nil {
+		return nil, fmt.Errorf("empty buffer, cant read aadLen: %w", errHeaderDeserialize)
+	}
 	var encryptionContext suite.EncryptionContext
 	if aadLen > 0 {
 		if buf.Len() < aadLen {
 			return nil, fmt.Errorf("empty buffer, cant read aadData: %w", errHeaderDeserialize)
 		}
-		aadData = AAD.FromBuffer(buf)
-		encryptionContext = aadData.EncryptionContext()
+		messageAADData, err := deserializeAAD(buf)
+		if err != nil {
+			return nil, fmt.Errorf("AADData: %w", err)
+		}
+		encryptionContext = messageAADData.EncryptionContext()
 	}
 
 	_, encryptedDataKeys, err := EDK.fromBufferWithCount(buf)
@@ -367,7 +374,7 @@ func (h *messageHeaderV2) AlgorithmSuiteData() []byte {
 }
 
 func writeAAD(buf *[]byte, aadLen int, data format.MessageAAD) {
-	if aadLen > 0 && data != nil {
+	if aadLen > 0 && data.Len() > 0 {
 		*buf = append(*buf, data.Bytes()...) // 2(count) + 25 + 29 + 45 = 101
 	}
 }

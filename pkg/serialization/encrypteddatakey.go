@@ -10,16 +10,9 @@ import (
 	"math"
 	"strings"
 
-	"github.com/rs/zerolog"
-
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
-)
-
-var (
-	log = logger.L().With().Logger().Level(zerolog.DebugLevel) //nolint:gochecknoglobals
 )
 
 const edkLenFields = int(3)
@@ -55,7 +48,7 @@ type encryptedDataKey struct {
 	encryptedDataKey    []byte           // bytes, encryptedDataKey is encrypted data key content bytes
 }
 
-func (e edk) new(providerID providerIdentity, providerInfo string, encryptedDataKeyData []byte) (*encryptedDataKey, error) {
+func newEDK(providerID providerIdentity, providerInfo string, encryptedDataKeyData []byte) (*encryptedDataKey, error) {
 	if strings.HasPrefix(string(providerID), "aws") && providerID != awsKmsProviderID {
 		return nil, fmt.Errorf("providerID %s is not supported: %w", providerID, errEDK)
 	}
@@ -91,11 +84,11 @@ func (edk encryptedDataKey) EncryptedDataKey() []byte {
 }
 
 func (edk encryptedDataKey) String() string {
-	return fmt.Sprintf("%#v", edk)
+	return fmt.Sprintf("ID: %s, Info: %s, Data: %d", edk.providerID, edk.providerInfo, len(edk.encryptedDataKey))
 }
 
 func (edk encryptedDataKey) Len() int {
-	return (EDK.LenFields * lenFieldBytes) +
+	return (edkLenFields * lenFieldBytes) +
 		edk.providerIDLen +
 		edk.providerInfoLen +
 		edk.encryptedDataKeyLen
@@ -140,14 +133,14 @@ func (e edk) fromBufferWithCount(buf *bytes.Buffer) (int, []format.MessageEDK, e
 		return 0, nil, fmt.Errorf("deserialize encrypted data keys count: %w", errEDK)
 	}
 
-	encryptedDataKeyCount := fieldReader.ReadCountField(buf)
+	encryptedDataKeyCount, _ := fieldReader.ReadCountField(buf)
 	if encryptedDataKeyCount <= 0 {
 		return 0, nil, fmt.Errorf("encrypted data keys not found in message header: %w", errEDK)
 	}
 
 	var edks []format.MessageEDK
 	for i := 0; i < encryptedDataKeyCount; i++ {
-		encDataKey, err := e.deserialize(buf)
+		encDataKey, err := deserializeEDK(buf)
 		if err != nil {
 			return 0, nil, fmt.Errorf("cant deserialize expected encrypted data key: %w", errors.Join(errEDK, err))
 		}
@@ -160,7 +153,7 @@ func (e edk) fromBufferWithCount(buf *bytes.Buffer) (int, []format.MessageEDK, e
 func (e edk) FromEDKs(list []model.EncryptedDataKeyI) ([]format.MessageEDK, error) {
 	edks := make([]format.MessageEDK, 0, len(list))
 	for _, keyI := range list {
-		encDataKey, err := e.new(providerIdentity(keyI.KeyProvider().ProviderID), keyI.KeyProvider().KeyID, keyI.EncryptedDataKey())
+		encDataKey, err := newEDK(providerIdentity(keyI.KeyProvider().ProviderID), keyI.KeyProvider().KeyID, keyI.EncryptedDataKey())
 		if err != nil {
 			return nil, err
 		}
@@ -169,13 +162,13 @@ func (e edk) FromEDKs(list []model.EncryptedDataKeyI) ([]format.MessageEDK, erro
 	return edks, nil
 }
 
-func (e edk) deserialize(buf *bytes.Buffer) (*encryptedDataKey, error) {
-	if buf.Len() < (lenFieldBytes * e.LenFields) {
-		return nil, fmt.Errorf("deserialize encrypted data key")
-	}
+func deserializeEDK(buf *bytes.Buffer) (*encryptedDataKey, error) {
 	providerIDLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
 		return nil, fmt.Errorf("cant deserialize encrypted data key providerIDLen, %w", err)
+	}
+	if buf.Len() < providerIDLen {
+		return nil, fmt.Errorf("cant deserialize encrypted data key providerID")
 	}
 	providerID := buf.Next(providerIDLen)
 
@@ -183,32 +176,19 @@ func (e edk) deserialize(buf *bytes.Buffer) (*encryptedDataKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cant deserialize encrypted data key providerInfoLen, %w", err)
 	}
+	if buf.Len() < providerInfoLen {
+		return nil, fmt.Errorf("cant deserialize encrypted data key providerInfo")
+	}
 	providerInfo := buf.Next(providerInfoLen)
 
 	encryptedDataKeyLen, err := fieldReader.ReadLenField(buf)
 	if err != nil {
 		return nil, fmt.Errorf("cant deserialize encrypted data key encryptedDataKeyLen, %w", err)
 	}
+	if buf.Len() < encryptedDataKeyLen {
+		return nil, fmt.Errorf("cant deserialize encrypted data key encryptedDataKeyData")
+	}
 	encryptedDataKeyData := buf.Next(encryptedDataKeyLen)
 
-	log.Trace().
-		Int("len", providerIDLen).
-		Str("bytes", logger.FmtBytes(providerID)).
-		Str("text", string(providerID)).
-		Msg("providerID")
-
-	log.Trace().
-		Int("len", providerInfoLen).
-		Str("byte", logger.FmtBytes(providerInfo)).
-		Str("text", string(providerInfo)).
-		Msg("providerInfo")
-
-	log.Trace().
-		Int("len", encryptedDataKeyLen).
-		Msg("encryptedDataKeyData")
-
-	//log.Trace().MsgFunc(logger.FmtHex("encryptedDataKeyData", encryptedDataKeyData))
-	//log.Trace().Str("encryptedDataKeyDataBytes", fmt.Sprintf("%#v", encryptedDataKeyData)).Msg("encryptedDataKeyDataBytes")
-
-	return e.new(providerIdentity(providerID), string(providerInfo), encryptedDataKeyData)
+	return newEDK(providerIdentity(providerID), string(providerInfo), encryptedDataKeyData)
 }
