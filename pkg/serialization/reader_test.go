@@ -41,6 +41,39 @@ func TestReadFrameField(t *testing.T) {
 	}
 }
 
+func TestReadCountField(t *testing.T) {
+	// countFieldBytes is 2
+	tests := []struct {
+		name      string
+		input     *bytes.Buffer
+		want      int
+		wantErr   bool
+		errString string
+	}{
+		{name: "Test with nil buffer", input: nil, want: 0, wantErr: true, errString: "buffer is nil"},
+		{name: "Test with short buffer", input: bytes.NewBuffer([]byte{0x01}), want: 0, wantErr: true, errString: "cant read numBytes"},
+		// 0x0102 in decimal is 258
+		{name: "Test normal buffer read", input: bytes.NewBuffer([]byte{0x01, 0x02}), want: 258, wantErr: false, errString: ""},
+		{name: "Test normal buffer read", input: bytes.NewBuffer([]byte{0x01, 0x02, 0x03}), want: 258, wantErr: false, errString: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := fieldReader.ReadCountField(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ReadCountField() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil && err.Error() != tt.errString {
+				t.Errorf("ReadCountField() error = %v, wantErr %v", err, tt.errString)
+			}
+			if got != tt.want {
+				t.Errorf("ReadCountField() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCheckBuffer(t *testing.T) {
 	tests := []struct {
 		name      string

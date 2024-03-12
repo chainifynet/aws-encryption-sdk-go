@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
@@ -56,9 +54,6 @@ func (s *ECCSigner) Sign() ([]byte, error) {
 			signature = sig
 			break
 		}
-		log.Trace().Int("expectedLen", s.signLen).
-			Int("actualLen", len(sig)).
-			Msg("sign is not desired length. recalculating")
 		continue
 	}
 	return signature, nil

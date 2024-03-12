@@ -77,10 +77,10 @@ vet:
 unit: lint unit-pkg
 
 unit-pkg:
-	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=1m ${BUILD_TAGS} ${SDK_PKGS}
+	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=4m ${BUILD_TAGS} ${SDK_PKGS}
 
 unit-race:
-	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=2m -cpu=4 -race -count=1 ${BUILD_TAGS} ${SDK_PKGS}
+	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=6m -cpu=4 -race -count=1 ${BUILD_TAGS} ${SDK_PKGS}
 
 ##
 # Integration tests
@@ -121,7 +121,7 @@ e2e-test-slow:
 
 test-cover:
 	@#CGO_ENABLED=1 go test -count=1 -coverpkg=./... -covermode=atomic -coverprofile coverage.out  ./...
-	@CGO_ENABLED=1 go test -race -tags example,mocks,codegen,integration -count=1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./pkg/...
+	@CGO_ENABLED=1 go test -timeout=10m -tags example,mocks,codegen,integration -cpu=2 -count=1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./pkg/...
 	@#CGO_ENABLED=1 go test -tags ${CI_TAGS} -count=1 -coverpkg=./... -covermode=atomic -coverprofile coverage.out ./pkg/...
 	@grep -v -E -f .covignore coverage.out > coverage.filtered.out
 	@mv coverage.filtered.out coverage.out

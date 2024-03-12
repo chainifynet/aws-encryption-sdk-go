@@ -148,8 +148,6 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 					Return(dk, nil)
 
 				mkp.EXPECT().MasterKeysForDecryption().Return([]model.MasterKey{masterKey})
-
-				mkp.EXPECT().ProviderID().Return("raw")
 			},
 			kp:      &KeyProvider{providerID: "raw", providerKind: types.Raw, vendOnDecrypt: false},
 			alg:     suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
@@ -161,11 +159,8 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 			name: "Valid decryption with second MasterKey",
 			setupMocks: func(t *testing.T, mkp *mocks.MockMasterKeyProvider, edk *mocks.MockEncryptedDataKey, dk model.DataKeyI) {
 				edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "raw", KeyID: "test2"})
-				edk.EXPECT().KeyID().Return("test2")
 
 				mkp.EXPECT().ValidateProviderID(mock.Anything).Return(nil)
-
-				mkp.EXPECT().ProviderID().Return("raw")
 
 				masterKey := mocks.NewMockMasterKey(t)
 				masterKey.EXPECT().KeyID().Return("test1")
@@ -207,8 +202,6 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 			name: "MasterKey MasterKeyForDecrypt does not own encrypted data key",
 			setupMocks: func(t *testing.T, mkp *mocks.MockMasterKeyProvider, edk *mocks.MockEncryptedDataKey, dk model.DataKeyI) {
 				edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "aws-kms", KeyID: "key3"})
-
-				mkp.EXPECT().ProviderID().Return("aws-kms")
 
 				mkp.EXPECT().ValidateProviderID(mock.Anything).Return(nil)
 
@@ -257,9 +250,6 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 			name: "Error in MasterKeyForDecrypt",
 			setupMocks: func(t *testing.T, mkp *mocks.MockMasterKeyProvider, edk *mocks.MockEncryptedDataKey, dk model.DataKeyI) {
 				edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "aws-kms", KeyID: "key3"})
-				edk.EXPECT().KeyID().Return("key3")
-
-				mkp.EXPECT().ProviderID().Return("aws-kms")
 
 				mkp.EXPECT().ValidateProviderID(mock.Anything).Return(nil)
 
@@ -297,9 +287,7 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 			name: "Error during data key decryption by a MasterKey",
 			setupMocks: func(t *testing.T, mkp *mocks.MockMasterKeyProvider, edk *mocks.MockEncryptedDataKey, dk model.DataKeyI) {
 				edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "aws-kms", KeyID: "key3"})
-				edk.EXPECT().KeyID().Return("key3")
 
-				mkp.EXPECT().ProviderID().Return("aws-kms")
 				mkp.EXPECT().ValidateProviderID(mock.Anything).Return(nil)
 
 				masterKey := mocks.NewMockMasterKey(t)
@@ -321,9 +309,7 @@ func TestKeyProvider_DecryptDataKey(t *testing.T) {
 			name: "Error during data key decryption by two MasterKeys",
 			setupMocks: func(t *testing.T, mkp *mocks.MockMasterKeyProvider, edk *mocks.MockEncryptedDataKey, dk model.DataKeyI) {
 				edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "aws-kms", KeyID: "key3"})
-				edk.EXPECT().KeyID().Return("key3")
 
-				mkp.EXPECT().ProviderID().Return("aws-kms")
 				mkp.EXPECT().ValidateProviderID(mock.Anything).Return(nil)
 
 				masterKey := mocks.NewMockMasterKey(t)
@@ -494,7 +480,7 @@ func TestKeyProvider_DecryptDataKeyFromList(t *testing.T) { //nolint:gocognit
 					Return(fmt.Errorf("validate provider ID error")).Once()
 				for _, edk := range edks {
 					edk.EXPECT().KeyProvider().Return(model.KeyMeta{ProviderID: "invalid", KeyID: "key2"}).
-						Times(3)
+						Times(1)
 				}
 			},
 			kp: &KeyProvider{providerID: "raw", providerKind: types.Raw, vendOnDecrypt: false},

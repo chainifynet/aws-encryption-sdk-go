@@ -30,10 +30,12 @@ func (br bufReader) readCountFieldBytes(buf []byte) int {
 	return conv.FromBytes.Uint16IntBigEndian(buf)
 }
 
-func (br bufReader) ReadCountField(b *bytes.Buffer) int {
-	// TODO andrew refactor to use checkBuffer and return (int, error)
+func (br bufReader) ReadCountField(b *bytes.Buffer) (int, error) {
+	if err := br.checkBuffer(b, countFieldBytes); err != nil {
+		return 0, err
+	}
 	fieldBytes := b.Next(countFieldBytes)
-	return br.readCountFieldBytes(fieldBytes)
+	return br.readCountFieldBytes(fieldBytes), nil
 }
 
 func (br bufReader) readSingleFieldByte(buf []byte) uint8 {

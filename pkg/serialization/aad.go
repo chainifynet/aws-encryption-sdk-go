@@ -17,19 +17,14 @@ import (
 
 const aadLenFields = int(2)
 
-var errAadLen = errors.New("key or value length is out of range")
+var (
+	errAadLen = errors.New("key or value length is out of range")
+	errAAD    = errors.New("AAD error")
+)
 
-var AAD = aad{ //nolint:gochecknoglobals
-	lenFields: aadLenFields,
-}
-
-type aad struct {
-	lenFields int
-}
-
-type aadData struct {
-	// N.B.: aadData serializes into 2 bytes count field (Key-Value Pair Count) + length of kv
-	kv []keyValuePair
+type messageAAD struct {
+	// N.B.: messageAAD serializes into 2 bytes count field (Key-Value Pair Count) + length of kv
+	kv []*keyValuePair
 }
 
 type keyValuePair struct {
@@ -39,22 +34,15 @@ type keyValuePair struct {
 	value    string // value is AAD Value
 }
 
-// NewAAD TODO andrew change to unexported
-func (s aad) NewAAD() *aadData {
-	return &aadData{
-		kv: []keyValuePair{},
+func newAAD(ec map[string]string) (*messageAAD, error) {
+	a := &messageAAD{
+		kv: []*keyValuePair{},
 	}
-}
 
-// NewAADWithEncryptionContext
-//
-// used during encryption process
-// TODO andrew refactor to return (nil, error)
-func (s aad) NewAADWithEncryptionContext(ec map[string]string) *aadData {
-	// just return new AAD if empty map provided
 	if len(ec) == 0 {
-		return AAD.NewAAD()
+		return a, nil
 	}
+
 	// it is extra important to keep an order of encryption context
 	keys := make([]string, 0, len(ec))
 	for k := range ec {
@@ -62,24 +50,45 @@ func (s aad) NewAADWithEncryptionContext(ec map[string]string) *aadData {
 	}
 	sort.Strings(keys)
 
-	data := AAD.NewAAD()
-
 	for _, k := range keys {
-		err := data.addKeyValue(k, ec[k])
+		err := a.addKeyValue(k, ec[k])
 		if err != nil {
-			fmt.Printf("ec: %#v, err: %v", ec, err)
-			// TODO andrew refactor to return (nil, error)
-			panic(err)
+			return nil, fmt.Errorf("key-value pair error: %w", errors.Join(errAAD, err))
 		}
 	}
-	return data
+
+	return a, nil
 }
 
-func (d *aadData) addKeyValue(key, value string) error {
-	if len(key) > math.MaxUint16 || len(value) > math.MaxUint32 {
-		return errAadLen
+func deserializeAAD(buf *bytes.Buffer) (*messageAAD, error) {
+	a := &messageAAD{
+		kv: []*keyValuePair{},
 	}
-	d.kv = append(d.kv, keyValuePair{
+
+	keyValueCount, err := fieldReader.ReadCountField(buf) // Key-Value Pair Count
+	if err != nil {
+		return nil, fmt.Errorf("cant read keyValueCount: %w", errors.Join(errAAD, err))
+	}
+	if keyValueCount == 0 {
+		return a, nil
+	}
+
+	for i := 0; i < keyValueCount; i++ {
+		kv, err := a.readKeyValuePair(buf)
+		if err != nil {
+			return nil, err
+		}
+		a.kv = append(a.kv, kv)
+	}
+
+	return a, nil
+}
+
+func (a *messageAAD) addKeyValue(key, value string) error {
+	if err := validateKeyValuePair(key, value); err != nil {
+		return fmt.Errorf("invalid key-value pair: %w", err)
+	}
+	a.kv = append(a.kv, &keyValuePair{
 		keyLen:   len(key),
 		key:      key,
 		valueLen: len(value),
@@ -88,50 +97,68 @@ func (d *aadData) addKeyValue(key, value string) error {
 	return nil
 }
 
+func (a *messageAAD) readKeyValuePair(buf *bytes.Buffer) (*keyValuePair, error) {
+	keyLen, err := fieldReader.ReadLenField(buf)
+	if err != nil {
+		return nil, fmt.Errorf("cant read keyLen: %w", err)
+	}
+	if buf.Len() < keyLen {
+		return nil, fmt.Errorf("empty buffer, cant read key data")
+	}
+	key := buf.Next(keyLen)
+
+	valueLen, err := fieldReader.ReadLenField(buf)
+	if err != nil {
+		return nil, fmt.Errorf("cant read valueLen: %w", err)
+	}
+	if buf.Len() < valueLen {
+		return nil, fmt.Errorf("empty buffer, cant read value data")
+	}
+	value := buf.Next(valueLen)
+
+	return &keyValuePair{
+		keyLen:   keyLen,
+		key:      string(key),
+		valueLen: valueLen,
+		value:    string(value),
+	}, nil
+}
+
 // Len returns length of AADData
 // N.B.: aadData serializes into 2 bytes count field (Key-Value Pair Count) + length of kv
 // When there is no encryption context or the encryption context is empty, this field is not present in the AAD structure.
-// TODO andrew change to unexported
-func (d *aadData) Len() int {
-	if len(d.kv) == 0 {
+func (a *messageAAD) Len() int {
+	if len(a.kv) == 0 {
 		return 0
 	}
-	return countFieldBytes + d.kvLen()
+	return countFieldBytes + a.kvLen()
 }
 
-func (d *aadData) String() string {
-	return fmt.Sprintf("%#v", *d)
-}
-
-func (d *aadData) kvLen() int {
+func (a *messageAAD) kvLen() int {
 	var kvLen int
-	for _, k := range d.kv {
+	for _, k := range a.kv {
 		kvLen += k.Len()
 	}
 	return kvLen
 }
 
-// Bytes TODO andrew change to unexported
-func (d *aadData) Bytes() []byte {
-	if len(d.kv) == 0 {
+func (a *messageAAD) Bytes() []byte {
+	if len(a.kv) == 0 {
 		return nil
 	}
 	var buf []byte
-	buf = make([]byte, 0, d.Len())
-	buf = append(buf, conv.FromInt.Uint16BigEndian(len(d.kv))...)
-	for _, k := range d.kv {
+	buf = make([]byte, 0, a.Len())
+	buf = append(buf, conv.FromInt.Uint16BigEndian(len(a.kv))...)
+	for _, k := range a.kv {
 		buf = append(buf, k.Bytes()...)
 	}
 	return buf
 }
 
-// EncryptionContext
-//
-// used during decryption process
-func (d *aadData) EncryptionContext() suite.EncryptionContext {
+func (a *messageAAD) EncryptionContext() suite.EncryptionContext {
 	ec := make(suite.EncryptionContext)
 
-	for _, pair := range d.kv {
+	for _, pair := range a.kv {
 		ec[pair.key] = pair.value
 	}
 
@@ -144,34 +171,12 @@ func (d *aadData) EncryptionContext() suite.EncryptionContext {
 	return encryptionContext
 }
 
-// FromBuffer TODO andrew refactor this to return (*aadData, error)
-func (s aad) FromBuffer(buf *bytes.Buffer) *aadData {
-	keyValueCount := fieldReader.ReadCountField(buf) // Key-Value Pair Count
-	if keyValueCount <= 0 {
-		return nil
-	}
-
-	data := &aadData{kv: []keyValuePair{}}
-
-	for i := 0; i < keyValueCount; i++ {
-		err := data.keyValueFromBuffer(buf)
-		if err != nil {
-			fmt.Printf("%v", err)
-			// TODO andrew refactor do not panic here, return (nil, error)
-			panic(err)
-		}
-	}
-	return data
-}
-
-// Len TODO andrew change to unexported
 func (kv keyValuePair) Len() int {
-	return (AAD.lenFields * lenFieldBytes) +
+	return (aadLenFields * lenFieldBytes) +
 		kv.keyLen +
 		kv.valueLen
 }
 
-// Bytes TODO andrew change to unexported
 func (kv keyValuePair) Bytes() []byte {
 	var buf []byte
 	buf = make([]byte, 0, kv.Len())
@@ -182,26 +187,12 @@ func (kv keyValuePair) Bytes() []byte {
 	return buf
 }
 
-func (d *aadData) keyValueFromBuffer(buf *bytes.Buffer) error {
-	keyLen, err := fieldReader.ReadLenField(buf)
-	if err != nil {
-		return fmt.Errorf("cant read keyLen: %w", errors.Join(errAadLen, err))
+func validateKeyValuePair(key, value string) error {
+	if key == "" || value == "" {
+		return fmt.Errorf("key and value cannot be empty")
 	}
-	key := buf.Next(keyLen)
-	valueLen, err := fieldReader.ReadLenField(buf)
-	if err != nil {
-		return fmt.Errorf("cant read valueLen: %w", errors.Join(errAadLen, err))
-	}
-	value := buf.Next(valueLen)
-
 	if len(key) > math.MaxUint16 || len(value) > math.MaxUint32 {
-		return fmt.Errorf("out of range: %w", errAadLen)
+		return errAadLen
 	}
-	d.kv = append(d.kv, keyValuePair{
-		keyLen:   keyLen,
-		key:      string(key),
-		valueLen: valueLen,
-		value:    string(value),
-	})
 	return nil
 }

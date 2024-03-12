@@ -13,18 +13,12 @@ import (
 	typesaws "github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/transport/http"
-	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-)
-
-var (
-	log = logger.L().Level(zerolog.TraceLevel) //nolint:gochecknoglobals
 )
 
 var (
@@ -142,10 +136,6 @@ func (kmsMK *MasterKey) EncryptDataKey(ctx context.Context, dataKey model.DataKe
 	if len(encryptOutput.CiphertextBlob) == 0 {
 		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(keys.ErrEncryptKey, fmt.Errorf("dataKeyOutput.CiphertextBlob length %d is empty", len(encryptOutput.CiphertextBlob))))
 	}
-	log.Trace().
-		Stringer("MK", kmsMK.Metadata()).
-		Stringer("DK", dataKey.KeyProvider()).
-		Msg("MasterKey: EncryptDataKey")
 
 	return model.NewEncryptedDataKey(
 		kmsMK.Metadata(),
@@ -210,17 +200,11 @@ func (kmsMK *MasterKey) decryptDataKey(ctx context.Context, encryptedDataKey mod
 					// ref github.com/aws/aws-sdk-go-v2/service/kms@v1.18.5/types/errors.go
 					// ref2 https://github.com/aws/aws-sdk-go-v2/issues/1110
 					// that is normal behaviour, we'll try to decrypt with other MasterKey in MasterKeyProvider
-					log.Trace().Caller().AnErr("kmsErr", kmsErr).Msg("KMS expected error")
 					return nil, fmt.Errorf("KMSMasterKey expected error: %w", errors.Join(keys.ErrDecryptKey, ErrKmsClient, kmsErr))
 				}
 			}
 		}
 
-		log.Trace().Caller().
-			Err(err).
-			Stringer("MK", kmsMK.Metadata()).
-			Stringer("EDK", encryptedDataKey.KeyProvider()).
-			Msg("MasterKey: DecryptDataKey")
 		return nil, fmt.Errorf("KMSMasterKey error: %w", errors.Join(keys.ErrDecryptKey, ErrKmsClient, err))
 	}
 

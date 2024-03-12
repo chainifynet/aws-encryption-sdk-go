@@ -8,19 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/zerolog"
-
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-)
-
-var (
-	log = logger.L().Level(zerolog.TraceLevel) //nolint:gochecknoglobals
 )
 
 type KeyProvider struct {
@@ -78,11 +71,6 @@ func (kp *KeyProvider) DecryptDataKey(ctx context.Context, MKP model.MasterKeyPr
 	if kp.vendOnDecrypt {
 		decryptMasterKey, err := MKP.MasterKeyForDecrypt(ctx, encryptedDataKey.KeyProvider())
 		if err != nil {
-			log.Trace().
-				Stringer("EDK", encryptedDataKey.KeyProvider()).
-				Str("MKP", MKP.ProviderID()).
-				Str("method", "DecryptDataKey").
-				Err(err).Msgf("cant reach MasterKey for EDK keyID: %v", encryptedDataKey.KeyID())
 			if errors.Is(err, providers.ErrMasterKeyProviderDecryptForbidden) {
 				return nil, fmt.Errorf("DecryptDataKey MKP.MasterKeyForDecrypt is forbidden for keyID %q with MKP %q: %w", encryptedDataKey.KeyID(), MKP.ProviderID(), errors.Join(providers.ErrMasterKeyProviderDecrypt, err))
 			}
@@ -96,14 +84,7 @@ func (kp *KeyProvider) DecryptDataKey(ctx context.Context, MKP model.MasterKeyPr
 	// ref https://github.com/awslabs/aws-encryption-sdk-specification/blob/master/framework/aws-kms/aws-kms-mrk-aware-master-key.md#decrypt-data-key
 	// For each encrypted data key in the filtered set, one at a time,
 	//	the master key MUST attempt to decrypt the data key.
-	for i, memberKey := range allMembers {
-		log.Trace().
-			Int("memberI", i).
-			Stringer("EDK", encryptedDataKey.KeyProvider()).
-			Str("MKP", MKP.ProviderID()).
-			Str("keyID", memberKey.KeyID()).
-			Str("method", "DecryptDataKey").
-			Msg("Provider: DecryptDataKey")
+	for _, memberKey := range allMembers {
 		if !memberKey.OwnsDataKey(encryptedDataKey) {
 			// if memberKey does not own encryptedDataKey, try to decrypt next provider member key
 			continue
@@ -120,13 +101,6 @@ func (kp *KeyProvider) DecryptDataKey(ctx context.Context, MKP model.MasterKeyPr
 			errMemberKey = errDecrypt
 			// if MasterKey returns keys.ErrDecryptKey, try to decrypt next provider member key
 			if errors.Is(errDecrypt, keys.ErrDecryptKey) {
-				log.Trace().
-					Int("memberI", i).
-					Stringer("EDK", encryptedDataKey.KeyProvider()).
-					Str("MKP", MKP.ProviderID()).
-					Str("keyID", memberKey.KeyID()).
-					Str("method", "DecryptDataKey").
-					Err(errDecrypt).Msgf("cant decrypt data key by BaseKey %v, for EDK keyID: %v", memberKey.KeyID(), encryptedDataKey.KeyID())
 				continue
 			} else { //nolint:revive
 				break
@@ -150,20 +124,8 @@ func (kp *KeyProvider) DecryptDataKeyFromList(ctx context.Context, MKP model.Mas
 	var dataKey model.DataKeyI
 
 	var errDecryptDataKey error
-	for i, edk := range encryptedDataKeys {
-		log.Trace().
-			Int("edkI", i).
-			Stringer("EDK", edk.KeyProvider()). // EncryptedDataKeyI KeyMeta (ProviderID and KeyID)
-			Str("MKP", MKP.ProviderID()).       // MasterKeyProvider ProviderID with which we try to decrypt EncryptedDataKeyI
-			Str("method", "DecryptDataKeyFromList").
-			Msg("DecryptDataKeyFromList")
+	for _, edk := range encryptedDataKeys {
 		if err := MKP.ValidateProviderID(edk.KeyProvider().ProviderID); err != nil {
-			log.Trace().Err(err).
-				Int("edkI", i).
-				Stringer("EDK", edk.KeyProvider()).
-				Str("MKP", MKP.ProviderID()).
-				Str("method", "DecryptDataKeyFromList").
-				Msg("DecryptDataKeyFromList validate expected error")
 			errDecryptDataKey = fmt.Errorf("DecryptDataKeyFromList validate expected error: %w", errors.Join(providers.ErrMasterKeyProviderDecrypt, err))
 			continue
 		}

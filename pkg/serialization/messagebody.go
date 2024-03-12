@@ -156,17 +156,15 @@ func (b *body) readFrame(buf *bytes.Buffer) (*frame, error) {
 		// N (check before read): encryptedContent (contentLength) +
 		// 16: authenticationTag (suite.AlgorithmSuite.EncryptionSuite.AuthLen)
 		// 4 + 12 + 4 + N + 16 = 36 minimum bytes must be available in buffer in order to read a frame
-		minBufferFrame := frameFieldBytes + b.algorithmSuite.EncryptionSuite.IVLen + frameFieldBytes +
-			b.algorithmSuite.EncryptionSuite.AuthLen
-		if buf.Len() < minBufferFrame {
-			return nil, fmt.Errorf("empty buffer, cant read a final frame: %w", errFrame)
-		}
-		sequenceNumber, err := fieldReader.ReadFrameField(buf) // checked by minBufferFrame
+		sequenceNumber, err := fieldReader.ReadFrameField(buf)
 		if err != nil {
 			return nil, fmt.Errorf("cant read sequenceNumber: %w", errors.Join(errFrame, err))
 		}
-		IV := buf.Next(b.algorithmSuite.EncryptionSuite.IVLen) // checked by minBufferFrame
-		contentLength, err := fieldReader.ReadFrameField(buf)  // checked by minBufferFrame
+		if buf.Len() < b.algorithmSuite.EncryptionSuite.IVLen {
+			return nil, fmt.Errorf("empty buffer, cant read IV: %w", errFrame)
+		}
+		IV := buf.Next(b.algorithmSuite.EncryptionSuite.IVLen)
+		contentLength, err := fieldReader.ReadFrameField(buf)
 		if err != nil {
 			return nil, fmt.Errorf("cant read contentLength: %w", errors.Join(errFrame, err))
 		}
