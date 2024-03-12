@@ -2,7 +2,7 @@ module github.com/chainifynet/aws-encryption-sdk-go/example/oneKmsKey
 
 go 1.20
 
-require github.com/chainifynet/aws-encryption-sdk-go v0.3.1
+require github.com/chainifynet/aws-encryption-sdk-go v0.3.2
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.25.3 // indirect
