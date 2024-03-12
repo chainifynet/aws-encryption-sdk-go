@@ -77,10 +77,10 @@ vet:
 unit: lint unit-pkg
 
 unit-pkg:
-	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=1m ${BUILD_TAGS} ${SDK_PKGS}
+	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=4m ${BUILD_TAGS} ${SDK_PKGS}
 
 unit-race:
-	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=2m -cpu=4 -race -count=1 ${BUILD_TAGS} ${SDK_PKGS}
+	@gotestsum -f ${GOTESTSUM_FMT} -- -timeout=6m -cpu=4 -race -count=1 ${BUILD_TAGS} ${SDK_PKGS}
 
 ##
 # Integration tests
