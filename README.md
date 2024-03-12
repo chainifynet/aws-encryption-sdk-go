@@ -22,6 +22,7 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 - AWS KMS Multi-Region Keys using [MRK-aware provider](example/mrkAwareKmsProvider) in Discovery or Strict mode.
 - Raw Master Key provider using static keys.
 - Comprehensive [end-to-end tests](test/e2e/enc_dec_test.go) ensuring compatibility with `aws-encryption-sdk-cli`.
+- [100% code coverage](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go) with tests.
 
 ### Current Limitations
 
@@ -192,7 +193,7 @@ if err != nil {
 - [ ] Add support for KMS aliases.
 - [x] Cover `providers` package with tests.
 - [x] Cover `keys` package with tests.
-- [ ] Cover `materials` package with tests.
+- [x] Cover `materials` package with tests.
 - [ ] GoDoc documentation.
 - [ ] Streamlined encryption and decryption.
 
