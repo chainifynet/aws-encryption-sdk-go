@@ -16,13 +16,13 @@ func NewDeserializer() format.Deserializer {
 	return &Deserializer{}
 }
 
-func (d *Deserializer) DeserializeHeader(buf *bytes.Buffer, maxEncryptedDataKeys int) (format.MessageHeader, format.MessageHeaderAuth, error) {
+func (d *Deserializer) DeserializeHeader(buf *bytes.Buffer, maxEDK int) (format.MessageHeader, format.MessageHeaderAuth, error) {
 	header, err := deserializeHeader(buf)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if errEdk := EDK.validateMinMaxEDKs(header.EncryptedDataKeyCount(), maxEncryptedDataKeys); errEdk != nil {
+	if errEdk := EDK.validateMinMaxEDKs(header.EncryptedDataKeyCount(), maxEDK); errEdk != nil {
 		return nil, nil, errEdk
 	}
 
