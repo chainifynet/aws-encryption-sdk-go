@@ -9,21 +9,15 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/rs/zerolog"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys/kms"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/logger"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/common"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-)
-
-var (
-	log = logger.L().Level(zerolog.TraceLevel) //nolint:gochecknoglobals
 )
 
 type KmsProvider interface {
@@ -182,10 +176,6 @@ func (kmsKP *KmsKeyProvider[KT]) getClient(ctx context.Context, keyID string) (m
 	if err := kmsKP.addRegionalClient(ctx, regionName); err != nil {
 		return nil, fmt.Errorf("KMS client error: %w", err)
 	}
-	log.Trace().
-		Str("region", regionName).
-		Str("keyID", keyID).
-		Msg("GET regional KMS client")
 	return kmsKP.regionalClients[regionName], nil
 }
 
@@ -201,8 +191,6 @@ func (kmsKP *KmsKeyProvider[KT]) addRegionalClient(ctx context.Context, region s
 	if err != nil {
 		return fmt.Errorf("unable to load AWS config: %w", err)
 	}
-	log.Trace().Str("region", region).
-		Msg("Register new regional KMS client")
 	kmsClient := kmsKP.options.clientFactory.NewFromConfig(cfg)
 	kmsKP.regionalClients[region] = kmsClient
 	return nil
