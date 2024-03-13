@@ -15,8 +15,8 @@ func TestNewConfig(t *testing.T) {
 	defaultCfg, err := NewConfig()
 	assert.NoError(t, err)
 
-	assert.Equal(t, defaultCommitment, defaultCfg.CommitmentPolicy())
-	assert.Equal(t, defaultMaxEDK, defaultCfg.MaxEncryptedDataKeys())
+	assert.Equal(t, DefaultCommitment, defaultCfg.CommitmentPolicy())
+	assert.Equal(t, DefaultMaxEDK, defaultCfg.MaxEncryptedDataKeys())
 }
 
 func TestNewConfigWithOpts(t *testing.T) {

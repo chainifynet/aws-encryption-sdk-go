@@ -1,7 +1,5 @@
 // Copyright Chainify Group LTD. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package pkg provides the core SDK packages.
 package pkg
-
-// Version is the current version of the SDK.
-const Version = "0.3.2"

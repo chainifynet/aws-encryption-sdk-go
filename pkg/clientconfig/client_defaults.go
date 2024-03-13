@@ -6,6 +6,10 @@ package clientconfig
 import "github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 
 const (
-	defaultCommitment = suite.CommitmentPolicyRequireEncryptRequireDecrypt
-	defaultMaxEDK     = 10
+	// DefaultCommitment is the default commitment policy for the client.
+	DefaultCommitment = suite.CommitmentPolicyRequireEncryptRequireDecrypt
+
+	// DefaultMaxEDK is the default maximum number of encrypted data keys that can be
+	// used to encrypt or decrypt a single message.
+	DefaultMaxEDK = 10
 )

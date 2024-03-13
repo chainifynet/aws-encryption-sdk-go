@@ -8,12 +8,14 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+// EncrypterConfig is the configuration for the encrypter.
 type EncrypterConfig struct {
 	ClientCfg   clientconfig.ClientConfig
 	Algorithm   *suite.AlgorithmSuite
 	FrameLength int
 }
 
+// DecrypterConfig is the configuration for the decrypter.
 type DecrypterConfig struct {
 	ClientCfg clientconfig.ClientConfig
 }
