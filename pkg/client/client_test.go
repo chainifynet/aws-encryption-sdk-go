@@ -77,7 +77,7 @@ func TestClient_Decrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrDecryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:       "Nil Ciphertext",
@@ -89,7 +89,7 @@ func TestClient_Decrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrDecryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:       "Empty Ciphertext",
@@ -101,7 +101,7 @@ func TestClient_Decrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrDecryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:       "Invalid Decrypt Handler",
@@ -115,7 +115,7 @@ func TestClient_Decrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "invalid decrypt option",
-			wantErrType: crypto.ErrDecryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:       "Decrypt Error",
@@ -237,7 +237,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Nil Source",
@@ -252,7 +252,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Empty Source",
@@ -267,7 +267,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "validation error",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Invalid Encrypt Handler",
@@ -284,7 +284,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "invalid encrypt option",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Invalid Frame Length",
@@ -301,7 +301,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "invalid encrypt option",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Unsupported Algorithm",
@@ -318,7 +318,7 @@ func TestClient_Encrypt(t *testing.T) {
 			want:        nil,
 			wantErr:     true,
 			wantErrStr:  "invalid encrypt option",
-			wantErrType: crypto.ErrEncryption,
+			wantErrType: client.ErrInvalidConfig,
 		},
 		{
 			name:   "Encrypt Error",

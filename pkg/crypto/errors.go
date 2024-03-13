@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrInvalidMessage = errors.New("invalid message format")
-	ErrDecryption     = errors.New("decryption error")
-	ErrEncryption     = errors.New("encryption error")
+	// ErrDecryption is returned when decryption fails.
+	ErrDecryption = errors.New("decryption error")
+	// ErrEncryption is returned when encryption fails.
+	ErrEncryption = errors.New("encryption error")
 )

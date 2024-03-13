@@ -353,7 +353,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 			},
 			want:        nil,
 			wantErr:     true,
-			wantErrType: crypto.ErrInvalidMessage,
+			wantErrType: ErrInvalidMessage,
 			wantErrStr:  "first byte does not contain message version",
 		},
 		{

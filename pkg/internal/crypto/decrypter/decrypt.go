@@ -13,13 +13,16 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/policy"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
+
+// ErrInvalidMessage is returned when the message format is invalid.
+var ErrInvalidMessage = errors.New("invalid message format")
 
 type Decrypter struct {
 	cmm             model.CryptoMaterialsManager
@@ -64,7 +67,7 @@ func (d *Decrypter) decryptData(ctx context.Context, ciphertext []byte) ([]byte,
 	// early stage check if cipher text contains needed first byte of message version
 	// by doing this we avoid mistakes with base64 byte sequence
 	if ciphertext[0] != firstByteEncryptedMessageV1 && ciphertext[0] != firstByteEncryptedMessageV2 {
-		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", crypto.ErrInvalidMessage)
+		return nil, nil, fmt.Errorf("first byte does not contain message version: %w", ErrInvalidMessage)
 	}
 	buf := bytes.NewBuffer(b)
 
