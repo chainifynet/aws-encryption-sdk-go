@@ -17,6 +17,9 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+// ErrInvalidConfig is returned when client configuration is invalid.
+var ErrInvalidConfig = errors.New("client config invalid")
+
 // NewClient returns a new client with default [clientconfig.ClientConfig] config
 func NewClient() *Client {
 	cfg, _ := clientconfig.NewConfig()
@@ -82,7 +85,7 @@ func (c *Client) clientConfig() clientconfig.ClientConfig {
 //     respectively. If these functions are not used, default values are applied.
 func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.EncryptionContext, materialsManager model.CryptoMaterialsManager, optFns ...EncryptOptionFunc) ([]byte, format.MessageHeader, error) {
 	if err := validateParams(ctx, source, materialsManager); err != nil {
-		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(crypto.ErrEncryption, err))
+		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(ErrInvalidConfig, crypto.ErrEncryption, err))
 	}
 	opts := EncryptOptions{
 		Algorithm:   suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
@@ -91,7 +94,7 @@ func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.Encryption
 	}
 	for _, optFn := range optFns {
 		if err := optFn(&opts); err != nil {
-			return nil, nil, fmt.Errorf("invalid encrypt option: %w", errors.Join(crypto.ErrEncryption, err))
+			return nil, nil, fmt.Errorf("invalid encrypt option: %w", errors.Join(ErrInvalidConfig, crypto.ErrEncryption, err))
 		}
 	}
 	conf := crypto.EncrypterConfig{
@@ -125,7 +128,7 @@ func (c *Client) Encrypt(ctx context.Context, source []byte, ec suite.Encryption
 //   - error: An error if decryption fails.
 func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManager model.CryptoMaterialsManager, optFns ...DecryptOptionFunc) ([]byte, format.MessageHeader, error) {
 	if err := validateParams(ctx, ciphertext, materialsManager); err != nil {
-		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(crypto.ErrDecryption, err))
+		return nil, nil, fmt.Errorf("validation error: %w", errors.Join(ErrInvalidConfig, crypto.ErrDecryption, err))
 	}
 
 	opts := DecryptOptions{
@@ -133,7 +136,7 @@ func (c *Client) Decrypt(ctx context.Context, ciphertext []byte, materialsManage
 	}
 	for _, optFn := range optFns {
 		if err := optFn(&opts); err != nil {
-			return nil, nil, fmt.Errorf("invalid decrypt option: %w", errors.Join(crypto.ErrDecryption, err))
+			return nil, nil, fmt.Errorf("invalid decrypt option: %w", errors.Join(ErrInvalidConfig, crypto.ErrDecryption, err))
 		}
 	}
 	handler := opts.Handler(crypto.DecrypterConfig{ClientCfg: c.clientConfig()}, materialsManager)

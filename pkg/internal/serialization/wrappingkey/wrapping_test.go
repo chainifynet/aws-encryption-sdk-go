@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/serialization/wrappingkey"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization/wrappingkey"
 )
 
 func TestWrappingKey_SerializeEncryptedDataKey(t *testing.T) {
