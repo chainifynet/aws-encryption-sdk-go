@@ -81,7 +81,7 @@ func (d *Decrypter) decryptData(ctx context.Context, ciphertext []byte) ([]byte,
 	}
 
 	if d.verifier != nil {
-		footer, errFooter := d.deser.DeserializeFooter(d.header.AlgorithmSuite(), buf)
+		footer, errFooter := d.deser.DeserializeFooter(buf, d.header.AlgorithmSuite())
 		if errFooter != nil {
 			return nil, nil, errFooter
 		}

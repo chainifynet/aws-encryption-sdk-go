@@ -34,10 +34,10 @@ func (d *Deserializer) DeserializeHeader(buf *bytes.Buffer, maxEDK int) (format.
 	return header, authData, nil
 }
 
-func (d *Deserializer) DeserializeBody(buf *bytes.Buffer, algorithm *suite.AlgorithmSuite, frameLen int) (format.MessageBody, error) {
-	return deserializeBody(algorithm, frameLen, buf)
+func (d *Deserializer) DeserializeBody(buf *bytes.Buffer, alg *suite.AlgorithmSuite, frameLen int) (format.MessageBody, error) {
+	return deserializeBody(alg, frameLen, buf)
 }
 
-func (d *Deserializer) DeserializeFooter(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (format.MessageFooter, error) {
+func (d *Deserializer) DeserializeFooter(buf *bytes.Buffer, alg *suite.AlgorithmSuite) (format.MessageFooter, error) {
 	return deserializeFooter(alg, buf)
 }

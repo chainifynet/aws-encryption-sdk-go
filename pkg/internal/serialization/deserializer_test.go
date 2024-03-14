@@ -202,8 +202,8 @@ func TestDeserializer_DeserializeBody(t *testing.T) {
 
 func TestDeserializer_DeserializeFooter(t *testing.T) {
 	type args struct {
-		alg *suite.AlgorithmSuite
 		buf *bytes.Buffer
+		alg *suite.AlgorithmSuite
 	}
 	tests := []struct {
 		name    string
@@ -214,8 +214,8 @@ func TestDeserializer_DeserializeFooter(t *testing.T) {
 		{
 			name: "Nil Buffer",
 			args: args{
-				alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				buf: nil,
+				alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 			},
 			want:    nil,
 			wantErr: true,
@@ -223,8 +223,8 @@ func TestDeserializer_DeserializeFooter(t *testing.T) {
 		{
 			name: "Valid Footer Deserialize",
 			args: args{
-				alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				buf: bytes.NewBuffer(concatSlices([]byte{0x0, 0x67}, make([]byte, 103))),
+				alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 			},
 			want: &footer{
 				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
@@ -237,7 +237,7 @@ func TestDeserializer_DeserializeFooter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &Deserializer{}
-			got, err := d.DeserializeFooter(tt.args.alg, tt.args.buf)
+			got, err := d.DeserializeFooter(tt.args.buf, tt.args.alg)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, got)

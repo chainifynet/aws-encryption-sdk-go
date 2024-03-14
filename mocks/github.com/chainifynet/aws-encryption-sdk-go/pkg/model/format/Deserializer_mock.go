@@ -26,9 +26,9 @@ func (_m *MockDeserializer) EXPECT() *MockDeserializer_Expecter {
 	return &MockDeserializer_Expecter{mock: &_m.Mock}
 }
 
-// DeserializeBody provides a mock function with given fields: buf, algorithm, frameLen
-func (_m *MockDeserializer) DeserializeBody(buf *bytes.Buffer, algorithm *suite.AlgorithmSuite, frameLen int) (format.MessageBody, error) {
-	ret := _m.Called(buf, algorithm, frameLen)
+// DeserializeBody provides a mock function with given fields: buf, alg, frameLen
+func (_m *MockDeserializer) DeserializeBody(buf *bytes.Buffer, alg *suite.AlgorithmSuite, frameLen int) (format.MessageBody, error) {
+	ret := _m.Called(buf, alg, frameLen)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeserializeBody")
@@ -37,10 +37,10 @@ func (_m *MockDeserializer) DeserializeBody(buf *bytes.Buffer, algorithm *suite.
 	var r0 format.MessageBody
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*bytes.Buffer, *suite.AlgorithmSuite, int) (format.MessageBody, error)); ok {
-		return rf(buf, algorithm, frameLen)
+		return rf(buf, alg, frameLen)
 	}
 	if rf, ok := ret.Get(0).(func(*bytes.Buffer, *suite.AlgorithmSuite, int) format.MessageBody); ok {
-		r0 = rf(buf, algorithm, frameLen)
+		r0 = rf(buf, alg, frameLen)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(format.MessageBody)
@@ -48,7 +48,7 @@ func (_m *MockDeserializer) DeserializeBody(buf *bytes.Buffer, algorithm *suite.
 	}
 
 	if rf, ok := ret.Get(1).(func(*bytes.Buffer, *suite.AlgorithmSuite, int) error); ok {
-		r1 = rf(buf, algorithm, frameLen)
+		r1 = rf(buf, alg, frameLen)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -63,13 +63,13 @@ type MockDeserializer_DeserializeBody_Call struct {
 
 // DeserializeBody is a helper method to define mock.On call
 //   - buf *bytes.Buffer
-//   - algorithm *suite.AlgorithmSuite
+//   - alg *suite.AlgorithmSuite
 //   - frameLen int
-func (_e *MockDeserializer_Expecter) DeserializeBody(buf interface{}, algorithm interface{}, frameLen interface{}) *MockDeserializer_DeserializeBody_Call {
-	return &MockDeserializer_DeserializeBody_Call{Call: _e.mock.On("DeserializeBody", buf, algorithm, frameLen)}
+func (_e *MockDeserializer_Expecter) DeserializeBody(buf interface{}, alg interface{}, frameLen interface{}) *MockDeserializer_DeserializeBody_Call {
+	return &MockDeserializer_DeserializeBody_Call{Call: _e.mock.On("DeserializeBody", buf, alg, frameLen)}
 }
 
-func (_c *MockDeserializer_DeserializeBody_Call) Run(run func(buf *bytes.Buffer, algorithm *suite.AlgorithmSuite, frameLen int)) *MockDeserializer_DeserializeBody_Call {
+func (_c *MockDeserializer_DeserializeBody_Call) Run(run func(buf *bytes.Buffer, alg *suite.AlgorithmSuite, frameLen int)) *MockDeserializer_DeserializeBody_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(*bytes.Buffer), args[1].(*suite.AlgorithmSuite), args[2].(int))
 	})
@@ -86,9 +86,9 @@ func (_c *MockDeserializer_DeserializeBody_Call) RunAndReturn(run func(*bytes.Bu
 	return _c
 }
 
-// DeserializeFooter provides a mock function with given fields: alg, buf
-func (_m *MockDeserializer) DeserializeFooter(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (format.MessageFooter, error) {
-	ret := _m.Called(alg, buf)
+// DeserializeFooter provides a mock function with given fields: buf, alg
+func (_m *MockDeserializer) DeserializeFooter(buf *bytes.Buffer, alg *suite.AlgorithmSuite) (format.MessageFooter, error) {
+	ret := _m.Called(buf, alg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeserializeFooter")
@@ -96,19 +96,19 @@ func (_m *MockDeserializer) DeserializeFooter(alg *suite.AlgorithmSuite, buf *by
 
 	var r0 format.MessageFooter
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*suite.AlgorithmSuite, *bytes.Buffer) (format.MessageFooter, error)); ok {
-		return rf(alg, buf)
+	if rf, ok := ret.Get(0).(func(*bytes.Buffer, *suite.AlgorithmSuite) (format.MessageFooter, error)); ok {
+		return rf(buf, alg)
 	}
-	if rf, ok := ret.Get(0).(func(*suite.AlgorithmSuite, *bytes.Buffer) format.MessageFooter); ok {
-		r0 = rf(alg, buf)
+	if rf, ok := ret.Get(0).(func(*bytes.Buffer, *suite.AlgorithmSuite) format.MessageFooter); ok {
+		r0 = rf(buf, alg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(format.MessageFooter)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*suite.AlgorithmSuite, *bytes.Buffer) error); ok {
-		r1 = rf(alg, buf)
+	if rf, ok := ret.Get(1).(func(*bytes.Buffer, *suite.AlgorithmSuite) error); ok {
+		r1 = rf(buf, alg)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -122,15 +122,15 @@ type MockDeserializer_DeserializeFooter_Call struct {
 }
 
 // DeserializeFooter is a helper method to define mock.On call
-//   - alg *suite.AlgorithmSuite
 //   - buf *bytes.Buffer
-func (_e *MockDeserializer_Expecter) DeserializeFooter(alg interface{}, buf interface{}) *MockDeserializer_DeserializeFooter_Call {
-	return &MockDeserializer_DeserializeFooter_Call{Call: _e.mock.On("DeserializeFooter", alg, buf)}
+//   - alg *suite.AlgorithmSuite
+func (_e *MockDeserializer_Expecter) DeserializeFooter(buf interface{}, alg interface{}) *MockDeserializer_DeserializeFooter_Call {
+	return &MockDeserializer_DeserializeFooter_Call{Call: _e.mock.On("DeserializeFooter", buf, alg)}
 }
 
-func (_c *MockDeserializer_DeserializeFooter_Call) Run(run func(alg *suite.AlgorithmSuite, buf *bytes.Buffer)) *MockDeserializer_DeserializeFooter_Call {
+func (_c *MockDeserializer_DeserializeFooter_Call) Run(run func(buf *bytes.Buffer, alg *suite.AlgorithmSuite)) *MockDeserializer_DeserializeFooter_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*suite.AlgorithmSuite), args[1].(*bytes.Buffer))
+		run(args[0].(*bytes.Buffer), args[1].(*suite.AlgorithmSuite))
 	})
 	return _c
 }
@@ -140,7 +140,7 @@ func (_c *MockDeserializer_DeserializeFooter_Call) Return(_a0 format.MessageFoot
 	return _c
 }
 
-func (_c *MockDeserializer_DeserializeFooter_Call) RunAndReturn(run func(*suite.AlgorithmSuite, *bytes.Buffer) (format.MessageFooter, error)) *MockDeserializer_DeserializeFooter_Call {
+func (_c *MockDeserializer_DeserializeFooter_Call) RunAndReturn(run func(*bytes.Buffer, *suite.AlgorithmSuite) (format.MessageFooter, error)) *MockDeserializer_DeserializeFooter_Call {
 	_c.Call.Return(run)
 	return _c
 }
