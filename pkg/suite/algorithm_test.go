@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_algorithm_ByID(t *testing.T) {
+func Test_ByID(t *testing.T) {
 	type args struct {
 		algorithmID uint16
 	}
@@ -37,8 +37,7 @@ func Test_algorithm_ByID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			al := algorithm{}
-			got, err := al.ByID(tt.args.algorithmID)
+			got, err := ByID(tt.args.algorithmID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ByID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -50,7 +49,7 @@ func Test_algorithm_ByID(t *testing.T) {
 	}
 }
 
-func Test_algorithm_FromBytes(t *testing.T) {
+func Test_FromBytes(t *testing.T) {
 	type args struct {
 		b []byte
 	}
@@ -69,8 +68,7 @@ func Test_algorithm_FromBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			alg := algorithm{}
-			got, err := alg.FromBytes(tt.args.b)
+			got, err := FromBytes(tt.args.b)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FromBytes() error = %v, wantErr %v", err, tt.wantErr)
 				return

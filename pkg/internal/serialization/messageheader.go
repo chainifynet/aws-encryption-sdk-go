@@ -58,7 +58,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 	if p.AlgorithmSuite == nil {
 		return nil, fmt.Errorf("invalid AlgorithmSuite: %v", p.AlgorithmSuite)
 	}
-	_, err := suite.Algorithm.ByID(p.AlgorithmSuite.AlgorithmID)
+	_, err := suite.ByID(p.AlgorithmSuite.AlgorithmID)
 	if err != nil {
 		return nil, fmt.Errorf("unsupported AlgorithmID: %w", err)
 	}
@@ -137,7 +137,7 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 	algorithmID := buf.Next(algorithmIDFieldBytes) // AlgorithmID is 2 bytes, uint16
 
 	// validate AlgorithmID is supported
-	algorithmSuite, err := suite.Algorithm.FromBytes(algorithmID)
+	algorithmSuite, err := suite.FromBytes(algorithmID)
 	if err != nil {
 		return nil, err
 	}

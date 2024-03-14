@@ -78,7 +78,7 @@ func WithAlgorithm(alg *suite.AlgorithmSuite) EncryptOptionFunc {
 		if alg == nil {
 			return fmt.Errorf("algorithm must not be nil")
 		}
-		if _, err := suite.Algorithm.ByID(alg.AlgorithmID); err != nil {
+		if _, err := suite.ByID(alg.AlgorithmID); err != nil {
 			return fmt.Errorf("algorithm error: %w", err)
 		}
 		o.Algorithm = alg

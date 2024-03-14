@@ -220,12 +220,8 @@ func newAlgorithmSuite(algorithmID uint16, encryptionSuite encryptionSuite, mess
 	return alg
 }
 
-var Algorithm algorithm
-
-type algorithm struct{}
-
 // ByID returns proper AlgorithmSuite by its algorithmID 16-bit unsigned integer
-func (algorithm) ByID(algorithmID uint16) (*AlgorithmSuite, error) {
+func ByID(algorithmID uint16) (*AlgorithmSuite, error) {
 	val, ok := algorithmLookup[algorithmID]
 	if !ok {
 		return nil, fmt.Errorf("%#v algorithm not supported: %w", algorithmID, ErrAlgorithmSuite)
@@ -234,9 +230,9 @@ func (algorithm) ByID(algorithmID uint16) (*AlgorithmSuite, error) {
 }
 
 // FromBytes returns proper AlgorithmSuite from slice of bytes, slice must have a length of 2 bytes
-func (alg algorithm) FromBytes(b []byte) (*AlgorithmSuite, error) {
+func FromBytes(b []byte) (*AlgorithmSuite, error) {
 	if len(b) != algorithmIDLen {
 		return nil, fmt.Errorf("%#v algorithm size must be 2 bytes: %w", b, ErrAlgorithmSuite)
 	}
-	return alg.ByID(conv.FromBytes.UUint16BigEndian(b))
+	return ByID(conv.FromBytes.UUint16BigEndian(b))
 }
