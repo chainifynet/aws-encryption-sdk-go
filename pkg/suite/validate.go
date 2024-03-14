@@ -5,6 +5,9 @@ package suite
 
 import "fmt"
 
+// ValidateMessageVersion validates the message format version values.
+//
+// The only supported message format versions are [V1] and [V2].
 func ValidateMessageVersion(v uint8) error {
 	version := MessageFormatVersion(v)
 	if version != V1 && version != V2 {
@@ -13,6 +16,9 @@ func ValidateMessageVersion(v uint8) error {
 	return nil
 }
 
+// ValidateContentType validates the content type values.
+//
+// The only supported content type is [FramedContent].
 func ValidateContentType(t ContentType) error {
 	if t != FramedContent {
 		return fmt.Errorf("ContentType %v not supported", t)
@@ -20,6 +26,7 @@ func ValidateContentType(t ContentType) error {
 	return nil
 }
 
+// ValidateCommitmentPolicy validates the commitment policy values.
 func ValidateCommitmentPolicy(p CommitmentPolicy) error {
 	if p < CommitmentPolicyForbidEncryptAllowDecrypt || p > CommitmentPolicyRequireEncryptRequireDecrypt {
 		return fmt.Errorf("invalid CommitmentPolicy %v", p)
