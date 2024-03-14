@@ -4,9 +4,11 @@
 package types
 
 const (
+	// KmsProviderID is the ID of the AWS KMS key provider.
 	KmsProviderID = "aws-kms"
 )
 
+// ProviderKind represents the kind of key provider.
 type ProviderKind int8
 
 const (
