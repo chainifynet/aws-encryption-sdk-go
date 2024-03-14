@@ -51,7 +51,7 @@ type MessageHeader interface {
 	MessageHeaderBase
 
 	// Type returns the message type. Present only in V1.
-	Type() suite.MessageType
+	Type() MessageType
 
 	// Reserved returns the reserved bytes. Present only in V1.
 	Reserved() []byte

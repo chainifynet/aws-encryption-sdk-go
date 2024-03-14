@@ -81,7 +81,7 @@ func TestNewHeader(t *testing.T) {
 			contentType:           suite.FramedContent,
 			frameLength:           1024,
 		},
-		messageType: suite.CustomerAEData,
+		messageType: format.CustomerAEData,
 		reserved:    reservedField,
 		ivLen:       12,
 	}
@@ -98,7 +98,7 @@ func TestNewHeader(t *testing.T) {
 			contentType:           suite.FramedContent,
 			frameLength:           1024,
 		},
-		messageType: suite.CustomerAEData,
+		messageType: format.CustomerAEData,
 		reserved:    reservedField,
 		ivLen:       12,
 	}
@@ -253,7 +253,7 @@ func Test_deserializeHeader(t *testing.T) {
 			contentType:           suite.FramedContent,
 			frameLength:           1024,
 		},
-		messageType: suite.CustomerAEData,
+		messageType: format.CustomerAEData,
 		reserved:    reservedV1,
 		ivLen:       12,
 	}

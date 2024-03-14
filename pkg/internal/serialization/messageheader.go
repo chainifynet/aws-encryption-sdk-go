@@ -44,9 +44,9 @@ type messageHeader struct {
 
 type messageHeaderV1 struct {
 	messageHeader
-	messageType suite.MessageType // 1, format.MessageType, present only in V1
-	reserved    []byte            // 4, reserved, present only in V1, always 0x00,0x00,0x00,0x00
-	ivLen       int               // 1, length of IV, present only in V1, always 12
+	messageType format.MessageType // 1, format.MessageType, present only in V1
+	reserved    []byte             // 4, reserved, present only in V1, always 0x00,0x00,0x00,0x00
+	ivLen       int                // 1, length of IV, present only in V1, always 12
 }
 
 type messageHeaderV2 struct {
@@ -105,7 +105,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 
 	return &messageHeaderV1{
 		messageHeader: header,
-		messageType:   suite.CustomerAEData,
+		messageType:   format.CustomerAEData,
 		reserved:      reservedField,
 		ivLen:         p.AlgorithmSuite.EncryptionSuite.IVLen,
 	}, nil
@@ -129,7 +129,7 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 
 	if messageVersion == suite.V1 {
 		messageType := fieldReader.ReadSingleField(buf)
-		if suite.MessageType(messageType) != suite.CustomerAEData {
+		if format.MessageType(messageType) != format.CustomerAEData {
 			return nil, fmt.Errorf("invalid messageType %v not supported: %w", messageType, errHeaderDeserialize)
 		}
 	}
@@ -341,7 +341,7 @@ func (h *messageHeader) FrameLength() int {
 	return h.frameLength
 }
 
-func (h *messageHeaderV1) Type() suite.MessageType {
+func (h *messageHeaderV1) Type() format.MessageType {
 	return h.messageType
 }
 
@@ -357,7 +357,7 @@ func (h *messageHeaderV1) AlgorithmSuiteData() []byte {
 	return nil
 }
 
-func (h *messageHeaderV2) Type() suite.MessageType {
+func (h *messageHeaderV2) Type() format.MessageType {
 	return 0
 }
 

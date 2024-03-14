@@ -624,18 +624,18 @@ func (_c *MockMessageHeader_Reserved_Call) RunAndReturn(run func() []byte) *Mock
 }
 
 // Type provides a mock function with given fields:
-func (_m *MockMessageHeader) Type() suite.MessageType {
+func (_m *MockMessageHeader) Type() format.MessageType {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Type")
 	}
 
-	var r0 suite.MessageType
-	if rf, ok := ret.Get(0).(func() suite.MessageType); ok {
+	var r0 format.MessageType
+	if rf, ok := ret.Get(0).(func() format.MessageType); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(suite.MessageType)
+		r0 = ret.Get(0).(format.MessageType)
 	}
 
 	return r0
@@ -658,12 +658,12 @@ func (_c *MockMessageHeader_Type_Call) Run(run func()) *MockMessageHeader_Type_C
 	return _c
 }
 
-func (_c *MockMessageHeader_Type_Call) Return(_a0 suite.MessageType) *MockMessageHeader_Type_Call {
+func (_c *MockMessageHeader_Type_Call) Return(_a0 format.MessageType) *MockMessageHeader_Type_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockMessageHeader_Type_Call) RunAndReturn(run func() suite.MessageType) *MockMessageHeader_Type_Call {
+func (_c *MockMessageHeader_Type_Call) RunAndReturn(run func() format.MessageType) *MockMessageHeader_Type_Call {
 	_c.Call.Return(run)
 	return _c
 }
