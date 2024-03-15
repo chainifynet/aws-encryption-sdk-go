@@ -5,8 +5,11 @@ package keys
 
 import "errors"
 
-var (
-	ErrDecryptKey      = errors.New("unable to decrypt data key")
-	ErrGenerateDataKey = errors.New("unable to generate data key")
-	ErrEncryptKey      = errors.New("unable to encrypt data key")
-)
+// ErrDecryptKey is returned when the data key cannot be decrypted.
+var ErrDecryptKey = errors.New("unable to decrypt data key")
+
+// ErrGenerateDataKey is returned when the data key cannot be generated.
+var ErrGenerateDataKey = errors.New("unable to generate data key")
+
+// ErrEncryptKey is returned when the data key cannot be encrypted.
+var ErrEncryptKey = errors.New("unable to encrypt data key")
