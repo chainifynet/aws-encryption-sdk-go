@@ -41,26 +41,44 @@ type EncryptionBuffer interface {
 	Reset()
 }
 
+// GcmEncrypter is an interface for GCM encryption implementations.
 type GcmEncrypter interface {
+	// Encrypt is a method for encrypting data. It returns three values: the
+	// encrypted ciphertext, the authentication tag, and an error if any occurred
+	// during the encryption process.
 	Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error)
 }
 
+// GcmDecrypter is an interface for GCM decryption implementations.
 type GcmDecrypter interface {
+	// Decrypt is a method for decrypting data. It returns the decrypted plaintext,
+	// and an error if any occurred.
 	Decrypt(key, iv, ciphertext, tag, aadData []byte) ([]byte, error)
 }
 
+// GcmCrypter is a combined interface for GCM encryption and decryption.
 type GcmCrypter interface {
 	GcmEncrypter
 	GcmDecrypter
 }
 
+// AEADEncrypter is an interface for AEAD encryption implementations.
 type AEADEncrypter interface {
 	GcmEncrypter
+
+	// GenerateHeaderAuth generates the header authentication tag and returns the
+	// authentication tag, iv, and an error if any occurred.
 	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error)
+
+	// ConstructIV constructs the IV from the sequence number.
 	ConstructIV(seqNum int) []byte
 }
 
+// AEADDecrypter is an interface for AEAD decryption implementations.
 type AEADDecrypter interface {
 	GcmDecrypter
+
+	// ValidateHeaderAuth validates that the header authentication tag against the
+	// message header, and returns an error if any occurred.
 	ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error
 }
