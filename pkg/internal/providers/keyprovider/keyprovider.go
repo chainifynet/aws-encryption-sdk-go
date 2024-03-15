@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"

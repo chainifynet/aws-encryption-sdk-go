@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/common"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"

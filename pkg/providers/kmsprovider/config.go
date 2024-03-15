@@ -12,10 +12,10 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/keyprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/kmsclient"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/itertools"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys/kms"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"

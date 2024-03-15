@@ -10,7 +10,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )

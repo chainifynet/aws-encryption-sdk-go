@@ -56,6 +56,9 @@ linters:
     - wrapcheck
     - gofmt
     - zerologlint
+# enable these on the next golangci-lint release:
+#    - copyloopvar
+#    - intrange
 
 linters-settings:
   errorlint:
