@@ -10,6 +10,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/arn"
 )
 
+// Options contains the configuration options for the [KmsKeyProvider].
 type Options struct {
 	awsConfigLoaders []func(options *config.LoadOptions) error
 	clientFactory    model.KMSClientFactory
@@ -22,8 +23,10 @@ type Options struct {
 	keyProvider      model.BaseKeyProvider
 }
 
+// OptionsFunc is a function that applies an option to the [Options].
 type OptionsFunc func(options *Options) error
 
+// WithAwsLoadOptions sets the AWS configuration loaders for the KMS provider.
 func WithAwsLoadOptions(optFns ...func(options *config.LoadOptions) error) OptionsFunc {
 	return func(o *Options) error {
 		o.awsConfigLoaders = optFns
@@ -31,6 +34,7 @@ func WithAwsLoadOptions(optFns ...func(options *config.LoadOptions) error) Optio
 	}
 }
 
+// WithClientFactory sets the KMS client factory for the KMS provider.
 func WithClientFactory(factory model.KMSClientFactory) OptionsFunc {
 	return func(o *Options) error {
 		o.clientFactory = factory
@@ -38,6 +42,7 @@ func WithClientFactory(factory model.KMSClientFactory) OptionsFunc {
 	}
 }
 
+// WithDiscovery enables the discovery mode for the KMS provider.
 func WithDiscovery() OptionsFunc {
 	return func(o *Options) error {
 		o.discovery = true
@@ -45,6 +50,8 @@ func WithDiscovery() OptionsFunc {
 	}
 }
 
+// WithDiscoveryFilter sets the discovery filter for the KMS provider, it also
+// enables the discovery mode.
 func WithDiscoveryFilter(accountIDs []string, partition string) OptionsFunc {
 	return func(o *Options) error {
 		filter := &discoveryFilter{accountIDs: accountIDs, partition: partition}
@@ -54,6 +61,7 @@ func WithDiscoveryFilter(accountIDs []string, partition string) OptionsFunc {
 	}
 }
 
+// WithMrkAwareness enables the multi-region key awareness for the KMS provider.
 func WithMrkAwareness() OptionsFunc {
 	return func(o *Options) error {
 		o.mrkAware = true
@@ -61,6 +69,7 @@ func WithMrkAwareness() OptionsFunc {
 	}
 }
 
+// WithDiscoveryRegion sets the discovery region for the KMS provider.
 func WithDiscoveryRegion(region string) OptionsFunc {
 	return func(o *Options) error {
 		o.discoveryRegion = region
@@ -68,6 +77,7 @@ func WithDiscoveryRegion(region string) OptionsFunc {
 	}
 }
 
+// WithKeyFactory sets the master key factory for the KMS provider.
 func WithKeyFactory(keyFactory model.MasterKeyFactory) OptionsFunc {
 	return func(o *Options) error {
 		o.keyFactory = keyFactory
@@ -75,6 +85,7 @@ func WithKeyFactory(keyFactory model.MasterKeyFactory) OptionsFunc {
 	}
 }
 
+// WithKeyProvider sets the base key provider for the KMS provider.
 func WithKeyProvider(keyProvider model.BaseKeyProvider) OptionsFunc {
 	return func(o *Options) error {
 		o.keyProvider = keyProvider
@@ -87,7 +98,7 @@ type discoveryFilter struct {
 	partition  string
 }
 
-func (df *discoveryFilter) IsAllowed(keyID string) bool {
+func (df *discoveryFilter) isAllowed(keyID string) bool {
 	keyArn, err := arn.ParseArn(keyID)
 	if err != nil {
 		return false

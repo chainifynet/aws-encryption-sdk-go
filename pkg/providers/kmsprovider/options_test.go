@@ -259,7 +259,7 @@ func Test_discoveryFilter_IsAllowed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.filter.IsAllowed(tt.keyID)
+			got := tt.filter.isAllowed(tt.keyID)
 			assert.Equal(t, tt.want, got)
 		})
 	}
