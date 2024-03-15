@@ -39,6 +39,9 @@ packages:
         config:
           mockname: "MockEncrypter"
           filename: "Encrypter_mock.go"
+      GcmCrypter:
+      AEADEncrypter:
+      AEADDecrypter:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format:
     interfaces:
       MessageAAD:
@@ -50,14 +53,6 @@ packages:
       MessageFooter:
       Deserializer:
       Serializer:
-  github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption:
-    interfaces:
-      GcmBase:
-        config:
-          mockname: "MockEncrypter"
-          filename: "Encrypter_mock.go"
-      AEADDecrypter:
-      AEADEncrypter:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand:
     config:
       dir: mocks/{{ replaceAll .PackagePath "internal" "internal_" }}

@@ -40,3 +40,27 @@ type EncryptionBuffer interface {
 	// Reset resets the buffer to be empty.
 	Reset()
 }
+
+type GcmEncrypter interface {
+	Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error)
+}
+
+type GcmDecrypter interface {
+	Decrypt(key, iv, ciphertext, tag, aadData []byte) ([]byte, error)
+}
+
+type GcmCrypter interface {
+	GcmEncrypter
+	GcmDecrypter
+}
+
+type AEADEncrypter interface {
+	GcmEncrypter
+	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error)
+	ConstructIV(seqNum int) []byte
+}
+
+type AEADDecrypter interface {
+	GcmDecrypter
+	ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error
+}

@@ -2,7 +2,7 @@
 
 //go:build mocks
 
-package encryption
+package model
 
 import mock "github.com/stretchr/testify/mock"
 

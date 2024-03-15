@@ -22,30 +22,6 @@ var (
 	ErrGcmEncrypt = errors.New("gcm encrypt error")
 )
 
-type Encrypter interface {
-	Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error)
-}
-
-type Decrypter interface {
-	Decrypt(key, iv, ciphertext, tag, aadData []byte) ([]byte, error)
-}
-
-type GcmBase interface {
-	Encrypter
-	Decrypter
-}
-
-type AEADEncrypter interface {
-	Encrypter
-	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error)
-	ConstructIV(seqNum int) []byte
-}
-
-type AEADDecrypter interface {
-	Decrypter
-	ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error
-}
-
 type Gcm struct{}
 
 // Decrypt data with AES-GCM AEAD, IV is nonce
