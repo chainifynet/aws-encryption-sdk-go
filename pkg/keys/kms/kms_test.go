@@ -121,7 +121,7 @@ func TestKmsMasterKey_GenerateDataKey(t *testing.T) {
 					}, nil).Once()
 			}
 
-			kmsMK, err := NewKmsMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			got, err := kmsMK.GenerateDataKey(ctx, tt.args.alg, tt.args.ec)
@@ -234,7 +234,7 @@ func TestKmsMasterKey_EncryptDataKey(t *testing.T) {
 					}, nil).Once()
 			}
 
-			kmsMK, err := NewKmsMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			dataKey := model.NewDataKey(
@@ -391,7 +391,7 @@ func TestKmsMasterKey_decryptDataKey(t *testing.T) {
 				}
 			}
 
-			kmsMK, err := NewKmsMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			edk := model.NewEncryptedDataKey(
@@ -447,7 +447,7 @@ func TestKmsMasterKey_validateAllowedDecrypt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockKmsClient := mocks.NewMockKMSClient(t)
-			kmsMK, err := NewKmsMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			tt.wantErr(t, kmsMK.validateAllowedDecrypt(tt.edkKeyID), fmt.Sprintf("validateAllowedDecrypt(%v)", tt.edkKeyID))
@@ -506,7 +506,7 @@ func TestKmsMasterKey_DecryptDataKey(t *testing.T) {
 					}, nil).Once()
 			}
 
-			kmsMK, err := NewKmsMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			edk := model.NewEncryptedDataKey(
@@ -576,11 +576,11 @@ func TestNewKmsMasterKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewKmsMasterKey(tt.args.client, tt.args.keyID)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewKmsMasterKey(%v, %v)", tt.args.client, tt.args.keyID)) {
+			got, err := newKmsMasterKey(tt.args.client, tt.args.keyID)
+			if !tt.wantErr(t, err, fmt.Sprintf("newKmsMasterKey(%v, %v)", tt.args.client, tt.args.keyID)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "NewKmsMasterKey(%v, %v)", tt.args.client, tt.args.keyID)
+			assert.Equalf(t, tt.want, got, "newKmsMasterKey(%v, %v)", tt.args.client, tt.args.keyID)
 		})
 	}
 }

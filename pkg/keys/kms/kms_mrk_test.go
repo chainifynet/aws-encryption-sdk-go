@@ -71,11 +71,11 @@ func TestNewKmsMrkMasterKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewKmsMrkMasterKey(tt.args.client, tt.args.keyID)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewKmsMrkMasterKey(%v, %v)", tt.args.client, tt.args.keyID)) {
+			got, err := newKmsMrkMasterKey(tt.args.client, tt.args.keyID)
+			if !tt.wantErr(t, err, fmt.Sprintf("newKmsMrkMasterKey(%v, %v)", tt.args.client, tt.args.keyID)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "NewKmsMrkMasterKey(%v, %v)", tt.args.client, tt.args.keyID)
+			assert.Equalf(t, tt.want, got, "newKmsMrkMasterKey(%v, %v)", tt.args.client, tt.args.keyID)
 		})
 	}
 }
@@ -127,7 +127,7 @@ func TestKmsMrkMasterKey_validateAllowedDecrypt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockKmsClient := mocks.NewMockKMSClient(t)
-			kmsMK, err := NewKmsMrkMasterKey(mockKmsClient, tt.keyID)
+			kmsMK, err := newKmsMrkMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			tt.wantErr(t, kmsMK.validateAllowedDecrypt(tt.edkKeyID), fmt.Sprintf("validateAllowedDecrypt(%v)", tt.edkKeyID))
@@ -188,7 +188,7 @@ func TestKmsMrkMasterKey_OwnsDataKey(t *testing.T) {
 			mockKey.EXPECT().KeyID().Return(tt.mockMeta.KeyID).Once()
 			mockKey.EXPECT().KeyProvider().Return(tt.mockMeta).Once()
 
-			kmsMrkMK, err := NewKmsMrkMasterKey(mockKmsClient, tt.keyID)
+			kmsMrkMK, err := newKmsMrkMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			assert.Equalf(t, tt.want, kmsMrkMK.OwnsDataKey(mockKey), "OwnsDataKey(%v)", mockKey)
@@ -256,7 +256,7 @@ func TestKmsMrkMasterKey_DecryptDataKey(t *testing.T) {
 					}, nil).Once()
 			}
 
-			kmsMrkMK, err := NewKmsMrkMasterKey(mockKmsClient, tt.keyID)
+			kmsMrkMK, err := newKmsMrkMasterKey(mockKmsClient, tt.keyID)
 			require.NoError(t, err)
 
 			edk := model.NewEncryptedDataKey(

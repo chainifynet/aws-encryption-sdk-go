@@ -14,12 +14,16 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/arn"
 )
 
+// MrkMasterKey is a Kms [MasterKey] that uses a KMS multi-Region key. It embeds
+// the Kms [MasterKey] and implements the Kms [KeyHandler] interface.
 type MrkMasterKey struct {
 	MasterKey
 }
 
+// MrkKeyFactory is a factory for creating Kms [MrkMasterKey].
 type MrkKeyFactory struct{}
 
+// NewMasterKey factory method returns a new instance of Kms [MrkMasterKey].
 func (f *MrkKeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, error) {
 	if len(args) != 2 { //nolint:gomnd
 		return nil, fmt.Errorf("invalid number of arguments")
@@ -34,14 +38,14 @@ func (f *MrkKeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, erro
 		return nil, fmt.Errorf("invalid keyID")
 	}
 
-	return NewKmsMrkMasterKey(client, keyID)
+	return newKmsMrkMasterKey(client, keyID)
 }
 
 // checking that MrkMasterKey implements both model.MasterKey and KeyHandler interfaces.
 var _ model.MasterKey = (*MrkMasterKey)(nil)
 var _ KeyHandler = (*MrkMasterKey)(nil)
 
-func NewKmsMrkMasterKey(client model.KMSClient, keyID string) (*MrkMasterKey, error) {
+func newKmsMrkMasterKey(client model.KMSClient, keyID string) (*MrkMasterKey, error) {
 	if client == nil {
 		return nil, fmt.Errorf("KMSMrkMasterKey: client must not be nil")
 	}
@@ -56,6 +60,8 @@ func NewKmsMrkMasterKey(client model.KMSClient, keyID string) (*MrkMasterKey, er
 	}, nil
 }
 
+// OwnsDataKey checks if the key resource ARN matches the keyID of the master
+// key. Both ARNs must be MRK ARNs.
 func (kmsMrkMK *MrkMasterKey) OwnsDataKey(key model.Key) bool {
 	if kmsMrkMK.Metadata().ProviderID == key.KeyProvider().ProviderID && arn.IsMrkArnEqual(kmsMrkMK.Metadata().KeyID, key.KeyID()) {
 		return true
@@ -70,6 +76,7 @@ func (kmsMrkMK *MrkMasterKey) validateAllowedDecrypt(edkKeyID string) error {
 	return nil
 }
 
+// DecryptDataKey decrypts the encrypted data key and returns the data key.
 func (kmsMrkMK *MrkMasterKey) DecryptDataKey(ctx context.Context, encryptedDataKey model.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.DataKeyI, error) {
 	if err := kmsMrkMK.validateAllowedDecrypt(encryptedDataKey.KeyID()); err != nil {
 		return nil, err
