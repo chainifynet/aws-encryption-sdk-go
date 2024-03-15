@@ -7,6 +7,5 @@ import (
 	"errors"
 )
 
-var (
-	ErrCMM = errors.New("CMM error")
-)
+// ErrCMM is a generic [model.CryptoMaterialsManager] error.
+var ErrCMM = errors.New("CMM error")

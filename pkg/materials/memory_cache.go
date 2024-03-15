@@ -10,6 +10,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 )
 
+// MemoryCache CachingCryptoMaterialsManager still under development.
 type MemoryCache struct {
 	cache sync.Map
 }

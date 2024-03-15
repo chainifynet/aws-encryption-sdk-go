@@ -19,6 +19,8 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 
+// DefaultCryptoMaterialsManager is a default implementation of [model.CryptoMaterialsManager].
+// It interacts directly with your Master Key Providers without any caching.
 type DefaultCryptoMaterialsManager struct {
 	primaryKeyProvider model.MasterKeyProvider
 	masterKeyProviders []model.MasterKeyProvider
@@ -27,6 +29,15 @@ type DefaultCryptoMaterialsManager struct {
 // compile checking that DefaultCryptoMaterialsManager implements CryptoMaterialsManager interface
 var _ model.CryptoMaterialsManager = (*DefaultCryptoMaterialsManager)(nil)
 
+// NewDefault creates a new instance of DefaultCryptoMaterialsManager.
+//
+// It takes a primary [model.MasterKeyProvider] and an optional list of extra
+// MasterKeyProviders as parameters. If the primary MasterKeyProvider is nil, it
+// returns an error.
+//
+// Parameters:
+//   - primary: The primary [model.MasterKeyProvider]. Must not be nil.
+//   - extra: Optional additional [model.MasterKeyProvider] providers. Duplicates are not allowed.
 func NewDefault(primary model.MasterKeyProvider, extra ...model.MasterKeyProvider) (*DefaultCryptoMaterialsManager, error) {
 	if primary == nil {
 		return nil, fmt.Errorf("primary MasterKeyProvider nil : %w", ErrCMM)
@@ -50,6 +61,9 @@ func NewDefault(primary model.MasterKeyProvider, extra ...model.MasterKeyProvide
 	}, nil
 }
 
+// GetEncryptionMaterials returns the encryption materials for the given request.
+// Used during encryption process to get the encryption materials from registered
+// master key providers.
 func (dm *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx context.Context, encReq model.EncryptionMaterialsRequest) (model.EncryptionMaterial, error) {
 	// copy encryption context map
 	var encryptionContext suite.EncryptionContext
@@ -95,6 +109,9 @@ func (dm *DefaultCryptoMaterialsManager) GetEncryptionMaterials(ctx context.Cont
 
 }
 
+// DecryptMaterials returns the decryption materials for the given request. Used
+// during decryption process to get the decryption materials from registered
+// master key providers.
 func (dm *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, decReq model.DecryptionMaterialsRequest) (model.DecryptionMaterial, error) {
 	var dataKey model.DataKeyI
 	var errDecryptDataKey error
@@ -149,6 +166,8 @@ func (dm *DefaultCryptoMaterialsManager) DecryptMaterials(ctx context.Context, d
 	return model.NewDecryptionMaterials(dataKey, verificationKey), nil
 }
 
+// GetInstance returns a new instance of the crypto materials manager to interact
+// within encryption/decryption process.
 func (dm *DefaultCryptoMaterialsManager) GetInstance() model.CryptoMaterialsManager {
 	return &DefaultCryptoMaterialsManager{
 		primaryKeyProvider: dm.primaryKeyProvider,

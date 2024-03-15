@@ -10,6 +10,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 )
 
+// BaseCache CachingCryptoMaterialsManager still under development.
 type BaseCache interface {
 	PutEncryptionEntry(cacheKey []byte, m model.EncryptionMaterials, n int) (*CacheEntry[model.EncryptionMaterials], error)
 	PutDecryptionEntry(cacheKey []byte, m model.DecryptionMaterials) (*CacheEntry[model.DecryptionMaterials], error)
@@ -17,6 +18,7 @@ type BaseCache interface {
 	GetDecryptionEntry(cacheKey []byte) (*CacheEntry[model.DecryptionMaterials], error)
 }
 
+// CachingCryptoMaterialsManager still under development.
 type CachingCryptoMaterialsManager struct {
 	// TODO probably add DefaultCryptoMaterialsManager
 	cache       BaseCache
@@ -25,6 +27,7 @@ type CachingCryptoMaterialsManager struct {
 	maxBytes    int
 }
 
+// NewCaching CachingCryptoMaterialsManager still under development.
 func NewCaching(cache BaseCache, _ model.MasterKeyProvider, _ ...model.MasterKeyProvider) (*CachingCryptoMaterialsManager, error) {
 	return &CachingCryptoMaterialsManager{
 		cache:       cache,
@@ -37,14 +40,17 @@ func NewCaching(cache BaseCache, _ model.MasterKeyProvider, _ ...model.MasterKey
 // compile checking that CachingCryptoMaterialsManager implements CryptoMaterialsManager interface
 var _ model.CryptoMaterialsManager = (*CachingCryptoMaterialsManager)(nil)
 
+// GetEncryptionMaterials CachingCryptoMaterialsManager still under development.
 func (cm *CachingCryptoMaterialsManager) GetEncryptionMaterials(_ context.Context, _ model.EncryptionMaterialsRequest) (model.EncryptionMaterial, error) {
 	return nil, nil
 }
 
+// DecryptMaterials CachingCryptoMaterialsManager still under development.
 func (cm *CachingCryptoMaterialsManager) DecryptMaterials(_ context.Context, _ model.DecryptionMaterialsRequest) (model.DecryptionMaterial, error) {
 	return nil, nil
 }
 
+// GetInstance CachingCryptoMaterialsManager still under development.
 func (cm *CachingCryptoMaterialsManager) GetInstance() model.CryptoMaterialsManager {
 	return &CachingCryptoMaterialsManager{
 		cache:       cm.cache,
