@@ -58,7 +58,9 @@ packages:
           filename: "Encrypter_mock.go"
       AEADDecrypter:
       AEADEncrypter:
-  github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand:
+  github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand:
+    config:
+      dir: mocks/{{ replaceAll .PackagePath "internal" "internal_" }}
     interfaces:
       RandomGenerator:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature:

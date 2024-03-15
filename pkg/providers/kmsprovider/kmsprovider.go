@@ -12,11 +12,11 @@ import (
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/common"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys/kms"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/common"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 )
 

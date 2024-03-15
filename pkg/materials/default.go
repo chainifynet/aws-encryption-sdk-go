@@ -12,11 +12,11 @@ import (
 	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
 type DefaultCryptoMaterialsManager struct {
