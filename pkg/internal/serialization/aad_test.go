@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 func Test_newAAD(t *testing.T) {

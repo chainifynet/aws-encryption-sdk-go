@@ -3,7 +3,9 @@
 
 package wrappingkey
 
-import "github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
+import (
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
+)
 
 const (
 	tagLen             = 16

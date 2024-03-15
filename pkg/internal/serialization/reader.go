@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 )
 
 var fieldReader bufReader //nolint:gochecknoglobals

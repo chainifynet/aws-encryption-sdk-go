@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/crypto/hkdf"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 )
 
 // ErrAlgorithmSuite is returned when algorithm suite is invalid or not supported.
