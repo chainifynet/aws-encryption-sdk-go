@@ -127,7 +127,7 @@ linters-settings:
     ignored-files:
       - 'algorithm\.go'
       - 'pkg/utils/conv/conv\.go'
-      - 'pkg/helpers/arn/arn\.go'
+      - 'pkg/utils/arn/arn\.go'
     ignored-functions:
       - '^math\.'
       - '^http\.StatusText$'
