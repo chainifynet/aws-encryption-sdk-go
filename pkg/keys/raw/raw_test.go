@@ -145,11 +145,11 @@ func TestNewRawMasterKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)) {
+			got, err := newRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			if !tt.wantErr(t, err, fmt.Sprintf("newRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			assert.Equalf(t, tt.want, got, "newRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
 		})
 	}
 }
