@@ -15,10 +15,10 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/keyderivation"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
 // ErrInvalidMessage is returned when the message format is invalid.

@@ -15,12 +15,12 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/keyderivation"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
 type Encrypter struct {

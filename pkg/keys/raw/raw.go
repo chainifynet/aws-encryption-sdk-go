@@ -10,12 +10,12 @@ import (
 	"fmt"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization/wrappingkey"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/keyderivation"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
 )
 
 type KeyHandler interface {
