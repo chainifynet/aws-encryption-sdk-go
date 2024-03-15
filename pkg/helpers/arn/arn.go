@@ -17,8 +17,10 @@ const (
 	aliasResourceType = "alias"
 )
 
+// ErrMalformedArn is returned when the ARN is malformed.
 var ErrMalformedArn = errors.New("malformed Key ARN")
 
+// KeyArn represents an AWS Key ARN.
 type KeyArn struct {
 	Partition    string // AWS partition, e.g. aws, aws-cn, aws-us-gov
 	Service      string // AWS service, kms
@@ -57,7 +59,7 @@ func (a *KeyArn) IsMrk() bool {
 	return a.ResourceType == KeyResourceType && strings.HasPrefix(a.ResourceID, mrkPrefix)
 }
 
-// ParseArn Parses str string as an ARN (KeyArn).
+// ParseArn parses str string as an ARN (KeyArn).
 func ParseArn(str string) (*KeyArn, error) {
 	elements := strings.SplitN(str, delim, 6)
 
@@ -126,6 +128,7 @@ func ParseArn(str string) (*KeyArn, error) {
 	}, nil
 }
 
+// ValidateKeyArn validates the keyID as an ARN.
 func ValidateKeyArn(keyID string) error {
 	_, err := ParseArn(keyID)
 	if err != nil {
