@@ -12,7 +12,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/structs"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/keyprovider"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/providers/kmsclient"
@@ -20,6 +19,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys/kms"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers"
+	arn2 "github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/arn"
 )
 
 func resolveProviderType(opts *Options) ProviderType {
@@ -89,7 +89,7 @@ func resolveDefaultRegion(keyIDs []string, opts *Options) {
 	var region string
 	if len(keyIDs) > 0 {
 		for _, keyID := range keyIDs {
-			keyArn, err := arn.ParseArn(keyID)
+			keyArn, err := arn2.ParseArn(keyID)
 			if err != nil {
 				// try next keyID in case of invalid ARN
 				continue
@@ -176,7 +176,7 @@ func validateConfig(t ProviderType, keyIDs []string, options *Options) error { /
 
 func validateKeyArns(keyIDs []string) error {
 	for _, keyID := range keyIDs {
-		if _, err := arn.ParseArn(keyID); err != nil {
+		if _, err := arn2.ParseArn(keyID); err != nil {
 			return fmt.Errorf("%q keyID is not a valid ARN: %w", keyID, err)
 		}
 	}
@@ -213,7 +213,7 @@ func validateAccountID(accountID string) error {
 }
 
 func validateUniqueMrks(keyIDs []string) error {
-	mrkKeyIDs, err := arn.FilterKeyIDs(arn.IsValidMrkIdentifier, keyIDs)
+	mrkKeyIDs, err := arn2.FilterKeyIDs(arn2.IsValidMrkIdentifier, keyIDs)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func validateUniqueMrks(keyIDs []string) error {
 		if structs.MapContains(duplicateIDs, key1) && structs.MapContains(duplicateIDs, key2) {
 			continue
 		}
-		ok, _ := arn.KeyResourceEqual(key1, key2)
+		ok, _ := arn2.KeyResourceEqual(key1, key2)
 		// error ignored because ARN is already validated IsValidMrkIdentifier
 		// or filtered out by FilterKeyIDs
 		if ok {
