@@ -1,6 +1,6 @@
 # Usage examples
 
-### [Basic encryption](basicEncryption)
+### 1. [Basic encryption](basicEncryption)
 
 Basic encryption uses a static key to encrypt and decrypt data.
 It doesn't require AWS credentials and KMS keys.
@@ -17,18 +17,24 @@ It doesn't require AWS credentials and KMS keys.
 
 Alternatively, you can replace the values in `main.go` with the ARN of the keys you want to use.
 
-### [Encryption with Custom AWS Config](customAwsKmsConfig)
+### 2. [Encryption with Custom AWS Config](customAwsKmsConfig)
 
-### [Using Discovery Filter with AWS KMS Key Provider](discoveryFilterKmsProvider)
+### 3. [Using Discovery Filter with AWS KMS Key Provider](discoveryFilterKmsProvider)
 
-### [Encrypt and Decrypt with Discovery enabled KMS provider](discoveryKmsProvider)
+### 4. [Encrypt and Decrypt with Discovery enabled KMS provider](discoveryKmsProvider)
 
-### [Encrypt and Decrypt with MRK-aware enabled KMS provider](mrkAwareKmsProvider)
+### 5. [Encrypt and Decrypt with MRK-aware enabled KMS provider](mrkAwareKmsProvider)
 
-### [Using KMS and Raw providers to encrypt and decrypt](multipleKeyProvider)
+### 6. [Using KMS and Raw providers to encrypt and decrypt](multipleKeyProvider)
 
-### [Encryption and decryption under multiple AWS KMS CMK](multipleKmsKey)
+### 7. [Encryption and decryption under multiple AWS KMS CMK](multipleKmsKey)
 
-### [Encryption and decryption with AWS KMS CMK](oneKmsKey)
+### 8. [Encryption and decryption with AWS KMS CMK](oneKmsKey)
 
-### [Encrypt using AWS KMS CMK with custom options](oneKmsKeyUnsigned)
+### 9. [Encrypt using AWS KMS CMK with custom options](oneKmsKeyUnsigned)
+
+### 10. [Custom Key Provider and Master Key implementations](customKeyProvider)
+Do not use `MyKey` and `MyProvider` in production!
+Custom `MyKey` implementation for simplicity of demonstration uses **base64** encoding for encryption and decryption.
+
+---
