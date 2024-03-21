@@ -213,7 +213,6 @@ func (kmsKP *KmsKeyProvider[KT]) AddMasterKey(keyID string) (model.MasterKey, er
 		// TODO fix context at the some point
 		key, err := kmsKP.NewMasterKey(context.Background(), keyID)
 		if err != nil {
-			// TODO introduce provider errors in order distinguish between MasterKey and MasterKeyProvider errors
 			return nil, err
 		}
 
@@ -225,7 +224,6 @@ func (kmsKP *KmsKeyProvider[KT]) AddMasterKey(keyID string) (model.MasterKey, er
 			kmsKP.primaryMasterKey = kmsKeyEntry
 		}
 
-		//kmsKeyEntry2 := common.NewKeyEntry(castKey)
 		kmsKP.keyEntriesForEncrypt[key.KeyID()] = common.NewKeyEntry(castKey)
 	}
 
