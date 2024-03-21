@@ -32,6 +32,11 @@ func TestProviderType_String(t *testing.T) {
 			want:     "RAW",
 		},
 		{
+			name:     "Custom Provider",
+			provider: Custom,
+			want:     "CUSTOM",
+		},
+		{
 			name:     "Unknown Provider",
 			provider: ProviderKind(99),
 			want:     "NONE",
