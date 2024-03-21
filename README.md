@@ -188,13 +188,13 @@ if err != nil {
 ## TODO
 
 - [ ] Add support for Caching Materials Manager.
-- [x] Add support for Message Format Version 1 [#170](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
+- [x] Add support for Message Format Version 1 [#170](https://github.com/chainifynet/aws-encryption-sdk-go/pull/170).
 - [x] Add support for AWS KMS Multi-Region Keys [#46](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
 - [ ] Add support for KMS aliases.
 - [x] Cover `providers` package with tests.
 - [x] Cover `keys` package with tests.
 - [x] Cover `materials` package with tests.
-- [ ] GoDoc documentation.
+- [x] GoDoc documentation [#294](https://github.com/chainifynet/aws-encryption-sdk-go/pull/294).
 - [ ] Streamlined encryption and decryption.
 
 ## Support and Contributions
