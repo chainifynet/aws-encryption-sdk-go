@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/providers/kmsprovider"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/arn"
 )
 
 func Test_Integration_KmsDiscovery(t *testing.T) {

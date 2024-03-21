@@ -11,7 +11,7 @@ import (
 	"hash"
 
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/hasher"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 )
 
 var (

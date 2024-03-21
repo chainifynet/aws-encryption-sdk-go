@@ -12,16 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	mocksrand "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/internal_/utils/rand"
 	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
-	mocksrand "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization/wrappingkey"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/encryption"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
-
-	mocksencryption "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 )
 
 func TestRawMasterKey_KeyID(t *testing.T) {
@@ -147,11 +145,11 @@ func TestNewRawMasterKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)) {
+			got, err := newRawMasterKey(tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			if !tt.wantErr(t, err, fmt.Sprintf("newRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "NewRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
+			assert.Equalf(t, tt.want, got, "newRawMasterKey(%v, %v, %v)", tt.args.providerID, tt.args.keyID, tt.args.rawKey)
 		})
 	}
 }
@@ -203,7 +201,7 @@ func TestRawMasterKey_encryptDataKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockEncrypter := mocksencryption.NewMockEncrypter(t)
+			mockEncrypter := mocks.NewMockGcmCrypter(t)
 			mockRandomGenerator := mocksrand.NewMockRandomGenerator(t)
 			mockWrapper := mocks.NewMockWrapper(t)
 
@@ -303,7 +301,7 @@ func TestRawMasterKey_GenerateDataKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			mockEncrypter := mocksencryption.NewMockEncrypter(t)
+			mockEncrypter := mocks.NewMockGcmCrypter(t)
 			mockRandomGenerator := mocksrand.NewMockRandomGenerator(t)
 			mockWrapper := mocks.NewMockWrapper(t)
 
@@ -403,7 +401,7 @@ func TestRawMasterKey_EncryptDataKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			mockEncrypter := mocksencryption.NewMockEncrypter(t)
+			mockEncrypter := mocks.NewMockGcmCrypter(t)
 			mockRandomGenerator := mocksrand.NewMockRandomGenerator(t)
 			mockWrapper := mocks.NewMockWrapper(t)
 
@@ -510,7 +508,7 @@ func TestRawMasterKey_decryptDataKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockEncrypter := mocksencryption.NewMockEncrypter(t)
+			mockEncrypter := mocks.NewMockGcmCrypter(t)
 			mockRandomGenerator := mocksrand.NewMockRandomGenerator(t)
 			mockWrapper := mocks.NewMockWrapper(t)
 
@@ -653,7 +651,7 @@ func TestRawMasterKey_DecryptDataKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			mockEncrypter := mocksencryption.NewMockEncrypter(t)
+			mockEncrypter := mocks.NewMockGcmCrypter(t)
 			mockRandomGenerator := mocksrand.NewMockRandomGenerator(t)
 			mockWrapper := mocks.NewMockWrapper(t)
 

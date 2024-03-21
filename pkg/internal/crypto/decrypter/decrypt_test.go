@@ -16,7 +16,6 @@ import (
 	signaturemock "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/internal_/crypto/signature"
 	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	formatmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
-	encryptionmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
@@ -126,7 +125,7 @@ func TestDecrypter_Decrypt(t *testing.T) {
 		name          string
 		clientCfgOpts []clientconfig.ConfigOptionFunc
 		ciphertext    []byte
-		setupMocks    func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
+		setupMocks    func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
 		want          []byte
 		wantErr       bool
 		wantErrType   error
@@ -135,7 +134,7 @@ func TestDecrypter_Decrypt(t *testing.T) {
 		{
 			name:       "Valid Decrypt",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				// header
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384).Times(10)
@@ -200,7 +199,7 @@ func TestDecrypter_Decrypt(t *testing.T) {
 		{
 			name:       "Decrypt Error",
 			ciphertext: nil,
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 			},
 			want:        nil,
 			wantErr:     true,
@@ -215,7 +214,7 @@ func TestDecrypter_Decrypt(t *testing.T) {
 			cmm := mocks.NewMockCryptoMaterialsManager(t)
 			deser := formatmocks.NewMockDeserializer(t)
 			verifier := signaturemock.NewMockVerifier(t)
-			aeadDecrypter := encryptionmocks.NewMockAEADDecrypter(t)
+			aeadDecrypter := mocks.NewMockAEADDecrypter(t)
 
 			tt.setupMocks(t, cmm, verifier, aeadDecrypter, deser)
 
@@ -265,7 +264,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		name          string
 		clientCfgOpts []clientconfig.ConfigOptionFunc
 		ciphertext    []byte
-		setupMocks    func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
+		setupMocks    func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
 		want          []byte
 		wantErr       bool
 		wantErrType   error
@@ -274,7 +273,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Valid Decrypt",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				// header
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384).Times(10)
@@ -339,7 +338,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Empty Ciphertext",
 			ciphertext: nil,
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 
 			},
 			want:       nil,
@@ -349,7 +348,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Invalid Ciphertext First Bytes",
 			ciphertext: []byte{0x03},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 			},
 			want:        nil,
 			wantErr:     true,
@@ -359,7 +358,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Header Decrypt Error",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				deser.EXPECT().DeserializeHeader(mock.Anything, mock.Anything).Return(nil, nil, assert.AnError).Once()
 			},
 			want:        nil,
@@ -369,7 +368,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Body Decrypt Error",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				// header
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().
@@ -411,7 +410,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Footer Deserialize Error",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				// header
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().
@@ -473,7 +472,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 		{
 			name:       "Footer Signature Error",
 			ciphertext: []byte{0x02, 0x00},
-			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, cmm *mocks.MockCryptoMaterialsManager, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				// header
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().
@@ -545,7 +544,7 @@ func TestDecrypter_decryptData(t *testing.T) {
 			cmm := mocks.NewMockCryptoMaterialsManager(t)
 			deser := formatmocks.NewMockDeserializer(t)
 			verifier := signaturemock.NewMockVerifier(t)
-			aeadDecrypter := encryptionmocks.NewMockAEADDecrypter(t)
+			aeadDecrypter := mocks.NewMockAEADDecrypter(t)
 
 			tt.setupMocks(t, cmm, verifier, aeadDecrypter, deser)
 
@@ -592,7 +591,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		name          string
 		clientCfgOpts []clientconfig.ConfigOptionFunc
 		alg           *suite.AlgorithmSuite
-		setupMocks    func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter)
+		setupMocks    func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter)
 		wantErr       bool
 		wantErrType   error
 		wantErrStr    string
@@ -600,7 +599,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Valid Committing Signing",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(8)
 				header.EXPECT().Bytes().Return([]byte("test")).Twice()
@@ -633,7 +632,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Valid Committing NonSigning",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(6)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -664,7 +663,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 				clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyRequireEncryptAllowDecrypt),
 			},
 			alg: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(5)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -694,7 +693,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 				clientconfig.WithCommitmentPolicy(suite.CommitmentPolicyForbidEncryptAllowDecrypt),
 			},
 			alg: suite.AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(7)
 				header.EXPECT().Bytes().Return([]byte("test")).Twice()
@@ -726,7 +725,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Deserialize Header Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				deser.EXPECT().DeserializeHeader(mock.Anything, mock.Anything).
 					Return(nil, nil, assert.AnError).Once()
 			},
@@ -736,7 +735,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Policy Conflict Error",
 			alg:  suite.AES_256_GCM_IV12_TAG16_HKDF_SHA256,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(1)
 
@@ -750,7 +749,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Verifier Update Header Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(4)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -767,7 +766,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Verifier Update Header Auth Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(4)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -786,7 +785,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "CMM DecryptMaterials Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(5)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -809,7 +808,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Verifier Elliptic Key Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(5)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -835,7 +834,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Derive DataKey Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(6)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -865,7 +864,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Commitment Key Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(8)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -896,7 +895,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Commitment Key Match Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(8)
 				header.EXPECT().Bytes().Return([]byte("test")).Once()
@@ -927,7 +926,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 		{
 			name: "Header Auth Error",
 			alg:  suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
-			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *encryptionmocks.MockAEADDecrypter) {
+			setupMocks: func(t *testing.T, alg *suite.AlgorithmSuite, cmm *mocks.MockCryptoMaterialsManager, deser *formatmocks.MockDeserializer, verifier *signaturemock.MockVerifier, aeadDecrypter *mocks.MockAEADDecrypter) {
 				header := formatmocks.NewMockMessageHeader(t)
 				header.EXPECT().AlgorithmSuite().Return(alg).Times(8)
 				header.EXPECT().Bytes().Return([]byte("test")).Twice()
@@ -967,7 +966,7 @@ func TestDecrypter_decryptHeader(t *testing.T) {
 			cmm := mocks.NewMockCryptoMaterialsManager(t)
 			deser := formatmocks.NewMockDeserializer(t)
 			verifier := signaturemock.NewMockVerifier(t)
-			aeadDecrypter := encryptionmocks.NewMockAEADDecrypter(t)
+			aeadDecrypter := mocks.NewMockAEADDecrypter(t)
 
 			tt.setupMocks(t, tt.alg, cmm, deser, verifier, aeadDecrypter)
 
@@ -1017,7 +1016,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 	tests := []struct {
 		name           string
 		derivedDataKey []byte
-		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
+		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer)
 		want           []byte
 		wantErr        bool
 		wantErrType    error
@@ -1026,7 +1025,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 		{
 			name:           "Valid Decrypt",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				header.EXPECT().AlgorithmSuite().
 					Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY).Once()
 				header.EXPECT().FrameLength().Return(1024).Once()
@@ -1056,7 +1055,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 		{
 			name:           "Valid Two Frames Decrypt",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				header.EXPECT().AlgorithmSuite().
 					Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY).Once()
 				header.EXPECT().FrameLength().Return(1024).Once()
@@ -1095,7 +1094,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 		{
 			name:           "Deserialize Body Error",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				header.EXPECT().AlgorithmSuite().
 					Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY).Once()
 				header.EXPECT().FrameLength().Return(1024).Once()
@@ -1111,7 +1110,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 		{
 			name:           "Decrypt Frame Error",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, deser *formatmocks.MockDeserializer) {
 				header.EXPECT().AlgorithmSuite().
 					Return(suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY).Once()
 				header.EXPECT().FrameLength().Return(1024).Once()
@@ -1136,7 +1135,7 @@ func TestDecrypter_decryptBody(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			header := formatmocks.NewMockMessageHeader(t)
 			deser := formatmocks.NewMockDeserializer(t)
-			aeadDecrypter := encryptionmocks.NewMockAEADDecrypter(t)
+			aeadDecrypter := mocks.NewMockAEADDecrypter(t)
 
 			tt.setupMocks(t, header, aeadDecrypter, deser)
 
@@ -1170,7 +1169,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 	tests := []struct {
 		name           string
 		derivedDataKey []byte
-		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier
+		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier
 		want           []byte
 		wantErr        bool
 		wantErrType    error
@@ -1179,7 +1178,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 		{
 			name:           "Valid Decrypt Final Frame",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-id")).Once()
 
@@ -1203,7 +1202,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 		{
 			name:           "Valid Decrypt NonFinal Frame",
 			derivedDataKey: []byte("test-key2"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-id")).Once()
 
@@ -1224,7 +1223,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 		{
 			name:           "BodyAAD NonFramed Error",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
 				header.EXPECT().ContentType().Return(suite.NonFramedContent).Once()
 
 				frame.EXPECT().IsFinal().Return(true).Once()
@@ -1237,7 +1236,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 		{
 			name:           "AEAD Decrypt Error",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-id")).Once()
 
@@ -1260,7 +1259,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 		{
 			name:           "Verifier Error",
 			derivedDataKey: []byte("test-key"),
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *encryptionmocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadDecrypter *mocks.MockAEADDecrypter, frame *formatmocks.MockBodyFrame) signature.Verifier {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-id")).Once()
 
@@ -1286,7 +1285,7 @@ func TestDecrypter_decryptFrame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			header := formatmocks.NewMockMessageHeader(t)
-			aeadDecrypter := encryptionmocks.NewMockAEADDecrypter(t)
+			aeadDecrypter := mocks.NewMockAEADDecrypter(t)
 			frame := formatmocks.NewMockBodyFrame(t)
 
 			verifier := tt.setupMocks(t, header, aeadDecrypter, frame)

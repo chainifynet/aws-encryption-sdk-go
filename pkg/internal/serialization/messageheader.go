@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 var (
@@ -44,9 +44,9 @@ type messageHeader struct {
 
 type messageHeaderV1 struct {
 	messageHeader
-	messageType suite.MessageType // 1, format.MessageType, present only in V1
-	reserved    []byte            // 4, reserved, present only in V1, always 0x00,0x00,0x00,0x00
-	ivLen       int               // 1, length of IV, present only in V1, always 12
+	messageType format.MessageType // 1, format.MessageType, present only in V1
+	reserved    []byte             // 4, reserved, present only in V1, always 0x00,0x00,0x00,0x00
+	ivLen       int                // 1, length of IV, present only in V1, always 12
 }
 
 type messageHeaderV2 struct {
@@ -58,7 +58,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 	if p.AlgorithmSuite == nil {
 		return nil, fmt.Errorf("invalid AlgorithmSuite: %v", p.AlgorithmSuite)
 	}
-	_, err := suite.Algorithm.ByID(p.AlgorithmSuite.AlgorithmID)
+	_, err := suite.ByID(p.AlgorithmSuite.AlgorithmID)
 	if err != nil {
 		return nil, fmt.Errorf("unsupported AlgorithmID: %w", err)
 	}
@@ -105,7 +105,7 @@ func newHeader(p format.HeaderParams) (format.MessageHeader, error) {
 
 	return &messageHeaderV1{
 		messageHeader: header,
-		messageType:   suite.CustomerAEData,
+		messageType:   format.CustomerAEData,
 		reserved:      reservedField,
 		ivLen:         p.AlgorithmSuite.EncryptionSuite.IVLen,
 	}, nil
@@ -129,7 +129,7 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 
 	if messageVersion == suite.V1 {
 		messageType := fieldReader.ReadSingleField(buf)
-		if suite.MessageType(messageType) != suite.CustomerAEData {
+		if format.MessageType(messageType) != format.CustomerAEData {
 			return nil, fmt.Errorf("invalid messageType %v not supported: %w", messageType, errHeaderDeserialize)
 		}
 	}
@@ -137,7 +137,7 @@ func deserializeHeader(buf *bytes.Buffer) (format.MessageHeader, error) { //noli
 	algorithmID := buf.Next(algorithmIDFieldBytes) // AlgorithmID is 2 bytes, uint16
 
 	// validate AlgorithmID is supported
-	algorithmSuite, err := suite.Algorithm.FromBytes(algorithmID)
+	algorithmSuite, err := suite.FromBytes(algorithmID)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (h *messageHeader) FrameLength() int {
 	return h.frameLength
 }
 
-func (h *messageHeaderV1) Type() suite.MessageType {
+func (h *messageHeaderV1) Type() format.MessageType {
 	return h.messageType
 }
 
@@ -357,7 +357,7 @@ func (h *messageHeaderV1) AlgorithmSuiteData() []byte {
 	return nil
 }
 
-func (h *messageHeaderV2) Type() suite.MessageType {
+func (h *messageHeaderV2) Type() format.MessageType {
 	return 0
 }
 

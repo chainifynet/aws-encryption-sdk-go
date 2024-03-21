@@ -14,17 +14,18 @@ import (
 	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/transport/http"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/helpers/arn"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/keys"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/types"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/arn"
 )
 
-var (
-	ErrKmsClient = errors.New("KMSClient error")
-)
+// ErrKmsClient is returned when AWS KMS encounters an error.
+var ErrKmsClient = errors.New("KMSClient error")
 
+// KeyHandler is an interface specific to the Kms [MasterKey] which is used by
+// the KmsMasterKeyProvider.
 type KeyHandler interface {
 	model.MasterKey
 	decryptDataKey(ctx context.Context, encryptedDataKey model.EncryptedDataKeyI, _ *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.DataKeyI, error)
@@ -34,8 +35,10 @@ type KeyHandler interface {
 	validateAllowedDecrypt(edkKeyID string) error
 }
 
+// KeyFactory is a factory for creating Kms [MasterKey].
 type KeyFactory struct{}
 
+// NewMasterKey factory method returns a new instance of Kms [MasterKey].
 func (f *KeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, error) {
 	if len(args) != 2 { //nolint:gomnd
 		return nil, fmt.Errorf("invalid number of arguments")
@@ -50,15 +53,16 @@ func (f *KeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, error) 
 		return nil, fmt.Errorf("invalid keyID")
 	}
 
-	return NewKmsMasterKey(client, keyID)
+	return newKmsMasterKey(client, keyID)
 }
 
+// MasterKey contains the Kms Master Key, KMS Client, and it implements the [model.MasterKey] interface.
 type MasterKey struct {
 	keys.BaseKey
 	kmsClient model.KMSClient
 }
 
-func NewKmsMasterKey(client model.KMSClient, keyID string) (*MasterKey, error) {
+func newKmsMasterKey(client model.KMSClient, keyID string) (*MasterKey, error) {
 	if client == nil {
 		return nil, fmt.Errorf("KMSMasterKey: client must not be nil")
 	}
@@ -75,12 +79,7 @@ func NewKmsMasterKey(client model.KMSClient, keyID string) (*MasterKey, error) {
 var _ model.MasterKey = (*MasterKey)(nil)
 var _ KeyHandler = (*MasterKey)(nil)
 
-// GenerateDataKey returns DataKey is generated from primaryMasterKey in MasterKeyProvider
-// DataKey contains:
-//
-//	provider			keyID of this (MasterKey) KmsMasterKey
-//	dataKey				Plaintext of this generated dataKey
-//	encryptedDataKey	CiphertextBlob of this generated dataKey
+// GenerateDataKey generates a new data key and returns it.
 func (kmsMK *MasterKey) GenerateDataKey(ctx context.Context, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.DataKeyI, error) {
 	dataKeyRequest := kmsMK.buildGenerateDataKeyRequest(alg, ec)
 
@@ -112,14 +111,7 @@ func (kmsMK *MasterKey) buildGenerateDataKeyRequest(alg *suite.AlgorithmSuite, e
 	}
 }
 
-// EncryptDataKey returns EncryptedDataKey which is encrypted from DataKey that was generated at GenerateDataKey
-// EncryptedDataKey contains:
-//
-//	provider			keyID of this (MasterKey) KmsMasterKey
-//	encryptedDataKey	CiphertextBlob is encrypted content of dataKey (this or other)
-//
-//	i.e. GenerateDataKey (encryption material generator), once per primaryMasterKey ->
-//	-> for each MasterKey (KmsMasterKey) registered in providers.MasterKeyProvider do EncryptDataKey
+// EncryptDataKey encrypts the data key and returns the encrypted data key.
 func (kmsMK *MasterKey) EncryptDataKey(ctx context.Context, dataKey model.DataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.EncryptedDataKeyI, error) {
 	encryptDataKeyRequest := kmsMK.buildEncryptRequest(dataKey, ec)
 
@@ -158,14 +150,7 @@ func (kmsMK *MasterKey) validateAllowedDecrypt(edkKeyID string) error {
 	return nil
 }
 
-// DecryptDataKey returns DataKey which is decrypted from EncryptedDataKey that was encrypted by EncryptDataKey
-// DataKey contains:
-//
-//	provider			keyID of this (MasterKey) KmsMasterKey MUST equals to EncryptedDataKey keyID
-//	dataKey				Plaintext is decrypted content of EncryptedDataKey encryptedDataKey
-//	encryptedDataKey	encrypted content of (this) EncryptedDataKey
-//
-// Decrypted dataKey (plaintext) MUST match DataKey (plaintext) that was originally generated at GenerateDataKey.
+// DecryptDataKey decrypts the encrypted data key and returns the data key.
 func (kmsMK *MasterKey) DecryptDataKey(ctx context.Context, encryptedDataKey model.EncryptedDataKeyI, alg *suite.AlgorithmSuite, ec suite.EncryptionContext) (model.DataKeyI, error) {
 	if err := kmsMK.validateAllowedDecrypt(encryptedDataKey.KeyID()); err != nil {
 		return nil, err

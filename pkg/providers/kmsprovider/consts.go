@@ -9,6 +9,7 @@ const (
 	_awsAccountIDLength = 12 // length of AWS account ID (e.g. "123456789012")
 )
 
+// ProviderType represents the type of KMS Provider.
 type ProviderType int
 
 const (
@@ -18,6 +19,7 @@ const (
 	MrkAwareDiscoveryKmsProvider                     // MRK-Aware Discovery-Enabled KMS Provider
 )
 
+// String returns the string representation of the KMS Provider type.
 func (k ProviderType) String() string {
 	switch k {
 	case StrictKmsProvider:

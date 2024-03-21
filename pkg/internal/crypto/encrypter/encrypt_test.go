@@ -12,17 +12,16 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	signaturemock "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/internal_/crypto/signature"
+	randmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/internal_/utils/rand"
 	mocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	formatmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
-	encryptionmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	randmocks "github.com/chainifynet/aws-encryption-sdk-go/mocks/github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/clientconfig"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/crypto"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
 func TestEncrypter_reset(t *testing.T) {
@@ -439,7 +438,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 		name           string
 		derivedDataKey []byte
 		args           args
-		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *encryptionmocks.MockAEADEncrypter)
+		setupMocks     func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *mocks.MockAEADEncrypter)
 		wantCiphertext []byte
 		wantAuthTag    []byte
 		wantErr        bool
@@ -450,7 +449,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 			name:           "BodyAAD Error",
 			derivedDataKey: []byte("derivedDataKey"),
 			args:           finalFrameMock,
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *encryptionmocks.MockAEADEncrypter) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *mocks.MockAEADEncrypter) {
 				header.EXPECT().ContentType().Return(suite.NonFramedContent).Once()
 			},
 			wantCiphertext: nil,
@@ -462,7 +461,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 			name:           "AEAD Encrypt Error",
 			derivedDataKey: []byte("derivedDataKey"),
 			args:           frameMock,
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *encryptionmocks.MockAEADEncrypter) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *mocks.MockAEADEncrypter) {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-message-id")).Once()
 
@@ -479,7 +478,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 			name:           "Valid Frame Encrypt",
 			derivedDataKey: []byte("derivedDataKey"),
 			args:           frameMock,
-			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *encryptionmocks.MockAEADEncrypter) {
+			setupMocks: func(t *testing.T, header *formatmocks.MockMessageHeader, aeadEncrypter *mocks.MockAEADEncrypter) {
 				header.EXPECT().ContentType().Return(suite.FramedContent).Once()
 				header.EXPECT().MessageID().Return([]byte("test-message-id")).Once()
 
@@ -494,7 +493,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			header := formatmocks.NewMockMessageHeader(t)
-			aeadEncrypter := encryptionmocks.NewMockAEADEncrypter(t)
+			aeadEncrypter := mocks.NewMockAEADEncrypter(t)
 
 			tt.setupMocks(t, header, aeadEncrypter)
 
@@ -529,7 +528,7 @@ func TestEncrypter_encryptFrame(t *testing.T) {
 func TestEncrypter_encryptBody(t *testing.T) {
 	type mocksParams struct {
 		header        *formatmocks.MockMessageHeader
-		aeadEncrypter *encryptionmocks.MockAEADEncrypter
+		aeadEncrypter *mocks.MockAEADEncrypter
 		ser           *formatmocks.MockSerializer
 		ciphertextBuf *mocks.MockEncryptionBuffer
 	}
@@ -640,7 +639,7 @@ func TestEncrypter_encryptBody(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			header := formatmocks.NewMockMessageHeader(t)
-			aeadEncrypter := encryptionmocks.NewMockAEADEncrypter(t)
+			aeadEncrypter := mocks.NewMockAEADEncrypter(t)
 			ser := formatmocks.NewMockSerializer(t)
 			ciphertextBuf := mocks.NewMockEncryptionBuffer(t)
 
@@ -683,7 +682,7 @@ func TestEncrypter_encryptBody(t *testing.T) {
 func TestEncrypter_generateHeaderAuth(t *testing.T) {
 	type mocksParams struct {
 		header        *formatmocks.MockMessageHeader
-		aeadEncrypter *encryptionmocks.MockAEADEncrypter
+		aeadEncrypter *mocks.MockAEADEncrypter
 		ser           *formatmocks.MockSerializer
 		ciphertextBuf *mocks.MockEncryptionBuffer
 	}
@@ -749,7 +748,7 @@ func TestEncrypter_generateHeaderAuth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			header := formatmocks.NewMockMessageHeader(t)
-			aeadEncrypter := encryptionmocks.NewMockAEADEncrypter(t)
+			aeadEncrypter := mocks.NewMockAEADEncrypter(t)
 			ser := formatmocks.NewMockSerializer(t)
 			ciphertextBuf := mocks.NewMockEncryptionBuffer(t)
 
@@ -1109,7 +1108,7 @@ func TestEncrypter_encryptData(t *testing.T) {
 	type mocksParams struct {
 		alg           *suite.AlgorithmSuite
 		cmm           *mocks.MockCryptoMaterialsManager
-		aeadEncrypter *encryptionmocks.MockAEADEncrypter
+		aeadEncrypter *mocks.MockAEADEncrypter
 		encMaterials  *mocks.MockEncryptionMaterial
 		ser           *formatmocks.MockSerializer
 		ciphertextBuf *mocks.MockEncryptionBuffer
@@ -1664,7 +1663,7 @@ func TestEncrypter_encryptData(t *testing.T) {
 			rand.CryptoRandGen = randomGen
 
 			cmm := mocks.NewMockCryptoMaterialsManager(t)
-			aeadEncrypter := encryptionmocks.NewMockAEADEncrypter(t)
+			aeadEncrypter := mocks.NewMockAEADEncrypter(t)
 			encMaterials := mocks.NewMockEncryptionMaterial(t)
 			ser := formatmocks.NewMockSerializer(t)
 			ciphertextBuf := mocks.NewMockEncryptionBuffer(t)
@@ -1724,7 +1723,7 @@ func TestEncrypter_Encrypt(t *testing.T) {
 	type mocksParams struct {
 		alg           *suite.AlgorithmSuite
 		cmm           *mocks.MockCryptoMaterialsManager
-		aeadEncrypter *encryptionmocks.MockAEADEncrypter
+		aeadEncrypter *mocks.MockAEADEncrypter
 		encMaterials  *mocks.MockEncryptionMaterial
 		ser           *formatmocks.MockSerializer
 		ciphertextBuf *mocks.MockEncryptionBuffer
@@ -1848,7 +1847,7 @@ func TestEncrypter_Encrypt(t *testing.T) {
 			rand.CryptoRandGen = randomGen
 
 			cmm := mocks.NewMockCryptoMaterialsManager(t)
-			aeadEncrypter := encryptionmocks.NewMockAEADEncrypter(t)
+			aeadEncrypter := mocks.NewMockAEADEncrypter(t)
 			encMaterials := mocks.NewMockEncryptionMaterial(t)
 			ser := formatmocks.NewMockSerializer(t)
 			ciphertextBuf := mocks.NewMockEncryptionBuffer(t)

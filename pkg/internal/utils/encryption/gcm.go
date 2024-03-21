@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 )
 
 const (
@@ -21,30 +21,6 @@ var (
 	ErrGcmDecrypt = errors.New("gcm decrypt error")
 	ErrGcmEncrypt = errors.New("gcm encrypt error")
 )
-
-type Encrypter interface {
-	Encrypt(key, iv, plaintext, aadData []byte) ([]byte, []byte, error)
-}
-
-type Decrypter interface {
-	Decrypt(key, iv, ciphertext, tag, aadData []byte) ([]byte, error)
-}
-
-type GcmBase interface {
-	Encrypter
-	Decrypter
-}
-
-type AEADEncrypter interface {
-	Encrypter
-	GenerateHeaderAuth(derivedDataKey, headerBytes []byte) ([]byte, []byte, error)
-	ConstructIV(seqNum int) []byte
-}
-
-type AEADDecrypter interface {
-	Decrypter
-	ValidateHeaderAuth(derivedDataKey, headerAuthTag, headerBytes []byte) error
-}
 
 type Gcm struct{}
 

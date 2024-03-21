@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	DefaultFrameLength = int(4096) // default frame size for encryption
+	// DefaultFrameLength default frame length for encryption.
+	DefaultFrameLength = int(4096)
 )
 
 // EncryptOptions defines the configuration options for the encryption process.
@@ -25,9 +26,12 @@ const (
 //   - Handler: Specifies a function that creates [model.EncryptionHandler] encryption handler.
 //     If not set, a default [encrypter.New] function is used.
 type EncryptOptions struct {
-	Algorithm   *suite.AlgorithmSuite
+	// Algorithm that defines the encryption algorithm to be used.
+	Algorithm *suite.AlgorithmSuite
+	// FrameLength specifies the frame length for encryption.
 	FrameLength int
-	Handler     func(config crypto.EncrypterConfig, cmm model.CryptoMaterialsManager) model.EncryptionHandler
+	// Handler specifies a function that creates model.EncryptionHandler encryption handler.
+	Handler func(config crypto.EncrypterConfig, cmm model.CryptoMaterialsManager) model.EncryptionHandler
 }
 
 // DecryptOptions defines the configuration options for the decryption process.
@@ -36,6 +40,7 @@ type EncryptOptions struct {
 //   - Handler: Specifies a function that creates [model.DecryptionHandler] decryption handler.
 //     If not set, a default [decrypter.New] function is used.
 type DecryptOptions struct {
+	// Handler specifies a function that creates model.DecryptionHandler decryption handler.
 	Handler func(config crypto.DecrypterConfig, cmm model.CryptoMaterialsManager) model.DecryptionHandler
 }
 
@@ -73,7 +78,7 @@ func WithAlgorithm(alg *suite.AlgorithmSuite) EncryptOptionFunc {
 		if alg == nil {
 			return fmt.Errorf("algorithm must not be nil")
 		}
-		if _, err := suite.Algorithm.ByID(alg.AlgorithmID); err != nil {
+		if _, err := suite.ByID(alg.AlgorithmID); err != nil {
 			return fmt.Errorf("algorithm error: %w", err)
 		}
 		o.Algorithm = alg

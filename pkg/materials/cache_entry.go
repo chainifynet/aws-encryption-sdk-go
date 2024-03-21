@@ -9,6 +9,7 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 )
 
+// CacheEntry CachingCryptoMaterialsManager still under development.
 type CacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials] struct {
 	key       []byte
 	value     V
@@ -19,6 +20,7 @@ type CacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials] struct 
 	valid     bool
 }
 
+// NewCacheEntry CachingCryptoMaterialsManager still under development.
 func NewCacheEntry[V model.EncryptionMaterials | model.DecryptionMaterials](key []byte, value V, lifetime time.Duration) *CacheEntry[V] {
 	return &CacheEntry[V]{
 		key:       key,

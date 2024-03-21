@@ -3,6 +3,6 @@
 
 package materials
 
-const (
-	EcPublicKeyField = "aws-crypto-public-key"
-)
+// EcPublicKeyField is the reserved field name in encryption context that
+// represents the public verification key.
+const EcPublicKeyField = "aws-crypto-public-key"

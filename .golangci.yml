@@ -56,6 +56,9 @@ linters:
     - wrapcheck
     - gofmt
     - zerologlint
+# enable these on the next golangci-lint release:
+#    - copyloopvar
+#    - intrange
 
 linters-settings:
   errorlint:
@@ -126,8 +129,8 @@ linters-settings:
       - assign
     ignored-files:
       - 'algorithm\.go'
-      - 'pkg/utils/conv/conv\.go'
-      - 'pkg/helpers/arn/arn\.go'
+      - 'pkg/internal/utils/conv/conv\.go'
+      - 'pkg/utils/arn/arn\.go'
     ignored-functions:
       - '^math\.'
       - '^http\.StatusText$'
@@ -180,7 +183,7 @@ issues:
     - path: 'pkg/suite/algorithm.go'
       linters:
         - gochecknoglobals
-    - path: 'pkg/utils/conv/conv.go'
+    - path: 'pkg/internal/utils/conv/conv.go'
       linters:
         - gochecknoglobals
     - linters:

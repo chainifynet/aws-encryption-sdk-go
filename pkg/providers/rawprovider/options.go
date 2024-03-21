@@ -10,6 +10,7 @@ type staticKey struct {
 	key   []byte
 }
 
+// Options contains the configuration options for the [RawKeyProvider].
 type Options struct {
 	staticKeys  map[string][]byte
 	configKeys  []staticKey
@@ -17,8 +18,10 @@ type Options struct {
 	keyProvider model.BaseKeyProvider
 }
 
+// OptionsFunc is a function that applies an option to the [Options].
 type OptionsFunc func(*Options) error
 
+// WithStaticKey configures a static key for the Raw provider.
 func WithStaticKey(keyID string, key []byte) OptionsFunc {
 	return func(o *Options) error {
 		o.configKeys = append(o.configKeys, staticKey{keyID, key})
@@ -26,6 +29,7 @@ func WithStaticKey(keyID string, key []byte) OptionsFunc {
 	}
 }
 
+// WithKeyFactory sets the master key factory for the Raw provider.
 func WithKeyFactory(keyFactory model.MasterKeyFactory) OptionsFunc {
 	return func(o *Options) error {
 		o.keyFactory = keyFactory
@@ -33,6 +37,7 @@ func WithKeyFactory(keyFactory model.MasterKeyFactory) OptionsFunc {
 	}
 }
 
+// WithKeyProvider sets the base key provider for the Raw provider.
 func WithKeyProvider(keyProvider model.BaseKeyProvider) OptionsFunc {
 	return func(o *Options) error {
 		o.keyProvider = keyProvider

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 var errKeyDerivation = errors.New("key derivation error")

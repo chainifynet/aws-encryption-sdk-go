@@ -15,18 +15,18 @@ import (
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/crypto/signature"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/serialization"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/bodyaad"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/encryption"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/keyderivation"
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/rand"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/model/format"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/encryption"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/keyderivation"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/rand"
 )
 
 type Encrypter struct {
 	cmm             model.CryptoMaterialsManager
 	cfg             crypto.EncrypterConfig
-	aeadEncrypter   encryption.AEADEncrypter
+	aeadEncrypter   model.AEADEncrypter
 	ser             format.Serializer
 	header          format.MessageHeader
 	_derivedDataKey []byte

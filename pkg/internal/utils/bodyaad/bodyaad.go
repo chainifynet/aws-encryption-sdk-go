@@ -4,8 +4,8 @@
 package bodyaad
 
 import (
+	"github.com/chainifynet/aws-encryption-sdk-go/pkg/internal/utils/conv"
 	"github.com/chainifynet/aws-encryption-sdk-go/pkg/suite"
-	"github.com/chainifynet/aws-encryption-sdk-go/pkg/utils/conv"
 )
 
 const (
@@ -13,14 +13,21 @@ const (
 	lengthLen = int(8) // length as big-endian 64-bit unsigned integer
 )
 
+type contentAADString string
+
+const (
+	contentAADFrame      contentAADString = "AWSKMSEncryptionClient Frame"
+	contentAADFinalFrame contentAADString = "AWSKMSEncryptionClient Final Frame"
+)
+
 func ContentString(contentType suite.ContentType, finalFrame bool) ([]byte, error) {
 	if err := suite.ValidateContentType(contentType); err != nil {
 		return nil, err
 	}
 	if finalFrame {
-		return []byte(suite.ContentAADFinalFrame), nil
+		return []byte(contentAADFinalFrame), nil
 	}
-	return []byte(suite.ContentAADFrame), nil
+	return []byte(contentAADFrame), nil
 }
 
 func ContentAADBytes(messageID, contentString []byte, seqNum, length int) []byte {
