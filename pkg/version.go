@@ -4,4 +4,4 @@
 package pkg
 
 // Version is the current version of the SDK.
-const Version = "0.3.2"
+const Version = "0.4.0"
