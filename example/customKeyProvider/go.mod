@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kms v1.32.0 // indirect
 	github.com/aws/smithy-go v1.20.2 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
 )
 
 replace github.com/chainifynet/aws-encryption-sdk-go => ../..
