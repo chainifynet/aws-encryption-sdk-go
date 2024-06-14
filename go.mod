@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/aws/aws-sdk-go-v2 v1.27.2
 	github.com/aws/aws-sdk-go-v2/config v1.27.18
-	github.com/aws/aws-sdk-go-v2/service/kms v1.32.3
+	github.com/aws/aws-sdk-go-v2/service/kms v1.33.0
 	github.com/aws/smithy-go v1.20.2
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
