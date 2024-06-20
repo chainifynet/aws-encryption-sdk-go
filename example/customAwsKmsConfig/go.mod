@@ -3,14 +3,14 @@ module github.com/chainifynet/aws-encryption-sdk-go/example/customAwsKmsConfig
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go-v2/config v1.27.19
+	github.com/aws/aws-sdk-go-v2/config v1.27.20
 	github.com/chainifynet/aws-encryption-sdk-go v0.4.0
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.29.0 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.19 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.6 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.30.0 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.20 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.7 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.11 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.11 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
