@@ -5,7 +5,7 @@ go 1.20
 require github.com/chainifynet/aws-encryption-sdk-go v0.4.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.29.0 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.30.0 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.27.20 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.20 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.7 // indirect
