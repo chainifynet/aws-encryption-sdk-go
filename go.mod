@@ -3,7 +3,7 @@ module github.com/chainifynet/aws-encryption-sdk-go
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.32.0
+	github.com/aws/aws-sdk-go-v2 v1.32.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.35
 	github.com/aws/aws-sdk-go-v2/service/kms v1.35.8
 	github.com/aws/smithy-go v1.22.0
