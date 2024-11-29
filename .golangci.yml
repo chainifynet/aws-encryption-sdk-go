@@ -24,15 +24,16 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exportloopref
+    #    - exportloopref # deprecated, use copyloopvar
+    - copyloopvar
     - gochecknoglobals
     - gochecknoinits
     - gocognit
     - goconst
     - gocritic
     - gocyclo
-    - gomnd
-    - goerr113
+    - mnd
+    - err113
     - goprintffuncname
     - gosec
     - grouper
@@ -57,7 +58,6 @@ linters:
     - gofmt
     - zerologlint
 # enable these on the next golangci-lint release:
-#    - copyloopvar
 #    - intrange
 
 linters-settings:
@@ -119,7 +119,7 @@ linters-settings:
           - pkg: "github.com/pkg/errors"
             desc: Should be replaced by standard lib errors package
 
-  gomnd:
+  mnd:
     checks:
       - argument
       - case
@@ -154,6 +154,10 @@ linters-settings:
       hugeParam:
         sizeThreshold: 180
 
+  gosec:
+    excludes:
+      - G115
+
 issues:
   fix: false
   exclude-rules:
@@ -187,8 +191,8 @@ issues:
       linters:
         - gochecknoglobals
     - linters:
-        - goerr113
-      text: "err113: do not define dynamic errors"
+        - err113
+      text: "do not define dynamic errors, use wrapped static errors instead"
     - path: '_mock\.go'
       linters:
         - wrapcheck
