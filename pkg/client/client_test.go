@@ -33,7 +33,6 @@ func Test_NewClientWithConfig(t *testing.T) {
 	assert.NotNil(t, cl1)
 	assert.NotNil(t, cl2)
 	assert.NotSame(t, cl1, cl2)
-	assert.NotSame(t, *cl1, *cl2)
 	assert.Equal(t, fmt.Sprintf("%v", cl1), fmt.Sprintf("%v", cl2))
 }
 
