@@ -33,7 +33,7 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 
 ## Requirements
 
-- Go v1.20 or later.
+- Go v1.21 or later.
 - AWS SDK for Go v2
 
 ## Installation
