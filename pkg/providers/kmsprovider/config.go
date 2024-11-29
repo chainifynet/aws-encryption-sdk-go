@@ -218,7 +218,7 @@ func validateUniqueMrks(keyIDs []string) error {
 		return err
 	}
 	duplicateIDs := make(map[string]struct{})
-	for _, pair := range itertools.Combinations(mrkKeyIDs, 2) { //nolint:gomnd
+	for _, pair := range itertools.Combinations(mrkKeyIDs, 2) { //nolint:mnd
 		key1, key2 := pair[0], pair[1]
 		if structs.MapContains(duplicateIDs, key1) && structs.MapContains(duplicateIDs, key2) {
 			continue

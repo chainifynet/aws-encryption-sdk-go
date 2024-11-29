@@ -22,9 +22,9 @@ jobs:
       fail-fast: true
       max-parallel: 2
       matrix:
-        go: ["1.21.x", "1.22.x"]
+        go: ["1.21.x", "1.22.x", "1.23.x"]
         include:
-          - go: 1.22.x
+          - go: 1.23.x
             latest: true
     name: Unit Tests ${{ matrix.go }}
     steps:

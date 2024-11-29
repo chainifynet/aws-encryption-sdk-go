@@ -15,14 +15,15 @@ RUN_NONE=-run NOTHING
 RUN_INTEG=-run '^Test_Integration_'
 
 .PHONY: all deps mocks mocks-build-tag vet lint lint-ci lint-local unit
-all: unit
+all: unit	## Run all the checks and tests
+	@echo "All checks and tests"
 
 deps:
 	@echo "Installing dependencies"
 	@go mod download -x all
 	@go install gotest.tools/gotestsum@latest
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.56.2
-	@go install github.com/vektra/mockery/v2@v2.42.0
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
+	@go install github.com/vektra/mockery/v2@v2.49.1
 	@#go get github.com/stretchr/testify/mock@v1.8.4
 
 mocks:
@@ -42,7 +43,7 @@ lint: mocks vet lint-ci
 
 lint-ci:
 	@echo "Running golangci-lint"
-	@golangci-lint run --build-tags=${CI_TAGS} --out-format=github-actions ./...
+	@golangci-lint run --build-tags=${CI_TAGS} --out-format=colored-line-number ./...
 
 lint-local:
 	@echo "Running golangci-lint locally"

@@ -10,7 +10,7 @@ import (
 
 func regionForKeyID(keyID, defaultRegion string) (string, error) {
 	parts := strings.Split(keyID, ":")
-	if len(parts) < 3 { //nolint:gomnd
+	if len(parts) < 3 { //nolint:mnd
 		// minimum chars in AWS region, i.e. sa-east-1
 		if len(defaultRegion) >= _awsRegionMinLength {
 			return defaultRegion, nil

@@ -31,9 +31,9 @@ type CachingCryptoMaterialsManager struct {
 func NewCaching(cache BaseCache, _ model.MasterKeyProvider, _ ...model.MasterKeyProvider) (*CachingCryptoMaterialsManager, error) {
 	return &CachingCryptoMaterialsManager{
 		cache:       cache,
-		maxAge:      300 * time.Second, //nolint:gomnd
-		maxMessages: 1000,              //nolint:gomnd
-		maxBytes:    1000000,           //nolint:gomnd
+		maxAge:      300 * time.Second, //nolint:mnd
+		maxMessages: 1000,              //nolint:mnd
+		maxBytes:    1000000,           //nolint:mnd
 	}, nil
 }
 

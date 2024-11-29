@@ -635,8 +635,8 @@ func TestFinalFrameIndicator(t *testing.T) {
 		{"wrong", assert.NotEqual, []byte{0x0f, 0x0f, 0x0f, 0x0f}, finalFrameIndicator},
 		{"correct", assert.Equal, []byte{0xff, 0xff, 0xff, 0xff}, finalFrameIndicator},
 		{"correct", assert.EqualValues, []byte{0xff, 0xff, 0xff, 0xff}, finalFrameIndicator},
-		{"wrongLen", assert.NotSame, []byte{0xff, 0xff, 0xff}, finalFrameIndicator},
-		{"wrongLen", assert.NotSame, []byte{0xff, 0xff, 0xff, 0xff, 0xff}, finalFrameIndicator},
+		{"wrongLen", assert.NotEqual, []byte{0xff, 0xff, 0xff}, finalFrameIndicator},
+		{"wrongLen", assert.NotEqual, []byte{0xff, 0xff, 0xff, 0xff, 0xff}, finalFrameIndicator},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

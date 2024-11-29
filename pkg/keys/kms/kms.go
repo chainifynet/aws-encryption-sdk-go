@@ -40,7 +40,7 @@ type KeyFactory struct{}
 
 // NewMasterKey factory method returns a new instance of Kms [MasterKey].
 func (f *KeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, error) {
-	if len(args) != 2 { //nolint:gomnd
+	if len(args) != 2 { //nolint:mnd
 		return nil, fmt.Errorf("invalid number of arguments")
 	}
 

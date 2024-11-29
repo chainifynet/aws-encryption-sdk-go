@@ -31,7 +31,7 @@ type KeyFactory struct{}
 
 // NewMasterKey factory method returns a new instance of Raw [MasterKey].
 func (f *KeyFactory) NewMasterKey(args ...interface{}) (model.MasterKey, error) {
-	if len(args) != 3 { //nolint:gomnd
+	if len(args) != 3 { //nolint:mnd
 		return nil, fmt.Errorf("invalid number of arguments")
 	}
 	providerID, ok := args[0].(string)

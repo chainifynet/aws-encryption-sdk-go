@@ -118,11 +118,11 @@ func (e edk) AsKeys(msgEDKs []format.MessageEDK) []model.EncryptedDataKeyI {
 	return edks
 }
 
-func (e edk) validateMinMaxEDKs(k, max int) error {
+func (e edk) validateMinMaxEDKs(k, m int) error {
 	if k <= 0 {
 		return fmt.Errorf("reached limit: %w", ErrMinEncryptedDataKeys)
 	}
-	if k > max {
+	if k > m {
 		return fmt.Errorf("reached max limit: %w", ErrMaxEncryptedDataKeys)
 	}
 	return nil

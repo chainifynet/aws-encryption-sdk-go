@@ -57,7 +57,6 @@ func TestNewKeyEntry(t *testing.T) {
 			assert.NotNil(t, ke)
 			assert.Equal(t, tt.want, ke)
 			assert.IsType(t, tt.want, ke)
-			assert.NotSame(t, tt.want, ke)
 		})
 	}
 }

@@ -28,20 +28,20 @@ func RandomBytes(r io.Reader, n int) ([]byte, error) {
 }
 
 type RandomGenerator interface {
-	CryptoRandomBytes(max int) ([]byte, error)
+	CryptoRandomBytes(m int) ([]byte, error)
 }
 
 // DefaultRandomGenerator uses crypto/rand.Reader to generate random bytes.
 type DefaultRandomGenerator struct{}
 
 // CryptoRandomBytes generates random bytes using the crypto/rand package.
-func (g DefaultRandomGenerator) CryptoRandomBytes(max int) ([]byte, error) {
-	return RandomBytes(Reader, max)
+func (g DefaultRandomGenerator) CryptoRandomBytes(m int) ([]byte, error) {
+	return RandomBytes(Reader, m)
 }
 
 // CryptoRandGen provides RandomGenerator interface that can reset during testing.
 var CryptoRandGen RandomGenerator = DefaultRandomGenerator{} //nolint:gochecknoglobals
 
-func CryptoRandomBytes(max int) ([]byte, error) {
-	return CryptoRandGen.CryptoRandomBytes(max)
+func CryptoRandomBytes(m int) ([]byte, error) {
+	return CryptoRandGen.CryptoRandomBytes(m)
 }

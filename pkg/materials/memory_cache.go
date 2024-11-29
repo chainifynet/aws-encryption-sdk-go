@@ -19,13 +19,13 @@ type MemoryCache struct {
 var _ BaseCache = (*MemoryCache)(nil)
 
 func (mc *MemoryCache) PutEncryptionEntry(key []byte, em model.EncryptionMaterials, _ int) (*CacheEntry[model.EncryptionMaterials], error) {
-	entry := NewCacheEntry(key, em, 300) //nolint:gomnd
+	entry := NewCacheEntry(key, em, 300) //nolint:mnd
 	mc.cache.Store(string(key), entry)
 	return entry, nil
 }
 
 func (mc *MemoryCache) PutDecryptionEntry(key []byte, dm model.DecryptionMaterials) (*CacheEntry[model.DecryptionMaterials], error) {
-	entry := NewCacheEntry(key, dm, 300) //nolint:gomnd
+	entry := NewCacheEntry(key, dm, 300) //nolint:mnd
 	mc.cache.Store(string(key), entry)
 	return entry, nil
 }
