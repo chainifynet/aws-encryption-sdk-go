@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
-      max-parallel: 2
+      max-parallel: 3
       matrix:
         go: ["1.21.x", "1.22.x", "1.23.x"]
         include:
