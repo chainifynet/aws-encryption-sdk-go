@@ -1,4 +1,7 @@
 with-expecter: true
+# remove 845 fix when V3 is released
+# https://vektra.github.io/mockery/latest/deprecations/#issue-845-fix
+issue-845-fix: true
 filename: "{{.InterfaceName}}_mock.go"
 mock-build-tags: "mocks"
 packages:
