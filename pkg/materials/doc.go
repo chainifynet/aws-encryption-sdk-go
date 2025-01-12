@@ -11,17 +11,25 @@
 //   - [DefaultCryptoMaterialsManager]: A default interacts with your Master Key
 //     Providers without any caching.
 //   - [CachingCryptoMaterialsManager]: A caching CMM that uses a cache to store
-//     cryptographic materials. Not implemented yet.
+//     cryptographic materials.
 //
 // # Usage
 //
-// The following example demonstrates how to use the DefaultCryptoMaterialsManager.
+// The following example demonstrates how to use the [DefaultCryptoMaterialsManager].
 //
 //	 // Set up your key provider.
 //	 cmm, err := materials.NewDefault(keyProvider)
 //	 if err != nil {
 //		  panic("materials manager setup failed") // handle error
 //	 }
+//
+// Use of [CachingCryptoMaterialsManager] example.
+//
+//	cache, err := cache.NewMemoryCache(10)
+//	if err != nil {
+//	    // handle error
+//	}
+//	cachingManager, err := NewCaching(cache, provider)
 //
 // Check [example] for more advanced usage.
 //
