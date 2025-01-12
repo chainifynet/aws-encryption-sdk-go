@@ -5,7 +5,7 @@ issue-845-fix: true
 resolve-type-alias: false
 filename: "{{.InterfaceName}}_mock.go"
 mock-build-tags: "mocks"
-disable-version-string: false
+disable-version-string: true
 packages:
   github.com/chainifynet/aws-encryption-sdk-go/pkg/model:
     interfaces:
