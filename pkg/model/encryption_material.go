@@ -31,7 +31,7 @@ type EncryptionMaterials struct {
 }
 
 // NewEncryptionMaterials returns a new instance of [EncryptionMaterials].
-func NewEncryptionMaterials(dataEncryptionKey DataKeyI, encryptedDataKeys []EncryptedDataKeyI, ec suite.EncryptionContext, signingKey *ecdsa.PrivateKey) *EncryptionMaterials {
+func NewEncryptionMaterials(dataEncryptionKey DataKeyI, encryptedDataKeys []EncryptedDataKeyI, ec suite.EncryptionContext, signingKey *ecdsa.PrivateKey) EncryptionMaterial {
 	return &EncryptionMaterials{dataEncryptionKey: dataEncryptionKey, encryptedDataKeys: encryptedDataKeys, encryptionContext: ec, signingKey: signingKey}
 }
 
@@ -74,8 +74,8 @@ type DecryptionMaterials struct {
 	verificationKey []byte
 }
 
-// NewDecryptionMaterials returns a new instance of [DecryptionMaterial].
-func NewDecryptionMaterials(dataKey DataKeyI, verificationKey []byte) *DecryptionMaterials {
+// NewDecryptionMaterials returns a new instance of [DecryptionMaterials].
+func NewDecryptionMaterials(dataKey DataKeyI, verificationKey []byte) DecryptionMaterial {
 	return &DecryptionMaterials{dataKey: dataKey, verificationKey: verificationKey}
 }
 
