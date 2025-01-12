@@ -71,7 +71,7 @@ func (m *MemoryCache) PutDecryptionEntry(key string, dm model.DecryptionMaterial
 	return m.storeCacheEntry(key, entry)
 }
 
-// GetEncryptionEntry retrieves a encryption entry from the cache using a specified key.
+// GetEncryptionEntry retrieves an encryption entry from the cache using a specified key.
 // It updates the metadata with the provided number of bytes.
 // Returns the cache entry and a boolean indicating success.
 func (m *MemoryCache) GetEncryptionEntry(key string, n int) (model.CacheEntry, bool) {
