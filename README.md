@@ -1,12 +1,12 @@
 # AWS Encryption SDK for Go
 
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 [![Go Unit](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-unit.yml)
 [![Go E2E](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml/badge.svg?branch=main)](https://github.com/chainifynet/aws-encryption-sdk-go/actions/workflows/go-e2e.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/chainifynet/aws-encryption-sdk-go)](https://goreportcard.com/report/github.com/chainifynet/aws-encryption-sdk-go)
 [![codecov](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go/graph/badge.svg?token=YPZT7IOJMM)](https://codecov.io/gh/chainifynet/aws-encryption-sdk-go)
 ![Code style: gofmt](https://img.shields.io/badge/code_style-gofmt-00ADD8.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/chainifynet/aws-encryption-sdk-go.svg)](https://pkg.go.dev/github.com/chainifynet/aws-encryption-sdk-go)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fchainifynet%2Faws-encryption-sdk-go?ref=badge_shield)
 
 This project is an implementation of the [AWS Encryption SDK](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/reference.html) for the Go programming language, providing a set of libraries for developers to easily add encryption and decryption functionality to their Go applications. This implementation is inspired by the [aws-encryption-sdk-python](https://github.com/aws/aws-encryption-sdk-python) and follows the [AWS Encryption SDK specification](https://github.com/awslabs/aws-encryption-sdk-specification/tree/c35fbd91b28303d69813119088c44b5006395eb4) closely.
 
@@ -26,7 +26,6 @@ This SDK aims to fill that gap, offering Go developers the tools to implement en
 
 ### Current Limitations
 
-- Does not support the Caching Materials Manager feature yet.
 - Does not support KMS aliases at this stage.
 - Raw Master Key provider does not support RSA encryption.
 - Only framed content type is supported.
@@ -187,7 +186,7 @@ if err != nil {
 
 ## TODO
 
-- [ ] Add support for Caching Materials Manager.
+- [x] Add support for Caching Materials Manager [#559](https://github.com/chainifynet/aws-encryption-sdk-go/pull/559).
 - [x] Add support for Message Format Version 1 [#170](https://github.com/chainifynet/aws-encryption-sdk-go/pull/170).
 - [x] Add support for AWS KMS Multi-Region Keys [#46](https://github.com/chainifynet/aws-encryption-sdk-go/pull/46).
 - [ ] Add support for KMS aliases.
