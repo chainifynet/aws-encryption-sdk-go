@@ -59,7 +59,9 @@ linters:
     - zerologlint
 # enable these on the next golangci-lint release:
 #    - intrange
-
+    - fatcontext
+    - iface
+    - recvcheck
 linters-settings:
   errorlint:
     errorf: true
