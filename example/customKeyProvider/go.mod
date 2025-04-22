@@ -1,15 +1,16 @@
 module github.com/chainifynet/aws-encryption-sdk-go-tests/example/customKeyProvider
 
 go 1.21
+toolchain go1.24.1
 
 require github.com/chainifynet/aws-encryption-sdk-go v0.5.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.33.0 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.28 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.28 // indirect
-	github.com/aws/aws-sdk-go-v2/service/kms v1.37.12 // indirect
-	github.com/aws/smithy-go v1.22.1 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.36.3 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.32 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.32 // indirect
+	github.com/aws/aws-sdk-go-v2/service/kms v1.37.18 // indirect
+	github.com/aws/smithy-go v1.22.2 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 )
 
