@@ -1,6 +1,7 @@
 module github.com/chainifynet/aws-encryption-sdk-go/example/discoveryKmsProvider
 
-go 1.21
+go 1.22
+
 toolchain go1.24.1
 
 require (
@@ -17,7 +18,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.13 // indirect
-	github.com/aws/aws-sdk-go-v2/service/kms v1.38.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/kms v1.39.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.25.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.14 // indirect
