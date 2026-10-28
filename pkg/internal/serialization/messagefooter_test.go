@@ -155,6 +155,20 @@ func Test_messageFooter_FromBuffer(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Valid buffer with shorter variable-length ECDSA signature",
+			args: args{
+				alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
+				// ECDSA DER signatures are variable-length; 102 bytes (0x0, 0x66) is valid, one below the 103 max
+				buf: bytes.NewBuffer(append([]byte{0x0, 0x66}, make([]byte, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384.Authentication.SignatureLen-1)...)),
+			},
+			want: &footer{
+				algorithmSuite: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
+				signLen:        suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384.Authentication.SignatureLen - 1,
+				signature:      make([]byte, suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384.Authentication.SignatureLen-1),
+			},
+			wantErr: false,
+		},
+		{
 			name: "Buffer longer than required",
 			args: args{alg: suite.AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384,
 				// here using twice P384 (206 bytes) longer signature than required P384 (103 bytes)

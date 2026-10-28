@@ -38,7 +38,9 @@ func deserializeFooter(alg *suite.AlgorithmSuite, buf *bytes.Buffer) (*footer, e
 	if err != nil {
 		return nil, fmt.Errorf("cant read signLen: %w", errors.Join(errFooter, err))
 	}
-	if signLen != alg.Authentication.SignatureLen {
+	// SignatureLen is the maximum DER length; ECDSA signatures are variable-length
+	// (P-384: 101-103 bytes), so bound signLen rather than require an exact match.
+	if signLen > alg.Authentication.SignatureLen {
 		return nil, fmt.Errorf("invalid signature length: %w", errFooter)
 	}
 	if buf.Len() < signLen {
